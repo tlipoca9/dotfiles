@@ -92,7 +92,6 @@ zi wait lucid depth'1' as'null' for \
   ' \
   @z-shell/0
 # https://github.com/neovim/neovim
-## https://github.com/AstroNvim/AstroNvim
 zi wait lucid depth'1' as'null' has'nvim' for \
   id-as'neovim/neovim' \
   atload'
@@ -100,14 +99,6 @@ zi wait lucid depth'1' as'null' has'nvim' for \
     alias vim="nvim"
     export EDITOR="nvim"
   ' \
-  @z-shell/0 \
-  id-as'AstroNvim/AstroNvim' \
-  atclone'
-    mv ~/.config/nvim ~/.config/nvim.bak
-    mv ~/.local/share/nvim ~/.local/share/nvim.bak
-    git clone --depth 1 https://github.com/AstroNvim/AstroNvim ~/.config/nvim
-  ' \
-  atpull'%atclone' \
   @z-shell/0
 # https://github.com/eza-community/eza
 zi wait lucid depth'1' as'null' for \
