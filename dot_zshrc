@@ -1,3 +1,11 @@
 #!/usr/bin/env zsh
 
+##################################
+# NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# brew install gcc zsh curl git chezmoi
+# chezmoi init --apply https://github.com/tlipoca9/dotfiles.git
+# command -v zsh | sudo tee -a /etc/shells
+# chsh -s "$(command -v zsh)"
+##################################
+
 [[ -f $HOME/.config/zsh/config.zsh ]] && source $HOME/.config/zsh/config.zsh

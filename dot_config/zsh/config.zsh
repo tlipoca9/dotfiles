@@ -1,11 +1,5 @@
 #!/usr/bin/env zsh
 
-##################################
-# NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-# brew install gcc zsh curl git chezmoi
-##################################
-
-
 has_command() {
   command -v "$@" >/dev/null 2>&1 && return 0 || return 1
 }
