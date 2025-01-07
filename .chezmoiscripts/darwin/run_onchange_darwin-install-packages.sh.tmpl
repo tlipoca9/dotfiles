@@ -52,7 +52,7 @@ SCPT
 {{ if .packages.darwin.brews.casks -}}
 brew_cask_names=$(brew list --cask)
 {{ range .packages.darwin.brews.casks -}}
-echo $brew_cask_names | sed 's/ /\n/g' | grep -E '^{{ range $i, $v := .skip_when_installed }}{{ if $i }}|{{end}}{{ $v }}{{ end }}$' > /dev/null 2>&1 \
+echo $brew_cask_names | sed 's/ /\n/g' | grep -E '^{{ range $i, $v := .aliases }}{{ if $i }}|{{end}}{{ $v }}{{ end }}$' > /dev/null 2>&1 \
   && (INFO "'{{ .name }}' is already installed.") \
   || (INFO "Installing '{{ .name }}'..." && brew install --cask {{ .name }})
 {{ end -}}
