@@ -1,0 +1,15 @@
+{{ if eq .chezmoi.os "windows" -}}
+{{ range .packages.windows.scoop.buckets -}}
+scoop bucket add {{ .name }} {{ .url }}
+{{ end -}}
+
+{{ range .packages.windows.scoop.commands -}}
+if (Get-Command {{ .cmd }} -ErrorAction SilentlyContinue) {
+  "'{{ .name }}' is already installed."
+} else {
+  "Installing '{{ .name }}'..."
+  scoop install {{ .name }}
+}
+{{ end -}}
+
+{{ end -}}

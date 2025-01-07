@@ -1,0 +1,46 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEFAULT="\033[0;m"
+RED="\033[31;m"
+BLUE="\033[34;m"
+YELLOW="\033[33;m"
+
+INFO(){
+    echo -e "$BLUE[INFO] $@ $DEFAULT"
+}
+WARN(){
+    echo -e "$YELLOW[WARN] $@ $DEFAULT"
+}
+ERROR(){
+    echo -e "$RED[ERROR] $@ $DEFAULT"
+}
+
+{{ range .packages.darwin.pkgManager -}}
+command -v {{ .cmd }} >/dev/null 2>&1 \
+&& INFO "'{{ .name }}' is already installed." \
+|| (INFO "Installing '{{ .name }}'..." && {{ .install_script }})
+{{ end -}}
+
+{{ range .packages.darwin.brews.commands -}}
+command -v {{ .cmd }} >/dev/null 2>&1 \
+&& INFO "'{{ .name }}' is already installed." \
+|| (INFO "Installing '{{ .name }}'..." && brew install {{ .name }})
+{{ end -}}
+
+{{ if .packages.darwin.brews.fonts -}}
+font_family_names=$(osascript << SCPT
+  use framework "AppKit"
+  set fontFamilyNames to (current application's NSFontManager's sharedFontManager's availableFontFamilies) as list
+  return fontFamilyNames
+SCPT
+)
+{{ range .packages.darwin.brews.fonts -}}
+(echo $font_family_names | sed 's/, /\n/g' | grep -E '^{{ .font }}$' > /dev/null 2>&1) \
+&& (INFO "'{{ .font }}' is already installed.") \
+|| (brew install --cask {{ .name }})
+{{ end -}}
+{{ end -}}
+
+{{ end -}}
