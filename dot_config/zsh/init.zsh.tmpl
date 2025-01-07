@@ -27,7 +27,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 
 [[ -f $ZSH_CONFIG_HOME/xdg.zsh ]] && source $ZSH_CONFIG_HOME/xdg.zsh
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
 [[ -f $ZSH_CONFIG_HOME/brew.zsh ]] && source $ZSH_CONFIG_HOME/brew.zsh
 {{ end -}}
 [[ -f $ZSH_CONFIG_HOME/zi.zsh ]] && source $ZSH_CONFIG_HOME/zi.zsh
