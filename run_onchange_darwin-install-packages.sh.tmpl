@@ -17,18 +17,23 @@ ERROR(){
   echo -e "$RED[ERROR] $@ $DEFAULT"
 }
 
+# pkgManager
 {{ range .packages.darwin.pkgManager -}}
 command -v {{ .cmd }} >/dev/null 2>&1 \
   && INFO "'{{ .name }}' is already installed." \
   || (INFO "Installing '{{ .name }}'..." && {{ .install_script }})
 {{ end -}}
 
+
+# brews
+## commands
 {{ range .packages.darwin.brews.commands -}}
 command -v {{ .cmd }} >/dev/null 2>&1 \
   && INFO "'{{ .name }}' is already installed." \
   || (INFO "Installing '{{ .name }}'..." && brew install {{ .name }})
 {{ end -}}
 
+## fonts
 {{ if .packages.darwin.brews.fonts -}}
 font_family_names=$(osascript << SCPT
   use framework "AppKit"
@@ -43,6 +48,7 @@ SCPT
 {{ end -}}
 {{ end -}}
 
+## casks
 {{ if .packages.darwin.brews.casks -}}
 brew_cask_names=$(brew list --cask)
 {{ range .packages.darwin.brews.casks -}}
@@ -51,4 +57,6 @@ echo $brew_cask_names | sed 's/ /\n/g' | grep -E '^{{ range $i, $v := .skip_when
   || (INFO "Installing '{{ .name }}'..." && brew install --cask {{ .name }})
 {{ end -}}
 {{ end -}}
+
+
 {{ end -}}
