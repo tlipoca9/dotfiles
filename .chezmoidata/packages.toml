@@ -49,6 +49,8 @@ commands = [
   { cmd = "make"     , name = "main/make"                  },
   { cmd = "rg"       , name = "main/ripgrep"               },
   { cmd = "gcc"      , name = "main/mingw"                 },
+  { cmd = "jq"       , name = "main/jq"                    },
+  { cmd = "wezterm"  , name = "extras/wezterm"             },
   { cmd = "zsh"      , name = "tlipoca9_scoop-bucket/zsh"  },
 ]
 fonts = [

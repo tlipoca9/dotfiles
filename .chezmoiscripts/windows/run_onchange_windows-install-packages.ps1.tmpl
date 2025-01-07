@@ -53,6 +53,7 @@ if ('{{ .name }}' -in $bucketNames) {
 {{ end -}}
 {{ end -}}
 
+{{ if .packages.windows.scoop.commands -}}
 HINT "[scoop] installing commands"
 {{ range .packages.windows.scoop.commands -}}
 if (Get-Command {{ .cmd }} -ErrorAction SilentlyContinue) {
@@ -61,6 +62,21 @@ if (Get-Command {{ .cmd }} -ErrorAction SilentlyContinue) {
   INFO "Installing '{{ .name }}'..."
   scoop install {{ .name }}
 }
+{{ end -}}
+{{ end -}}
+
+{{ if .packages.windows.scoop.fonts -}}
+HINT "[scoop] installing fonts"
+Add-Type -AssemblyName System.Drawing
+$installedFonts = (New-Object 'System.Drawing.Text.InstalledFontCollection').Families | ForEach-Object { $_.Name }
+{{ range .packages.windows.scoop.fonts -}}
+if ('{{ .font }}' -in $installedFonts) {
+  INFO "'{{ .font }}' is already installed."
+} else {
+  INFO "Installing '{{ .font }}'..."
+  scoop install {{ .name }}
+}
+{{ end -}}
 {{ end -}}
 
 {{ end -}}
