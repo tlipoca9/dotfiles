@@ -39,6 +39,7 @@ buckets = [
 ]
 commands = [
   { cmd = "git"      , name = "main/git"                   },
+  { cmd = "innounp"  , name = "main/innounp"               },
   { cmd = "sudo"     , name = "main/sudo"                  },
   { cmd = "7z"       , name = "main/7zip"                  },
   { cmd = "dark"     , name = "main/dark"                  },
