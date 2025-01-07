@@ -50,6 +50,12 @@ commands = [
   { cmd = "rg"       , name = "main/ripgrep"               },
   { cmd = "gcc"      , name = "main/mingw"                 },
   { cmd = "jq"       , name = "main/jq"                    },
+  { cmd = "gitui"    , name = "main/gitui"                 },
+  { cmd = "fd"       , name = "main/fd"                    },
+  { cmd = "eza"      , name = "main/eza"                   },
+  { cmd = "bat"      , name = "main/bat"                   },
+  { cmd = "starship" , name = "main/starship"              },
+  { cmd = "fzf"      , name = "main/fzf"                   },
   { cmd = "wezterm"  , name = "extras/wezterm"             },
   { cmd = "zsh"      , name = "tlipoca9_scoop-bucket/zsh"  },
 ]
