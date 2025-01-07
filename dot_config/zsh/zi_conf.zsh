@@ -35,16 +35,15 @@ zi wait lucid depth'1' as'null' for \
   eval"atuin init zsh" \
   @atuinsh/atuin
 # https://github.com/denisidoro/navi
-# zi wait lucid depth'1' as'null' for \
-#   id-as'denisidoro/navi' \
-#   cargo'navi' sbin'**/navi' \
-#   eval"navi widget zsh" \
-#   @z-shell/0
 zi wait lucid depth'1' as'null' for \
-  has'fzf' \
-  from"gh-r" sbin'navi' \
+  id-as'denisidoro/navi' \
+  has'navi' \
   eval"navi widget zsh" \
-  @denisidoro/navi
+  atload'
+    export NAVI_CONFIG="$XDG_CONFIG_HOME/navi/config.yaml"
+    export NAVI_PATH="$XDG_CONFIG_HOME/navi/cheats"
+  ' \
+  @z-shell/0
 # https://github.com/starship/starship
 zi depth'1' as'null' for \
   id-as'starship/starship' \
