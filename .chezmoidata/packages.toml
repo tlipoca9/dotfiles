@@ -47,6 +47,7 @@ commands = [
   { cmd = "nvim"     , name = "main/neovim"                },
   { cmd = "make"     , name = "main/make"                  },
   { cmd = "rg"       , name = "main/ripgrep"               },
+  { cmd = "gcc"      , name = "main/mingw"                 },
   { cmd = "zsh"      , name = "tlipoca9_scoop-bucket/zsh"  },
 ]
 fonts = [
