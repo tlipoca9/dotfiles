@@ -1,4 +1,4 @@
 README.md
 {{ if eq .chezmoi.os "windows" -}}
-.config/navi/**
+.config/navi
 {{ end -}}
