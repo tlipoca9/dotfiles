@@ -1,5 +1,79 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEFAULT="\033[0;m"
+RED="\033[31;m"
+BLUE="\033[34;m"
+YELLOW="\033[33;m"
+
+INFO(){
+    echo -e "$BLUE[INFO] $@ $DEFAULT"
+}
+WARN(){
+    echo -e "$YELLOW[WARN] $@ $DEFAULT"
+}
+ERROR(){
+    echo -e "$RED[ERROR] $@ $DEFAULT"
+}
+
 {{ if eq .chezmoi.os "linux" -}}
 {{ else if eq .chezmoi.os "darwin" -}}
-#!/bin/sh
-brew install gcc zsh git curl chezmoi
+manually_install() {
+  cmd=$1; repo=$1; msg=$1
+  if [[ $1 =~ ^(.+)=(.+)=(.+)$ ]]; then
+    cmd=${BASH_REMATCH[1]}
+    repo=${BASH_REMATCH[2]}
+    msg=${BASH_REMATCH[3]}
+  fi
+  if command -v $cmd >/dev/null 2>&1; then
+    INFO "'$repo' is already installed."
+  else
+    WARN "'$repo' is not installed. $msg"
+    exit 1
+  fi
+}
+
+ensure_install() {
+  cmd=$1; repo=$1
+  if [[ $1 =~ ^(.+)=(.+)$ ]]; then
+    cmd=${BASH_REMATCH[1]}
+    repo=${BASH_REMATCH[2]}
+  fi
+  if command -v $cmd >/dev/null 2>&1; then
+    INFO "'$repo' is already installed."
+  else
+    INFO "Installing '$repo'..."
+    brew install $repo
+  fi
+}
+
+# manually_install xcode=xcode="Xcode can be installed from the App Store: 'https://apps.apple.com/us/app/xcode/id497799835'"
+ensure_install gcc
+ensure_install zsh
+ensure_install git
+ensure_install curl
+ensure_install chezmoi
+ensure_install nvim=neovim
+ensure_install bat
+ensure_install jq
+ensure_install yq
+ensure_install eza
+ensure_install rg=ripgrep
+ensure_install fd
+ensure_install fzf
+ensure_install gitui
+ensure_install file
+# ensure_install kafka
+
+# Ensure 'FiraCode Nerd Font Mono' is installed
+font_family_names=$(osascript << SCPT
+  use framework "AppKit"
+  set fontFamilyNames to (current application's NSFontManager's sharedFontManager's availableFontFamilies) as list
+  return fontFamilyNames
+SCPT
+)
+(echo $font_family_names | sed 's/, /\n/g' | grep -E '^FiraCode Nerd Font Mono$' > /dev/null 2>&1) \
+&& (INFO "'FiraCode Nerd Font Mono' is already installed.") \
+|| (brew install --cask font-fira-code-nerd-font)
+
 {{ end -}}
