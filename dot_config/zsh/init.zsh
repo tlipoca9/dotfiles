@@ -25,7 +25,8 @@ retry() {
 export ZSH_CONFIG_HOME="$(dirname $0)"
 export PATH="$HOME/.local/bin:$PATH"
 
-source $ZSH_CONFIG_HOME/xdg.zsh
-source $ZSH_CONFIG_HOME/brew.zsh
-source $ZSH_CONFIG_HOME/zi.zsh
-source $ZSH_CONFIG_HOME/zi_conf.zsh
+
+[[ -f $ZSH_CONFIG_HOME/xdg.zsh ]] && source $ZSH_CONFIG_HOME/xdg.zsh
+[[ -f $ZSH_CONFIG_HOME/brew.zsh ]] && source $ZSH_CONFIG_HOME/brew.zsh
+[[ -f $ZSH_CONFIG_HOME/zi.zsh ]] && source $ZSH_CONFIG_HOME/zi.zsh
+[[ -f $ZSH_CONFIG_HOME/zi_conf.zsh ]] && source $ZSH_CONFIG_HOME/zi_conf.zsh
