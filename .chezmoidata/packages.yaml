@@ -1,75 +1,80 @@
 packages:
   darwin:
     pkgManager:
-      - cmd: brew
-        name: homebrew
-        install_script: |
-          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    - cmd: brew
+      name: homebrew
+      install_script: |
+        NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     brews:
       commands:
-        - cmd: gcc
-          name: gcc
-        - cmd: zsh
-          name: zsh
-        - cmd: git
-          name: git
-        - cmd: curl
-          name: curl
-        - cmd: chezmoi
-          name: chezmoi
-        - cmd: nvim
-          name: neovim
-        - cmd: bat
-          name: bat
-        - cmd: jq
-          name: jq
-        - cmd: yq
-          name: yq
-        - cmd: eza
-          name: eza
-        - cmd: rg
-          name: ripgrep
-        - cmd: fd
-          name: fd
-        - cmd: fzf
-          name: fzf
-        - cmd: gitui
-          name: gitui
-        - cmd: file
-          name: file
+      - cmd: gcc
+        name: gcc
+      - cmd: zsh
+        name: zsh
+      - cmd: git
+        name: git
+      - cmd: curl
+        name: curl
+      - cmd: chezmoi
+        name: chezmoi
+      - cmd: nvim
+        name: neovim
+      - cmd: bat
+        name: bat
+      - cmd: jq
+        name: jq
+      - cmd: yq
+        name: yq
+      - cmd: eza
+        name: eza
+      - cmd: rg
+        name: ripgrep
+      - cmd: fd
+        name: fd
+      - cmd: fzf
+        name: fzf
+      - cmd: gitui
+        name: gitui
+      - cmd: file
+        name: file
       fonts:
-        - font: 'FiraCode Nerd Font Mono'
-          name: font-fira-code-nerd-font
+      - font: 'FiraCode Nerd Font Mono'
+        name: font-fira-code-nerd-font
+      casks:
+      - skip_when_installed:
+        - wezterm
+        - wezterm-nightly
+        name: wezterm
   windows:
     scoop:
       buckets:
-        - name: extras
-          url: extras
-        - name: nerd-fonts
-          url: nerd-fonts
-        - name: tlipoca9-scoop-bucket
-          url: https://github.com/tlipoca9/scoop-bucket
+      - name: extras
+        url: extras
+      - name: nerd-fonts
+        url: nerd-fonts
+      - name: tlipoca9-scoop-bucket
+        url: https://github.com/tlipoca9/scoop-bucket
       commands:
-        - cmd: git
-          name: main/git
-        - cmd: sudo
-          name: main/sudo
-        - cmd: 7zip
-          name: main/7zip
-        - cmd: dark
-          name: main/dark
-        - cmd: curl
-          name: main/curl
-        - cmd: chezmoi
-          name: main/chezmoi
-        - cmd: make
-          name: main/chezmoi 
-        - cmd: nvim
-          name: main/neovim
-        - cmd: rg
-          name: main/ripgrep
-        - cmd: zsh
-          name: tlipoca9-scoop-bucket/zsh
+      - cmd: git
+        name: main/git
+      - cmd: sudo
+        name: main/sudo
+      - cmd: 7zip
+        name: main/7zip
+      - cmd: dark
+        name: main/dark
+      - cmd: curl
+        name: main/curl
+      - cmd: chezmoi
+        name: main/chezmoi
+      - cmd: make
+        name: main/chezmoi 
+      - cmd: nvim
+        name: main/neovim
+      - cmd: rg
+        name: main/ripgrep
+      - cmd: zsh
+        name: tlipoca9-scoop-bucket/zsh
       fonts:
-        - font: 'FiraCode Nerd Font Mono'
-          name: nerd-fonts/FiraCode-NF
+      - font: 'FiraCode Nerd Font Mono'
+        name: nerd-fonts/FiraCode-NF

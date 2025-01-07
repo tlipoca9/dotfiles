@@ -8,25 +8,25 @@ BLUE="\033[34;m"
 YELLOW="\033[33;m"
 
 INFO(){
-    echo -e "$BLUE[INFO] $@ $DEFAULT"
+  echo -e "$BLUE[INFO] $@ $DEFAULT"
 }
 WARN(){
-    echo -e "$YELLOW[WARN] $@ $DEFAULT"
+  echo -e "$YELLOW[WARN] $@ $DEFAULT"
 }
 ERROR(){
-    echo -e "$RED[ERROR] $@ $DEFAULT"
+  echo -e "$RED[ERROR] $@ $DEFAULT"
 }
 
 {{ range .packages.darwin.pkgManager -}}
 command -v {{ .cmd }} >/dev/null 2>&1 \
-&& INFO "'{{ .name }}' is already installed." \
-|| (INFO "Installing '{{ .name }}'..." && {{ .install_script }})
+  && INFO "'{{ .name }}' is already installed." \
+  || (INFO "Installing '{{ .name }}'..." && {{ .install_script }})
 {{ end -}}
 
 {{ range .packages.darwin.brews.commands -}}
 command -v {{ .cmd }} >/dev/null 2>&1 \
-&& INFO "'{{ .name }}' is already installed." \
-|| (INFO "Installing '{{ .name }}'..." && brew install {{ .name }})
+  && INFO "'{{ .name }}' is already installed." \
+  || (INFO "Installing '{{ .name }}'..." && brew install {{ .name }})
 {{ end -}}
 
 {{ if .packages.darwin.brews.fonts -}}
@@ -38,9 +38,17 @@ SCPT
 )
 {{ range .packages.darwin.brews.fonts -}}
 (echo $font_family_names | sed 's/, /\n/g' | grep -E '^{{ .font }}$' > /dev/null 2>&1) \
-&& (INFO "'{{ .font }}' is already installed.") \
-|| (brew install --cask {{ .name }})
+  && (INFO "'{{ .font }}' is already installed.") \
+  || (brew install --cask {{ .name }})
 {{ end -}}
 {{ end -}}
 
+{{ if .packages.darwin.brews.casks -}}
+brew_cask_names=$(brew list --cask)
+{{ range .packages.darwin.brews.casks -}}
+echo $brew_cask_names | sed 's/ /\n/g' | grep -E '^{{ range $i, $v := .skip_when_installed }}{{ if $i }}|{{end}}{{ $v }}{{ end }}$' > /dev/null 2>&1 \
+  && (INFO "'{{ .name }}' is already installed.") \
+  || (INFO "Installing '{{ .name }}'..." && brew install --cask {{ .name }})
+{{ end -}}
+{{ end -}}
 {{ end -}}
