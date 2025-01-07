@@ -1,13 +1,64 @@
 {{ if eq .chezmoi.os "windows" -}}
+
+function HINT {
+  
+  param (
+    $message
+  )
+
+  Write-Host "====== $message ======" -ForegroundColor Green
+}
+
+function INFO {
+
+  param (
+    $message
+  )
+
+  Write-Host "[INFO] $message" -ForegroundColor Blue
+}
+
+function WARN {
+  
+  param (
+    $message
+  )
+
+  Write-Host "[WARN] $message" -ForegroundColor Yellow
+}
+
+function ERROR {
+  
+  param (
+    $message
+  )
+
+  Write-Host "[ERRO] $message" -ForegroundColor Red
+}
+
+{{ if .packages.windows.scoop.buckets -}}
+HINT "[scoop] adding buckets"
+$bucketNames = scoop bucket list | ForEach-Object { $_.Name }
 {{ range .packages.windows.scoop.buckets -}}
-scoop bucket add {{ .name }} {{ .url }}
+if ('{{ .name }}' -in $bucketNames) {
+  INFO "Bucket '{{ .name }}' is already added."
+} else {
+  INFO "Adding scoop bucket '{{ .name }}'..."
+{{- if eq .name .url }}
+  scoop bucket add {{ .name }}
+{{- else }}
+  scoop bucket add {{ .name }} {{ .url }}
+{{- end }}
+}
+{{ end -}}
 {{ end -}}
 
+HINT "[scoop] installing commands"
 {{ range .packages.windows.scoop.commands -}}
 if (Get-Command {{ .cmd }} -ErrorAction SilentlyContinue) {
-  "'{{ .name }}' is already installed."
+  INFO "'{{ .name }}' is already installed."
 } else {
-  "Installing '{{ .name }}'..."
+  INFO "Installing '{{ .name }}'..."
   scoop install {{ .name }}
 }
 {{ end -}}
