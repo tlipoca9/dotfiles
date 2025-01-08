@@ -17,7 +17,8 @@ return {
    cursor_blink_rate = 650,
 
    -- color scheme
-   color_scheme = 'Dracula',
+   -- color_scheme = 'Dracula',
+   color_scheme = 'Snazzy (base16)',
 
    -- scrollbar
    enable_scroll_bar = true,
