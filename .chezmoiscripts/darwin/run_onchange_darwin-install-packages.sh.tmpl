@@ -6,7 +6,11 @@ DEFAULT="\033[0;m"
 RED="\033[31;m"
 BLUE="\033[34;m"
 YELLOW="\033[33;m"
+GREEN="\033[32;m"
 
+HINT() {
+  echo -e "$GREEN===== $@ ======$DEFAULT"
+}
 INFO(){
   echo -e "$BLUE[INFO] $@ $DEFAULT"
 }
@@ -17,24 +21,31 @@ ERROR(){
   echo -e "$RED[ERROR] $@ $DEFAULT"
 }
 
+{{ if .packages.darwin.pkgManager -}}
+HINT "package manager"
 # pkgManager
 {{ range .packages.darwin.pkgManager -}}
 command -v {{ .cmd }} >/dev/null 2>&1 \
   && INFO "'{{ .name }}' is already installed." \
   || (INFO "Installing '{{ .name }}'..." && {{ .install_script }})
 {{ end -}}
+{{ end -}}
 
 
 # brews
 ## commands
+{{ if .packages.darwin.brews.commands -}}
+HINT "[homebrew] commands"
 {{ range .packages.darwin.brews.commands -}}
 command -v {{ .cmd }} >/dev/null 2>&1 \
   && INFO "'{{ .name }}' is already installed." \
   || (INFO "Installing '{{ .name }}'..." && brew install -v {{ .name }})
 {{ end -}}
+{{ end -}}
 
 ## fonts
 {{ if .packages.darwin.brews.fonts -}}
+HINT "[homebrew] fonts"
 font_family_names=$(osascript << SCPT
   use framework "AppKit"
   set fontFamilyNames to (current application's NSFontManager's sharedFontManager's availableFontFamilies) as list
@@ -50,6 +61,7 @@ SCPT
 
 ## casks
 {{ if .packages.darwin.brews.casks -}}
+HINT "[homebrew] casks"
 brew_cask_names=$(brew list --cask)
 {{ range .packages.darwin.brews.casks -}}
 echo $brew_cask_names | sed 's/ /\n/g' | grep -E '^{{ range $i, $v := .aliases }}{{ if $i }}|{{end}}{{ $v }}{{ end }}$' > /dev/null 2>&1 \
