@@ -1,0 +1,8 @@
+% chezmoi
+
+# Commit local changes and push to remote
+chezmoi git add . && \
+chezmoi git -- commit -am "chore: polish dotfiles" && \
+chezmoi git push
+
+
