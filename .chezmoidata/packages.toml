@@ -7,22 +7,23 @@ NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Ho
 
 [packages.darwin.brews]
 commands = [
-  { cmd = "gcc"     , name = "gcc"      },
-  { cmd = "zsh"     , name = "zsh"      },
-  { cmd = "git"     , name = "git"      },
-  { cmd = "curl"    , name = "curl"     },
-  { cmd = "chezmoi" , name = "chezmoi"  },
-  { cmd = "nvim"    , name = "neovim"   },
-  { cmd = "bat"     , name = "bat"      },
-  { cmd = "jq"      , name = "jq"       },
-  { cmd = "yq"      , name = "yq"       },
-  { cmd = "eza"     , name = "eza"      },
-  { cmd = "rg"      , name = "ripgrep"  },
-  { cmd = "fd"      , name = "fd"       },
-  { cmd = "fzf"     , name = "fzf"      },
-  { cmd = "gitui"   , name = "gitui"    },
-  { cmd = "file"    , name = "file"     },
-  { cmd = "kcat"    , name = "kcat"     },
+  { cmd = "gcc"         , name = "gcc"      },
+  { cmd = "zsh"         , name = "zsh"      },
+  { cmd = "git"         , name = "git"      },
+  { cmd = "curl"        , name = "curl"     },
+  { cmd = "chezmoi"     , name = "chezmoi"  },
+  { cmd = "nvim"        , name = "neovim"   },
+  { cmd = "bat"         , name = "bat"      },
+  { cmd = "jq"          , name = "jq"       },
+  { cmd = "yq"          , name = "yq"       },
+  { cmd = "eza"         , name = "eza"      },
+  { cmd = "rg"          , name = "ripgrep"  },
+  { cmd = "fd"          , name = "fd"       },
+  { cmd = "fzf"         , name = "fzf"      },
+  { cmd = "gitui"       , name = "gitui"    },
+  { cmd = "file"        , name = "file"     },
+  { cmd = "kcat"        , name = "kcat"     },
+  { cmd = "starship"    , name = "starship" },
 ]
 fonts = [
   { font = "FiraCode Nerd Font Mono", name = "font-fira-code-nerd-font" },
@@ -62,3 +63,4 @@ commands = [
 fonts = [
   { font = "FiraCode Nerd Font Mono", name = "nerd-fonts/FiraCode-NF" },
 ]
+
