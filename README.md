@@ -5,13 +5,13 @@
 ### https
 
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply https://github.com/tlipoca9/dotfiles.git
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin init --apply https://github.com/tlipoca9/dotfiles.git
 ```
 
 ### ssh
 
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply git@github.com:tlipoca9/dotfiles.git
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin init --apply git@github.com:tlipoca9/dotfiles.git
 ```
 
 ## init with new user (linux)
