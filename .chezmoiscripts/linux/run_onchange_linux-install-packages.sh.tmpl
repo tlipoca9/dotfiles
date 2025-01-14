@@ -17,9 +17,13 @@ command -v {{ .cmd }} >/dev/null 2>&1 \
 HINT "[service] docker"
 {{ range .services.linux.docker.osRelease -}}
 {{ if eq .osReleaseId $.chezmoi.osRelease.id -}}
-{{ .checker -}} \
-  && INFO "'docker' is already installed." \
-  || (INFO "Installing 'docker'..." && {{ .installer }})
+{{ .checker }}
+if [ $? -eq 0 ]; then
+  INFO "'docker' is already installed."
+else
+  INFO "Installing 'docker'..."
+  {{ .installer }}
+fi
 {{ if .addUserToGroup -}}
 groups | grep -q docker \
   && INFO "You are already in the 'docker' group." \
