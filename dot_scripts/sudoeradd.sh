@@ -9,3 +9,4 @@ echo "$username ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 {{ else -}}
 echo "This script must be run as root"
 {{ end -}}
+{{ end -}}
