@@ -1,11 +1,11 @@
 [services.linux.docker]
 enabled = true
-checker = """
-command -v docker >/dev/null 2>&1
-"""
 [[services.linux.docker.osRelease]]
 addUserToGroup = true
 osReleaseId = "opencloudos"
+checker = """
+command -v docker >/dev/null 2>&1
+"""
 installer = """
 sudo yum install docker -y
 sudo systemctl enable docker
