@@ -2,7 +2,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 {{ template "shell_logger" . -}}
-groups | grep -q root || WARN "You are not in the root group, please run this script as root." && exit 1
+groups | grep -q root || (WARN "You are not in the root group, please run this script as root." && exit 1)
 echo "Please Input the username you want to add: "
 read username
 sudo useradd $username
