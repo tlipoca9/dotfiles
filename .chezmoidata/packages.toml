@@ -58,6 +58,7 @@ commands = [
   { cmd = "file"        , name = "file"     },
   { cmd = "kcat"        , name = "kcat"     },
   { cmd = "starship"    , name = "starship" },
+  { cmd = "atuin"       , name = "atuin"    },
 ]
 
 [packages.windows.scoop]
