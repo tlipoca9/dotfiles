@@ -70,6 +70,7 @@ commands = [
   { cmd = "kcat"        , name = "kcat"     },
   { cmd = "starship"    , name = "starship" },
   { cmd = "atuin"       , name = "atuin"    },
+  { cmd = "navi"        , name = "navi"     },
 ]
 
 [packages.windows.scoop]
