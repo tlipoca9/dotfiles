@@ -20,7 +20,7 @@ if ('{{ .id }}' -in $bucketNames) {
 
 Add-Type -AssemblyName System.Drawing
 $installedFonts = (New-Object 'System.Drawing.Text.InstalledFontCollection').Families | ForEach-Object { $_.Name }
-{{ range $id, $options := .windows.packages }}{{ if eq .options.type "scoop" }}{{ if $options.enable -}}
+{{ range $id, $options := .windows.packages }}{{ if eq $options.type "scoop" }}{{ if $options.enable -}}
 {{ if eq .checker.type "command" -}}
 if (Get-Command {{ .checker.command }} -ErrorAction SilentlyContinue) {
 {{ else if eq .checker.type "font" -}}
