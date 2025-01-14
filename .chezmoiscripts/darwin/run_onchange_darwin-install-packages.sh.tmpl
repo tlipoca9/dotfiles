@@ -21,16 +21,15 @@ ERROR(){
   echo -e "$RED[ERROR] $@ $DEFAULT"
 }
 
-{{ if .packages.darwin.pkgManager -}}
-HINT "package manager"
-# pkgManager
-{{ range .packages.darwin.pkgManager -}}
+{{ if .packages.darwin.homebrew.enabled -}}
+{{ with .packages.darwin.homebrew -}}
+HINT "homebrew"
 command -v {{ .cmd }} >/dev/null 2>&1 \
-  && INFO "'{{ .name }}' is already installed." \
-  || (INFO "Installing '{{ .name }}'..." && {{ .install_script }})
+  && INFO "'homebrew' is already installed." \
+  || (INFO "Installing 'homebrew'..." && {{ .install_script }})
 {{ end -}}
+{{ template "brew/shellenv" . -}}
 {{ end -}}
-
 
 # brews
 ## commands

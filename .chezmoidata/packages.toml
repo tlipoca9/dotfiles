@@ -1,6 +1,6 @@
-[[packages.darwin.pkgManager]]
+[packages.darwin.homebrew]
+enabled = true
 cmd = "brew"
-name = "Homebrew"
 install_script = """
 NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 """
@@ -32,9 +32,9 @@ casks = [
   { aliases = [ "wezterm", "wezterm-nightly" ], name = "wezterm" },
 ]
 
-[[packages.linux.pkgManager]]
+[packages.linux.homebrew]
+enabled = true
 cmd = "brew"
-name = "Homebrew"
 install_script = """
 NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 """
