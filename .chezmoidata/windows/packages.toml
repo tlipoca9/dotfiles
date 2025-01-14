@@ -109,6 +109,16 @@ enable = true
 type = "scoop"
 checker = { type = "command", command = "zsh" }
 
+[windows.packages."main/python"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "python3" }
+
+[windows.packages."main/yq"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "yq" }
+
 [windows.packages."nerd-fonts/FiraCode-NF"]
 enable = true
 type = "scoop"
