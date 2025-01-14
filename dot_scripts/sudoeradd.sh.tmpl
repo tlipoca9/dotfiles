@@ -1,0 +1,10 @@
+{{ if eq .chezmoi.os "linux" -}}
+#!/usr/bin/env bash
+set -euo pipefail
+groups | grep -q root || echo "You are not in the root group, please run this script as root" && exit 1
+echo "Please Input the username you want to add: "
+read username
+sudo useradd $username
+sudo passwd $username
+sudo echo "$username ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+{{ end -}}
