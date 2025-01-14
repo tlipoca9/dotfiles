@@ -29,7 +29,7 @@ else INFO "Installing 'docker'..." && docker_checker=false;
 fi
 set -e
 if [[ "$docker_checker" == "false" ]]; then
-  {{ .installer }})
+  {{ .installer }}
 fi
 {{ if .addUserToGroup -}}
 groups | grep -q docker \
