@@ -1,40 +1,5 @@
 {{ if eq .chezmoi.os "windows" -}}
-
-function HINT {
-  
-  param (
-    $message
-  )
-
-  Write-Host "====== $message ======" -ForegroundColor Green
-}
-
-function INFO {
-
-  param (
-    $message
-  )
-
-  Write-Host "[INFO] $message" -ForegroundColor Blue
-}
-
-function WARN {
-  
-  param (
-    $message
-  )
-
-  Write-Host "[WARN] $message" -ForegroundColor Yellow
-}
-
-function ERROR {
-  
-  param (
-    $message
-  )
-
-  Write-Host "[ERRO] $message" -ForegroundColor Red
-}
+{{ template "shell_logger" . -}}
 
 {{ if .packages.windows.scoop.buckets -}}
 HINT "[scoop] adding buckets"
