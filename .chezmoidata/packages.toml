@@ -43,6 +43,7 @@ NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Ho
 enabled = true
 cmd = "docker"
 [[packages.linux.docker.osRelease]]
+addUserToGroup = true
 osReleaseId = "opencloudos"
 install_script = """
 sudo yum install docker -y

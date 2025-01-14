@@ -1,4 +1,8 @@
 README.md
-{{ if eq .chezmoi.os "windows" -}}
+{{ if eq .chezmoi.os "macos" -}}
+.scripts
+{{ elseif eq .chezmoi.os "linux" -}}
+{{ elseif eq .chezmoi.os "windows" -}}
+.scripts
 .config/navi
 {{ end -}}
