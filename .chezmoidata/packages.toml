@@ -60,6 +60,7 @@ commands = [
   { cmd = "starship"    , name = "starship" },
   { cmd = "atuin"       , name = "atuin"    },
   { cmd = "navi"        , name = "navi"     },
+  { cmd = "htop"        , name = "htop"     },
 ]
 
 [packages.windows.scoop]
