@@ -6,3 +6,6 @@ chezmoi git -- commit -am "chore: polish dotfiles" && \
 chezmoi git push
 
 
+# Pull remote changes and apply to local
+chezmoi git pull && \
+chezmoi apply
