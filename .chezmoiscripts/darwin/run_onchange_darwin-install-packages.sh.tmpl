@@ -1,55 +1,81 @@
+{{ define "script_checker" -}}
+script_checker_exitcode=1
+set +e
+{{ if eq .checker.type "command" -}}
+command -v {{ .checker.command }} >/dev/null 2>&1
+{{ else if eq .checker.type "script" -}}
+{{ .checker.script }}
+{{ end -}}
+script_checker_exitcode=$?
+set -e
+{{ end -}}
+
+{{ define "homebrew_checker" -}}
+homebrew_checker_exitcode=1
+set +e
+{{ if eq .checker.type "command" -}}
+command -v {{ .checker.command }} >/dev/null 2>&1
+{{ else if eq .checker.type "font" -}}
+echo $font_family_names | sed 's/, /\n/g' | grep -E '^{{ .font }}$' > /dev/null 2>&1
+{{ else if eq .checker.type "cask" -}}
+echo $homebrew_casks | sed 's/ /\n/g' | grep -E '^{{ .name }}$' > /dev/null 2>&1
+{{ else if eq .checker.type "script" -}}
+{{ .checker.script }}
+{{ end -}}
+homebrew_checker_exitcode=$?
+set -e
+{{ end -}}
+
+
 {{ if eq .chezmoi.os "darwin" -}}
 #!/usr/bin/env bash
 set -euo pipefail
 {{ template "shell_logger" . -}}
 
-{{ if .packages.darwin.homebrew.enabled -}}
-{{ with .packages.darwin.homebrew -}}
-HINT "homebrew"
-command -v {{ .cmd }} >/dev/null 2>&1 \
-  && INFO "'homebrew' is already installed." \
-  || (INFO "Installing 'homebrew'..." && {{ .install_script }})
-{{ end -}}
-{{ template "brew/shellenv" . -}}
-{{ end -}}
+## `script` type
+{{ range $id, $options := .darwin.packages }}{{ if eq $options.type "script" }}{{ if $options.enable -}}
+{{ template "script_checker" $options -}}
+if [[ $script_checker_exitcode -eq 0 ]]; then
+  INFO "Installing '{{ $id }}'..."
+  {{ $options.installer }}
+else
+  INFO "'{{ $id }}' is already installed."
+fi
+{{ end }}{{ end }}{{ end -}}
 
-# brews
-## commands
-{{ if .packages.darwin.brews.commands -}}
-HINT "[homebrew] commands"
-{{ range .packages.darwin.brews.commands -}}
-command -v {{ .cmd }} >/dev/null 2>&1 \
-  && INFO "'{{ .name }}' is already installed." \
-  || (INFO "Installing '{{ .name }}'..." && brew install {{ .name }})
-{{ end -}}
-{{ end -}}
 
-## fonts
-{{ if .packages.darwin.brews.fonts -}}
-HINT "[homebrew] fonts"
+## `homebrew` type
+homebrew_checker_exitcode=1
+set -e
+command -v brew >/dev/null 2>&1
+homebrew_checker_exitcode=$?
+set +e
+if [[ $homebrew_checker_exitcode -ne 0 ]]; then
+  INFO "'homebrew' is not installed, so skipping the installation of homebrew packages."
+else
 font_family_names=$(osascript << SCPT
   use framework "AppKit"
   set fontFamilyNames to (current application's NSFontManager's sharedFontManager's availableFontFamilies) as list
   return fontFamilyNames
 SCPT
 )
-{{ range .packages.darwin.brews.fonts -}}
-(echo $font_family_names | sed 's/, /\n/g' | grep -E '^{{ .font }}$' > /dev/null 2>&1) \
-  && (INFO "'{{ .font }}' is already installed.") \
-  || (brew install --cask {{ .name }})
-{{ end -}}
-{{ end -}}
-
-## casks
-{{ if .packages.darwin.brews.casks -}}
-HINT "[homebrew] casks"
-brew_cask_names=$(brew list --cask)
-{{ range .packages.darwin.brews.casks -}}
-echo $brew_cask_names | sed 's/ /\n/g' | grep -E '^{{ range $i, $v := .aliases }}{{ if $i }}|{{end}}{{ $v }}{{ end }}$' > /dev/null 2>&1 \
-  && (INFO "'{{ .name }}' is already installed.") \
-  || (INFO "Installing '{{ .name }}'..." && brew install --cask {{ .name }})
-{{ end -}}
-{{ end -}}
+homebrew_casks=$(brew list --cask)
+{{ range $id, $options := .darwin.packages }}{{ if eq $options.type "homebrew" }}{{ if $options.enable -}}
+{{ template "homebrew_checker" $options -}}
+if [[ $homebrew_checker_exitcode -eq 0 ]]; then
+  INFO "Installing '{{ $id }}'..."
+  {{- if eq $options.installer.type "formula" }}
+  brew install {{ $id }}
+  {{- else if eq $options.installer.type "cask" }}
+  brew install --cask {{ $id }}
+  {{- else }}
+  ERROR "Unsupported installer type '{{ $options.installer.type }}' for '{{ $id }}'."
+  {{- end}}
+else
+  INFO "'{{ $id }}' is already installed."
+fi
+{{ end }}{{ end }}{{ end -}}
+fi
 
 
 {{ end -}}

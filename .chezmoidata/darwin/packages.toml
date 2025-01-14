@@ -1,0 +1,121 @@
+[darwin.packages.homebrew]
+enable = true
+type = "script"
+checker = { type = "command", command = "brew" }
+install_script = """
+NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+"""
+
+[darwin.packages.gcc]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "gcc" }
+installer = { type = "formula" }
+
+[darwin.packages.zsh]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "zsh" }
+installer = { type = "formula" }
+
+[darwin.packages.git]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "git" }
+installer = { type = "formula" }
+
+[darwin.packages.curl]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "curl" }
+installer = { type = "formula" }
+
+[darwin.packages.chezmoi]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "chezmoi" }
+installer = { type = "formula" }
+
+[darwin.packages.neovim]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "nvim" }
+installer = { type = "formula" }
+
+[darwin.packages.bat]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "bat" }
+installer = { type = "formula" }
+
+[darwin.packages.jq]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "jq" }
+installer = { type = "formula" }
+
+[darwin.packages.yq]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "yq" }
+installer = { type = "formula" }
+
+[darwin.packages.eza]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "eza" }
+installer = { type = "formula" }
+
+[darwin.packages.ripgrep]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "rg" }
+installer = { type = "formula" }
+
+[darwin.packages.fd]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "fd" }
+installer = { type = "formula" }
+
+[darwin.packages.fzf]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "fzf" }
+installer = { type = "formula" }
+
+[darwin.packages.gitui]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "gitui" }
+installer = { type = "formula" }
+
+[darwin.packages.file]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "file" }
+installer = { type = "formula" }
+
+[darwin.packages.kcat]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "kcat" }
+installer = { type = "formula" }
+
+[darwin.packages.starship]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "starship" }
+installer = { type = "formula" }
+
+[darwin.packages.font-fira-code-nerd-font]
+enable = true
+type = "homebrew"
+checker = { type = "font", font = "FiraCode Nerd Font Mono" }
+installer = { type = "cask" }
+
+[darwin.packages.wezterm]
+enable = true
+type = "homebrew"
+checker = { type = "cask", cask = "wezterm" }
+installer = { type = "cask" }
