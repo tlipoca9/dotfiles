@@ -1,10 +1,7 @@
 #!/usr/bin/env zsh
 
 ##################################
-# sudo useradd tlipoca9
-# sudo usermod -a -G wheel tlipoca9
-# sudo vi /etc/sudoers # wheel ALL=(ALL) NOPASSWD: ALL
-# command -v zsh | sudo tee -a /etc/shells
+# sudo cat /etc/shells | grep "$(command -v zsh)" || sudo echo "$(command -v zsh)" | sudo tee -a /etc/shells
 # chsh -s "$(command -v zsh)"
 ##################################
 
