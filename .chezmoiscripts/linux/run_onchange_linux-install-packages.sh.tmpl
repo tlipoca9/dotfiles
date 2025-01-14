@@ -41,7 +41,7 @@ command -v docker >/dev/null 2>&1 \
 {{ if .addUserToGroup -}}
 groups | grep -q docker \
   && INFO "You are already in the 'docker' group." \
-  || (INFO "Adding you to the 'docker' group..." && sudo usermod -aG docker {{ .chezmoi.username }})
+  || (INFO "Adding you to the 'docker' group..." && sudo usermod -aG docker {{ $.chezmoi.username }})
 {{ end -}}
 {{ end -}}
 {{ end -}}
