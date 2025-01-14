@@ -39,18 +39,6 @@ install_script = """
 NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 """
 
-[packages.linux.docker]
-enabled = true
-cmd = "docker"
-[[packages.linux.docker.osRelease]]
-addUserToGroup = true
-osReleaseId = "opencloudos"
-install_script = """
-sudo yum install docker -y
-sudo systemctl enable docker
-sudo systemctl start docker
-"""
-
 [packages.linux.brews]
 commands = [
   { cmd = "gcc"         , name = "gcc"      },
