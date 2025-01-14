@@ -24,11 +24,10 @@ retry() {
 
 export ZSH_CONFIG_HOME="$(dirname $0)"
 export PATH="$HOME/.local/bin:$PATH"
-
-
-[[ -f $ZSH_CONFIG_HOME/xdg.zsh ]] && source $ZSH_CONFIG_HOME/xdg.zsh
+{{ template "xdgenv" . -}}
 {{ if or (eq .chezmoi.os "darwin") (eq .chezmoi.os "linux") -}}
-[[ -f $ZSH_CONFIG_HOME/brew.zsh ]] && source $ZSH_CONFIG_HOME/brew.zsh
+{{ template "brew/shellenv" . -}}
 {{ end -}}
+
 [[ -f $ZSH_CONFIG_HOME/zi.zsh ]] && source $ZSH_CONFIG_HOME/zi.zsh
 [[ -f $ZSH_CONFIG_HOME/zi_conf.zsh ]] && source $ZSH_CONFIG_HOME/zi_conf.zsh

@@ -99,9 +99,10 @@ zi wait lucid depth'1' as'null' for \
 {{ if ne .chezmoi.os "windows" -}}
 # https://github.com/atuinsh/atuin
 zi wait lucid depth'1' as'null' for \
-  from"gh-r" sbin'**/atuin -> atuin' \
+  id-as'atuinsh/atuin' \
+  has'atuin' \
   eval"atuin init zsh" \
-  @atuinsh/atuin
+  @z-shell/0
 # https://github.com/denisidoro/navi
 zi wait lucid depth'1' as'null' for \
   id-as'denisidoro/navi' \
