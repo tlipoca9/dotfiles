@@ -19,6 +19,8 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply git@github.com:tlipoca9/dot
 ### configure proxy
 ```bash
 PROXY_ADDRESS="http://<proxy_address>:<proxy_port>"
+export HTTP_PROXY=$PROXY_ADDRESS
+export HTTPS_PROXY=$PROXY_ADDRESS
 echo "export HTTP_PROXY=$PROXY_ADDRESS" >> /etc/bashrc
 echo "export HTTPS_PROXY=$PROXY_ADDRESS" >> /etc/bashrc
 echo "export HTTP_PROXY=$PROXY_ADDRESS" >> /etc/zshrc
