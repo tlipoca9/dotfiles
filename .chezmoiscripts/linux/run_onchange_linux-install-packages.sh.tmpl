@@ -32,9 +32,10 @@ command -v {{ .cmd }} >/dev/null 2>&1 \
 {{ end -}}
 
 {{ if .packages.linux.docker.enabled -}}
-{{ with .packages.linux.docker -}}
 HINT "docker"
-command -v {{ .cmd }} >/dev/null 2>&1 \
+{{ range .packages.linux.docker.osRelease -}}
+{{ if eq .osReleaseId .chezmoi.osRelease.id -}}
+command -v docker >/dev/null 2>&1 \
   && INFO "'docker' is already installed." \
   || (INFO "Installing 'docker'..." && {{ .install_script }})
 {{ end -}}

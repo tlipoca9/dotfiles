@@ -42,14 +42,12 @@ NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Ho
 [packages.linux.docker]
 enabled = true
 cmd = "docker"
+[[packages.linux.docker.osRelease]]
+osReleaseId = "opencloudos"
 install_script = """
-{{ if eq .chezmoi.osRelease.id "opencloudos" -}}
 sudo yum install docker -y
 sudo systemctl enable docker
 sudo systemctl start docker
-{{ else -}}
-echo "Unsupported OS: {{ .chezmoi.osRelease.id }}"
-{{ end -}}
 """
 
 [packages.linux.brews]
