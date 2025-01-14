@@ -1,3 +1,4 @@
+docs
 README.md
 {{ if eq .chezmoi.os "macos" -}}
 .scripts
