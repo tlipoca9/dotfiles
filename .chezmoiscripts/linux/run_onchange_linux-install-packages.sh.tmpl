@@ -21,7 +21,9 @@ command -v {{ .cmd }} >/dev/null 2>&1 \
 HINT "[service] docker"
 {{ range .services.linux.docker.osRelease -}}
 {{ if eq .osReleaseId $.chezmoi.osRelease.id -}}
+set +e
 {{ .checker }}
+set -e
 if [ $? -eq 0 ]; then
   INFO "'docker' is already installed."
 else
