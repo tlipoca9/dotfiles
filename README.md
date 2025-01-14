@@ -18,11 +18,15 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin init --apply git@git
 
 ### configure proxy
 ```bash
-PROXY_ADDRESS="http://<proxy_address>:<proxy_port>"
+export PROXY_ADDRESS="http://<proxy_address>:<proxy_port>"
 export HTTP_PROXY=$PROXY_ADDRESS
 export HTTPS_PROXY=$PROXY_ADDRESS
+
+echo "export PROXY_ADDRESS=$PROXY_ADDRESS" >> /etc/bashrc
 echo "export HTTP_PROXY=$PROXY_ADDRESS" >> /etc/bashrc
 echo "export HTTPS_PROXY=$PROXY_ADDRESS" >> /etc/bashrc
+
+echo "export PROXY_ADDRESS=$PROXY_ADDRESS" >> /etc/zshrc
 echo "export HTTP_PROXY=$PROXY_ADDRESS" >> /etc/zshrc
 echo "export HTTPS_PROXY=$PROXY_ADDRESS" >> /etc/zshrc
 ```

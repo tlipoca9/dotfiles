@@ -3,6 +3,7 @@
 set -euo pipefail
 {{ template "shell_logger" . -}}
 
+# homebrew
 {{ if .packages.linux.homebrew.enabled -}}
 {{ with .packages.linux.homebrew -}}
 HINT "homebrew"
@@ -17,6 +18,7 @@ command -v {{ .cmd }} >/dev/null 2>&1 \
 {{ template "brew/shellenv" . -}}
 {{ end -}}
 
+# docker
 {{ if .services.linux.docker.enabled -}}
 HINT "[service] docker"
 {{ range .services.linux.docker.osRelease -}}
@@ -36,6 +38,25 @@ groups | grep -q docker \
   && INFO "You are already in the 'docker' group." \
   || (INFO "Adding you to the 'docker' group..." && sudo usermod -aG docker {{ $.chezmoi.username }})
 {{ end -}}
+{{ end -}}
+{{ end -}}
+{{ end -}}
+
+# v2rayA
+{{ if .services.linux.v2rayA.enabled -}}
+HINT "[service] v2rayA"
+{{ range .services.linux.v2rayA.osRelease -}}
+{{ if eq .osReleaseId $.chezmoi.osRelease.id -}}
+set +e
+{{ .checker }}
+if [[ $? -eq 0 ]]; 
+then INFO "'v2rayA' is already installed." && v2rayA_checker=true;
+else INFO "Installing 'v2rayA'..." && v2rayA_checker=false;
+fi
+set -e
+if [[ "$v2rayA_checker" == "false" ]]; then
+  {{ .installer }}
+fi
 {{ end -}}
 {{ end -}}
 {{ end -}}
