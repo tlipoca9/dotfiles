@@ -20,7 +20,7 @@ HINT "[homebrew] commands"
 {{ range .packages.darwin.brews.commands -}}
 command -v {{ .cmd }} >/dev/null 2>&1 \
   && INFO "'{{ .name }}' is already installed." \
-  || (INFO "Installing '{{ .name }}'..." && brew install -v {{ .name }})
+  || (INFO "Installing '{{ .name }}'..." && brew install {{ .name }})
 {{ end -}}
 {{ end -}}
 
