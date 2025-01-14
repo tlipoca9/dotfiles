@@ -6,6 +6,10 @@ set -euo pipefail
 {{ if .packages.linux.homebrew.enabled -}}
 {{ with .packages.linux.homebrew -}}
 HINT "homebrew"
+if ! [[ "$PATH" =~ "/home/linuxbrew/.linuxbrew/bin" ]]; then
+  INFO "Adding 'homebrew' to PATH temporarily..."
+  export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+fi
 command -v {{ .cmd }} >/dev/null 2>&1 \
   && INFO "'homebrew' is already installed." \
   || (INFO "Installing 'homebrew'..." && {{ .install_script }})

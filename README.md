@@ -35,7 +35,7 @@ echo "export HTTPS_PROXY=$PROXY_ADDRESS" >> /etc/zshrc
 ### change login shell
 ```bash
 sudo su <new_user>
-sudo cat /etc/shells | grep "$(command -v zsh)" || sudo echo "$(command -v zsh)" | sudo tee -a /etc/shells
+sudo cat /etc/shells | grep -E "^$(command -v zsh)" || (sudo echo "$(command -v zsh)" | sudo tee -a /etc/shells)
 chsh -s "$(command -v zsh)"
 ```
 
