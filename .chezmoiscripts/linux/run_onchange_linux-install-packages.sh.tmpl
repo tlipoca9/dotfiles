@@ -21,8 +21,8 @@ ERROR(){
   echo -e "$RED[ERROR] $@ $DEFAULT"
 }
 
-{{ if .packages.darwin.homebrew.enabled -}}
-{{ with .packages.darwin.homebrew -}}
+{{ if .packages.linux.homebrew.enabled -}}
+{{ with .packages.linux.homebrew -}}
 HINT "homebrew"
 command -v {{ .cmd }} >/dev/null 2>&1 \
   && INFO "'homebrew' is already installed." \
