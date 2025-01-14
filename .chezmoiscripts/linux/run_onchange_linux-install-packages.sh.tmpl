@@ -40,6 +40,9 @@ command -v docker >/dev/null 2>&1 \
   || (INFO "Installing 'docker'..." && {{ .install_script }})
 {{ end -}}
 {{ end -}}
+groups | grep -q docker \
+  && INFO "You are already in the 'docker' group." \
+  || (INFO "Adding you to the 'docker' group..." && sudo usermod -aG docker {{ .chezmoi.username }})
 {{ end -}}
 
 # brews
