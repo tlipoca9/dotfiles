@@ -31,6 +31,14 @@ command -v {{ .cmd }} >/dev/null 2>&1 \
 {{ template "brew/shellenv" . -}}
 {{ end -}}
 
+{{ if .packages.linux.docker.enabled -}}
+{{ with .packages.linux.docker -}}
+HINT "docker"
+command -v {{ .cmd }} >/dev/null 2>&1 \
+  && INFO "'docker' is already installed." \
+  || (INFO "Installing 'docker'..." && {{ .install_script }})
+{{ end -}}
+{{ end -}}
 
 # brews
 ## commands

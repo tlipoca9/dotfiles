@@ -39,6 +39,19 @@ install_script = """
 NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 """
 
+[packages.linux.docker]
+enabled = true
+cmd = "docker"
+install_script = """
+{{ if eq .chezmoi.osRelease.id "opencloudos" -}}
+sudo yum install docker -y
+sudo systemctl enable docker
+sudo systemctl start docker
+{{ else -}}
+echo "Unsupported OS: {{ .chezmoi.osRelease.id }}"
+{{ end -}}
+"""
+
 [packages.linux.brews]
 commands = [
   { cmd = "gcc"         , name = "gcc"      },
