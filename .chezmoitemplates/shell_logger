@@ -36,6 +36,10 @@ WARN(){
 ERROR(){
   echo -e "$RED[ERROR] $@ $DEFAULT"
 }
+FATAL(){
+  echo -e "$RED[FATAL] $@ $DEFAULT"
+  exit 1
+}
 {{ else if eq .chezmoi.os "windows" -}}
 function HINT {
   
@@ -70,6 +74,16 @@ function ERROR {
     $message
   )
 
-  Write-Host "[ERRO] $message" -ForegroundColor Red
+  Write-Host "[ERROR] $message" -ForegroundColor Red
+}
+
+function FATAL {
+
+  param (
+    $message
+  )
+
+  Write-Host "[FATAL] $message" -ForegroundColor Red
+  exit 1
 }
 {{ end -}}

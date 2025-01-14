@@ -1,47 +1,41 @@
 {{ if eq .chezmoi.os "windows" -}}
 {{ template "shell_logger" . -}}
 
-{{ if .packages.windows.scoop.buckets -}}
-HINT "[scoop] adding buckets"
+{{ range $id, $options := .windows.packages }}{{ if $options.enable }}{{ if eq $id "scoop" -}}
 $bucketNames = scoop bucket list | ForEach-Object { $_.Name }
-{{ range .packages.windows.scoop.buckets -}}
-if ('{{ .name }}' -in $bucketNames) {
-  INFO "Bucket '{{ .name }}' is already added."
+{{ range $options.options.buckets }}
+if ('{{ .id }}' -in $bucketNames) {
+  INFO "Bucket '{{ .id }}' is already added."
 } else {
-  INFO "Adding scoop bucket '{{ .name }}'..."
-{{- if eq .name .url }}
-  scoop bucket add {{ .name }}
-{{- else }}
-  scoop bucket add {{ .name }} {{ .url }}
-{{- end }}
+  INFO "Adding scoop bucket '{{ .id }}'..."
+  {{- if eq .id .url }}
+  scoop bucket add {{ .id }}
+  {{- else }}
+  scoop bucket add {{ .id }} {{ .url }}
+  {{- end }}
 }
 {{ end -}}
-{{ end -}}
+{{ end }}{{ end }}{{ end -}}
 
-{{ if .packages.windows.scoop.commands -}}
-HINT "[scoop] installing commands"
-{{ range .packages.windows.scoop.commands -}}
-if (Get-Command {{ .cmd }} -ErrorAction SilentlyContinue) {
-  INFO "'{{ .name }}' is already installed."
-} else {
-  INFO "Installing '{{ .name }}'..."
-  scoop install {{ .name }}
-}
-{{ end -}}
-{{ end -}}
 
-{{ if .packages.windows.scoop.fonts -}}
-HINT "[scoop] installing fonts"
 Add-Type -AssemblyName System.Drawing
 $installedFonts = (New-Object 'System.Drawing.Text.InstalledFontCollection').Families | ForEach-Object { $_.Name }
-{{ range .packages.windows.scoop.fonts -}}
-if ('{{ .font }}' -in $installedFonts) {
-  INFO "'{{ .font }}' is already installed."
+{{ range $id, $options := .windows.packages }}{{ if eq .options.type "scoop" }}{{ if $options.enable -}}
+{{ if eq .checker.type "command" -}}
+if (Get-Command {{ .checker.command }} -ErrorAction SilentlyContinue) {
+{{ else if eq .checker.type "font" -}}
+if ('{{ .checker.font }}' -in $installedFonts) {
+{{ else if eq .checker.type "script" -}}
+if ({{ .checker.script }}) {
+{{ else }}
+FATAL "Unsupported checker type '{{ .checker.type }}' for '{{ $id }}'."
+{{ end -}}
+  INFO "'{{ $id }}' is already installed."
 } else {
-  INFO "Installing '{{ .font }}'..."
-  scoop install {{ .name }}
+  INFO "Installing '{{ $id }}'..."
+  scoop install {{ $id }}
 }
-{{ end -}}
-{{ end -}}
+{{ end }}{{ end }}{{ end -}}
+
 
 {{ end -}}

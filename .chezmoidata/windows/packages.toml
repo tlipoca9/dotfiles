@@ -1,0 +1,115 @@
+[windows.packages.scoop]
+enable = true
+type = "custom"
+[windows.packages.scoop.options]
+buckets = [
+  { id = "extras"                 , url = "extras"                                    },
+  { id = "nerd-fonts"             , url = "nerd-fonts"                                },
+  { id = "tlipoca9_scoop-buckets" , url = "https://github.com/tlipoca9/scoop-bucket"  },
+]
+
+
+[windows.packages."main/git"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "git" }
+
+[windows.packages."main/innounp"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "innounp" }
+
+[windows.packages."main/sudo"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "sudo" }
+
+[windows.packages."main/7zip"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "7z" }
+
+[windows.packages."main/dark"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "dark" }
+
+[windows.packages."main/curl"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "curl" }
+
+[windows.packages."main/chezmoi"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "chezmoi" }
+
+[windows.packages."main/neovim"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "nvim" }
+
+[windows.packages."main/make"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "make" }
+
+[windows.packages."main/ripgrep"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "rg" }
+
+[windows.packages."main/mingw"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "gcc" }
+
+[windows.packages."main/jq"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "jq" }
+
+[windows.packages."main/gitui"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "gitui" }
+
+[windows.packages."main/fd"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "fd" }
+
+[windows.packages."main/eza"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "eza" }
+
+[windows.packages."main/bat"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "bat" }
+
+[windows.packages."main/starship"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "starship" }
+
+[windows.packages."main/fzf"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "fzf" }
+
+[windows.packages."extras/wezterm"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "wezterm" }
+
+[windows.packages."tlipoca9_scoop-bucket/zsh"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "zsh" }
+
+[windows.packages."nerd-fonts/FiraCode-NF"]
+enable = true
+type = "scoop"
+checker = { type = "font", font = "FiraCode Nerd Font Mono" }
