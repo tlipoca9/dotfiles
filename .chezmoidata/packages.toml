@@ -32,6 +32,34 @@ casks = [
   { aliases = [ "wezterm", "wezterm-nightly" ], name = "wezterm" },
 ]
 
+[[packages.linux.pkgManager]]
+cmd = "brew"
+name = "Homebrew"
+install_script = """
+NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+"""
+
+[packages.linux.brews]
+commands = [
+  { cmd = "gcc"         , name = "gcc"      },
+  { cmd = "zsh"         , name = "zsh"      },
+  { cmd = "git"         , name = "git"      },
+  { cmd = "curl"        , name = "curl"     },
+  { cmd = "chezmoi"     , name = "chezmoi"  },
+  { cmd = "nvim"        , name = "neovim"   },
+  { cmd = "bat"         , name = "bat"      },
+  { cmd = "jq"          , name = "jq"       },
+  { cmd = "yq"          , name = "yq"       },
+  { cmd = "eza"         , name = "eza"      },
+  { cmd = "rg"          , name = "ripgrep"  },
+  { cmd = "fd"          , name = "fd"       },
+  { cmd = "fzf"         , name = "fzf"      },
+  { cmd = "gitui"       , name = "gitui"    },
+  { cmd = "file"        , name = "file"     },
+  { cmd = "kcat"        , name = "kcat"     },
+  { cmd = "starship"    , name = "starship" },
+]
+
 [packages.windows.scoop]
 buckets = [
   { name = "extras"                 , url = "extras"                                    },

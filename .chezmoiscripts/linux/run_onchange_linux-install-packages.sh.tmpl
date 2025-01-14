@@ -1,0 +1,47 @@
+{{ if eq .chezmoi.os "linux" -}}
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEFAULT="\033[0;m"
+RED="\033[31;m"
+BLUE="\033[34;m"
+YELLOW="\033[33;m"
+GREEN="\033[32;m"
+
+HINT() {
+  echo -e "$GREEN====== $@ ======$DEFAULT"
+}
+INFO(){
+  echo -e "$BLUE[INFO] $@ $DEFAULT"
+}
+WARN(){
+  echo -e "$YELLOW[WARN] $@ $DEFAULT"
+}
+ERROR(){
+  echo -e "$RED[ERROR] $@ $DEFAULT"
+}
+
+{{ if .packages.linux.pkgManager -}}
+HINT "package manager"
+# pkgManager
+{{ range .packages.linux.pkgManager -}}
+command -v {{ .cmd }} >/dev/null 2>&1 \
+  && INFO "'{{ .name }}' is already installed." \
+  || (INFO "Installing '{{ .name }}'..." && {{ .install_script }})
+{{ end -}}
+{{ end -}}
+
+
+# brews
+## commands
+{{ if .packages.linux.brews.commands -}}
+HINT "[homebrew] commands"
+{{ range .packages.linux.brews.commands -}}
+command -v {{ .cmd }} >/dev/null 2>&1 \
+  && INFO "'{{ .name }}' is already installed." \
+  || (INFO "Installing '{{ .name }}'..." && brew install -v {{ .name }})
+{{ end -}}
+{{ end -}}
+
+
+{{ end -}}
