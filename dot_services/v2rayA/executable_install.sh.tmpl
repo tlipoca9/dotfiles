@@ -1,0 +1,3 @@
+{{ if eq .chezmoi.os "linux" -}}
+docker-compose -f $HOME/.services/v2rayA/docker-compose.yml up -d
+{{ end -}}

@@ -1,0 +1,12 @@
+{{ if eq .chezmoi.os "linux" -}}
+#!/usr/bin/env bash
+{{ template "shell_logger" . -}}
+{{ if eq .chezmoi.osRelease.id "opencloudos" -}}
+sudo yum install docker -y
+sudo systemctl enable docker
+sudo systemctl start docker
+groups | grep -q docker \
+  && INFO "You are already in the 'docker' group." \
+  || (INFO "Added you to the 'docker' group, please re-login." && sudo usermod -aG docker {{ .chezmoi.username }})
+{{ end -}}
+{{ end -}}

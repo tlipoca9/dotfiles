@@ -1,0 +1,115 @@
+[linux.packages.homebrew]
+enable = true
+type = "script"
+checker = { type = "command", command = "brew" }
+installer = """
+NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+"""
+
+[linux.packages.gcc]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "gcc" }
+installer = { type = "formula" }
+
+[linux.packages.zsh]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "zsh" }
+installer = { type = "formula" }
+
+[linux.packages.git]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "git" }
+installer = { type = "formula" }
+
+[linux.packages.curl]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "curl" }
+installer = { type = "formula" }
+
+[linux.packages.chezmoi]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "chezmoi" }
+installer = { type = "formula" }
+
+[linux.packages.neovim]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "nvim" }
+installer = { type = "formula" }
+
+[linux.packages.bat]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "bat" }
+installer = { type = "formula" }
+
+[linux.packages.jq]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "jq" }
+installer = { type = "formula" }
+
+[linux.packages.yq]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "yq" }
+installer = { type = "formula" }
+
+[linux.packages.eza]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "eza" }
+installer = { type = "formula" }
+
+[linux.packages.ripgrep]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "rg" }
+installer = { type = "formula" }
+
+[linux.packages.fd]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "fd" }
+installer = { type = "formula" }
+
+[linux.packages.fzf]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "fzf" }
+installer = { type = "formula" }
+
+[linux.packages.gitui]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "gitui" }
+installer = { type = "formula" }
+
+[linux.packages.file]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "file" }
+installer = { type = "formula" }
+
+[linux.packages.kcat]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "kcat" }
+installer = { type = "formula" }
+
+[linux.packages.starship]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "starship" }
+installer = { type = "formula" }
+
+[linux.packages.gum]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "gum" }
+installer = { type = "formula" }
