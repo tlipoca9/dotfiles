@@ -16,9 +16,9 @@ set +e
 {{ if eq .checker.type "command" -}}
 command -v {{ .checker.command }} >/dev/null 2>&1
 {{ else if eq .checker.type "font" -}}
-echo $font_family_names | sed 's/, /\n/g' | grep -E '^{{ .font }}$' > /dev/null 2>&1
+echo $font_family_names | sed 's/, /\n/g' | grep -E '^{{ .checker.font }}$' > /dev/null 2>&1
 {{ else if eq .checker.type "cask" -}}
-echo $homebrew_casks | sed 's/ /\n/g' | grep -E '^{{ .name }}$' > /dev/null 2>&1
+echo $homebrew_casks | sed 's/ /\n/g' | grep -E '^{{ .checker.cask }}$' > /dev/null 2>&1
 {{ else if eq .checker.type "script" -}}
 {{ .checker.script }}
 {{ end -}}
@@ -35,7 +35,7 @@ set -euo pipefail
 ## `script` type
 {{ range $id, $options := .darwin.packages }}{{ if eq $options.type "script" }}{{ if $options.enable -}}
 {{ template "script_checker" $options -}}
-if [[ $script_checker_exitcode -eq 0 ]]; then
+if [[ $script_checker_exitcode -ne 0 ]]; then
   INFO "Installing '{{ $id }}'..."
   {{ $options.installer }}
 else
@@ -62,7 +62,7 @@ SCPT
 homebrew_casks=$(brew list --cask)
 {{ range $id, $options := .darwin.packages }}{{ if eq $options.type "homebrew" }}{{ if $options.enable -}}
 {{ template "homebrew_checker" $options -}}
-if [[ $homebrew_checker_exitcode -eq 0 ]]; then
+if [[ $homebrew_checker_exitcode -ne 0 ]]; then
   INFO "Installing '{{ $id }}'..."
   {{- if eq $options.installer.type "formula" }}
   brew install {{ $id }}

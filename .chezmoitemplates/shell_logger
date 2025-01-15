@@ -17,7 +17,7 @@ WARN(){
 ERROR(){
   echo -e "$RED[ERROR] $@ $DEFAULT"
 }
-{{ else if eq .chezmoi.os "macos" -}}
+{{ else if eq .chezmoi.os "darwin" -}}
 DEFAULT="\033[0;m"
 RED="\033[31;m"
 BLUE="\033[34;m"
