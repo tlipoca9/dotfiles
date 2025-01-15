@@ -27,13 +27,13 @@ set -e
 {{ end -}}
 
 
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if eq .chezmoi.os "linux" -}}
 #!/usr/bin/env bash
 set -euo pipefail
 {{ template "shell_logger" . -}}
 
 ## `script` type
-{{ range $id, $options := .darwin.packages }}{{ if eq $options.type "script" }}{{ if $options.enable -}}
+{{ range $id, $options := .linux.packages }}{{ if eq $options.type "script" }}{{ if $options.enable -}}
 {{ template "script_checker" $options -}}
 if [[ $script_checker_exitcode -ne 0 ]]; then
   INFO "Installing '{{ $id }}'..."
@@ -53,7 +53,7 @@ set +e
 if [[ $homebrew_checker_exitcode -ne 0 ]]; then
   INFO "'homebrew' is not installed, so skipping the installation of homebrew packages."
 else
-{{ range $id, $options := .darwin.packages }}{{ if eq $options.type "homebrew" }}{{ if $options.enable -}}
+{{ range $id, $options := .linux.packages }}{{ if eq $options.type "homebrew" }}{{ if $options.enable -}}
 {{ template "homebrew_checker" $options -}}
 if [[ $homebrew_checker_exitcode -ne 0 ]]; then
   INFO "Installing '{{ $id }}'..."
