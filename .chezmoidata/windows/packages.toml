@@ -123,3 +123,8 @@ checker = { type = "command", command = "yq" }
 enable = true
 type = "scoop"
 checker = { type = "font", font = "FiraCode Nerd Font Mono" }
+
+[windows.packages."charm-gum"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "gum" }
