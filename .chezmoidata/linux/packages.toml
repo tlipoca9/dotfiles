@@ -5,6 +5,9 @@ checker = { type = "command", command = "brew" }
 installer = """
 NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 """
+post_install = """
+eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+"""
 
 [linux.packages.gcc]
 enable = true
