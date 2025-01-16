@@ -34,6 +34,9 @@ set -euo pipefail
 
 ## `script` type
 {{ range $id, $options := .linux.packages }}{{ if eq $options.type "script" }}{{ if $options.enable -}}
+{{ if and (eq $id "homebrew") (eq .chezmoi.username "root") -}}
+INFO "Skip the installation of 'homebrew' because the user is 'root'."
+{{ else -}}
 {{ template "script_checker" $options -}}
 if [[ $script_checker_exitcode -ne 0 ]]; then
   INFO "Installing '{{ $id }}'..."
@@ -41,6 +44,7 @@ if [[ $script_checker_exitcode -ne 0 ]]; then
 else
   INFO "'{{ $id }}' is already installed."
 fi
+{{ end -}}
 {{ end }}{{ end }}{{ end -}}
 
 
