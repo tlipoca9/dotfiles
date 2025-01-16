@@ -9,5 +9,15 @@ groups | grep -q docker \
   && INFO "You are already in the 'docker' group." \
   || (INFO "Added you to the 'docker' group, please re-login." && sudo usermod -aG docker {{ .chezmoi.username }})
 INFO "If you want to use registry mirrors, please edit /etc/docker/daemon.json. see https://cloud.tencent.com/document/product/1207/45596"
+echo '
+# example like this
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "registry-mirrors": [
+    "https://mirror.ccs.tencentyun.com"
+  ]
+}
+EOF
+'
 {{ end -}}
 {{ end -}}
