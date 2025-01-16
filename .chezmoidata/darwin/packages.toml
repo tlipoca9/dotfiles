@@ -138,3 +138,9 @@ enable = true
 type = "homebrew"
 checker = { type = "command", command = "atuin" }
 installer = { type = "formula" }
+
+[linux.packages.navi]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "navi" }
+installer = { type = "formula" }
