@@ -38,6 +38,9 @@ set -euo pipefail
 if [[ $script_checker_exitcode -ne 0 ]]; then
   INFO "Installing '{{ $id }}'..."
   {{ $options.installer }}
+  {{- if $options.post_install }}
+  {{ $options.post_install }}
+  {{- end }}
 else
   INFO "'{{ $id }}' is already installed."
 fi

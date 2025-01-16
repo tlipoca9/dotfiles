@@ -5,6 +5,13 @@ checker = { type = "command", command = "brew" }
 installer = """
 NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 """
+post_install = """
+if [[ -d /opt/homebrew ]]; then
+  eval $(/opt/homebrew/bin/brew shellenv)
+else
+  eval $(/usr/local/bin/brew shellenv)
+fi
+"""
 
 [darwin.packages.gcc]
 enable = true
