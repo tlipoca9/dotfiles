@@ -1,5 +1,3 @@
-version: "3"
-
 services:
   v2raya:
     image: mzz2017/v2raya:v2.2.6.3
@@ -11,6 +9,7 @@ services:
       - /etc/resolv.conf:/etc/resolv.conf
       - /etc/v2raya:/etc/v2raya
     environment:
+      - V2RAYA_ADDRESS=0.0.0.0:80
       - V2RAYA_LOG_FILE=/tmp/v2raya.log
       - V2RAYA_V2RAY_BIN=/usr/local/bin/v2ray
       - V2RAYA_NFTABLES_SUPPORT=off
