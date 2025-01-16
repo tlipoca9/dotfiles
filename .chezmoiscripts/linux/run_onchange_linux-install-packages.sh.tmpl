@@ -34,7 +34,7 @@ set -euo pipefail
 
 ## `script` type
 {{ range $id, $options := .linux.packages }}{{ if eq $options.type "script" }}{{ if $options.enable -}}
-{{ if and (eq $id "homebrew") (eq .chezmoi.username "root") -}}
+{{ if and (eq $id "homebrew") (eq $.chezmoi.username "root") -}}
 INFO "Skip the installation of 'homebrew' because the user is 'root'."
 {{ else -}}
 {{ template "script_checker" $options -}}
