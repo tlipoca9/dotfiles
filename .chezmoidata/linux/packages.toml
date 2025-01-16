@@ -116,3 +116,9 @@ enable = true
 type = "homebrew"
 checker = { type = "command", command = "gum" }
 installer = { type = "formula" }
+
+[linux.packages.atuin]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "atuin" }
+installer = { type = "formula" }
