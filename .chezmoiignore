@@ -6,4 +6,5 @@ README.md
 {{ else if eq .chezmoi.os "windows" -}}
 .scripts
 .config/navi
+.config/atuin
 {{ end -}}
