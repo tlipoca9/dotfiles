@@ -8,17 +8,17 @@ if ! command -v docker >/dev/null 2>&1; then
   sudo systemctl start docker
   INFO "If you want to use registry mirrors, please edit /etc/docker/daemon.json. see https://cloud.tencent.com/document/product/1207/45596"
   echo '
-  # example like this
-  mkdir -p /etc/docker
-  cat <<EOF > /etc/docker/daemon.json
-  {
-    "registry-mirrors": [
-      "https://mirror.ccs.tencentyun.com"
-    ]
-  }
-  EOF
-  sudo systemctl restart docker
-  '
+# example like this
+mkdir -p /etc/docker
+cat <<EOF > /etc/docker/daemon.json
+{
+  "registry-mirrors": [
+    "https://mirror.ccs.tencentyun.com"
+  ]
+}
+EOF
+sudo systemctl restart docker
+'
 else
 groups | grep -q docker \
   && INFO "You are already in the 'docker' group." \
