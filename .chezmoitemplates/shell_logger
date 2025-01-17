@@ -17,6 +17,10 @@ WARN(){
 ERROR(){
   echo -e "$RED[ERROR] $@ $DEFAULT"
 }
+FATAL(){
+  echo -e "$RED[FATAL] $@ $DEFAULT"
+  exit 1
+}
 {{ else if eq .chezmoi.os "darwin" -}}
 DEFAULT="\033[0;m"
 RED="\033[31;m"
