@@ -14,9 +14,9 @@ zi light z-shell/z-a-bin-gem-node
 # zi ice depth'1'
 # zi light z-shell/z-a-rust
 # https://wiki.zshell.dev/zh-Hans/ecosystem/annexes/meta-plugins#@zsh-users+fast
-zi ice depth'1' for \
-  light-mode z-shell/z-a-meta-plugins \
-  light-mode @zsh-users+fast
+zi light-mode for z-shell/z-a-meta-plugins \
+  @romkatv \
+  @zsh-users
 # https://github.com/z-shell/z-a-eval
 zi ice depth'1'
 zi light z-shell/z-a-eval
@@ -24,14 +24,6 @@ zi light z-shell/z-a-eval
 #
 zi ice wait lucid depth'1' has'fzf'
 zi light Aloxaf/fzf-tab
-
-
-# https://github.com/starship/starship
-zi depth'1' as'null' for \
-  id-as'starship/starship' \
-  has'starship' \
-  eval"starship init zsh" \
-  @z-shell/0
 
 # https://github.com/sharkdp/bat
 zi wait lucid depth'1' as'null' for \

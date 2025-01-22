@@ -121,6 +121,24 @@ type = "homebrew"
 checker = { type = "command", command = "gum" }
 installer = { type = "formula" }
 
+[darwin.packages.atuin]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "atuin" }
+installer = { type = "formula" }
+
+[darwin.packages.navi]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "navi" }
+installer = { type = "formula" }
+
+[darwin.packages.fselect]
+enable = true
+type = "homebrew"
+checker = { type = "command", command = "fselect" }
+installer = { type = "formula" }
+
 [darwin.packages.font-fira-code-nerd-font]
 enable = true
 type = "homebrew"
@@ -133,14 +151,15 @@ type = "homebrew"
 checker = { type = "cask", cask = "wezterm" }
 installer = { type = "cask" }
 
-[linux.packages.atuin]
+[darwin.packages.raycast]
 enable = true
 type = "homebrew"
-checker = { type = "command", command = "atuin" }
-installer = { type = "formula" }
+checker = { type = "cask", cask = "raycast" }
+installer = { type = "cask" }
 
-[linux.packages.navi]
+[darwin.packages.keycastr]
 enable = true
 type = "homebrew"
-checker = { type = "command", command = "navi" }
-installer = { type = "formula" }
+checker = { type = "cask", cask = "keycastr" }
+installer = { type = "cask" }
+
