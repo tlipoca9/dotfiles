@@ -1,6 +1,6 @@
 docs
 README.md
-{{ if eq .chezmoi.os "macos" -}}
+{{ if eq .chezmoi.os "darwin" -}}
 .scripts
 {{ else if eq .chezmoi.os "linux" -}}
 {{ else if eq .chezmoi.os "windows" -}}
@@ -8,3 +8,13 @@ README.md
 .config/navi
 .config/atuin
 {{ end -}}
+
+
+{{ if ne .chezmoi.os "darwin"}}
+Library/Application Support/Code/User/settings.json
+Library/Application Support/Code/User/keybindings.json
+{{ end }}
+{{ if ne .chezmoi.os "windows"}}
+AppData/Roaming/Code/User/settings.json
+AppData/Roaming/Code/User/keybindings.json
+{{ end }}

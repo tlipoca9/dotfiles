@@ -1,0 +1,123 @@
+[
+    // window shortcuts
+    {
+        "key": "alt+\\",
+        "name": "split vertical",
+        "command": "workbench.action.splitEditorRight",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "alt+-",
+        "name": "split horizontal",
+        "command": "workbench.action.splitEditorDown",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "alt+w",
+        "name": "close panel",
+        "command": "workbench.action.closeActiveEditor"
+    },
+    {
+        "key": "alt+p",
+        "name": "pick panel",
+        "command": "workbench.action.showAllEditors",
+        "when": "editorTextFocus"
+    },
+    {
+        "key": "alt+h",
+        "name": "navigate left",
+        "command": "workbench.action.navigateLeft"
+    },
+    {
+        "key": "alt+j",
+        "name": "navigate down",
+        "command": "workbench.action.navigateDown"
+    },
+    {
+        "key": "alt+k",
+        "name": "navigate up",
+        "command": "workbench.action.navigateUp"
+    },
+    {
+        "key": "alt+l",
+        "name": "navigate right",
+        "command": "workbench.action.navigateRight"
+    },
+    {
+        "key": "alt+t",
+        "command": "workbench.action.terminal.toggleTerminal"
+    },
+    {
+        "key": "alt+e",
+        "name": "open explorer",
+        "command": "workbench.view.explorer",
+        "when": "!sideBarFocus"
+    },
+    {
+        "key": "alt+e",
+        "name": "close explorer",
+        "command": "workbench.action.toggleSidebarVisibility",
+        "when": "sideBarFocus"
+    },
+
+    // explorer shortcuts
+    {
+        "key": "a",
+        "name": "create new file",
+        "command": "explorer.newFile",
+        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "shift+a",
+        "name": "create new folder",
+        "command": "explorer.newFolder",
+        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "y",
+        "name": "copy file",
+        "command": "filesExplorer.copy",
+        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "x",
+        "name": "cut file",
+        "command": "filesExplorer.cut",
+        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "p",
+        "name": "paste file",
+        "command": "filesExplorer.paste",
+        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "r",
+        "name": "rename file",
+        "command": "renameFile",
+        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+    },
+    {
+        "key": "d",
+        "name": "delete file",
+        "command": "deleteFile",
+        "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
+    },
+
+    // code completion shortcuts
+    {
+        "key": "tab",
+        "command": "acceptSelectedSuggestion",
+        "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && textInputFocus"
+    },
+    {
+        "key": "ctrl+j",
+        "command": "selectNextSuggestion",
+        "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && editorTextFocus"
+    },
+    {
+        "key": "ctrl+k",
+        "command": "selectPrevSuggestion",
+        "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && editorTextFocus"
+    }
+]

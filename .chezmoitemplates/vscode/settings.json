@@ -1,0 +1,59 @@
+{
+    // common
+    "extensions.ignoreRecommendations": true,
+    "security.workspace.trust.untrustedFiles": "open",
+    // shell
+    "terminal.integrated.profiles.windows": {
+        "Bash": {
+            "path": [
+                // windows
+                "D:\\scoop\\apps\\git\\current\\bin\\bash.exe"
+            ]
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "Bash",
+    // theme
+    "workbench.colorTheme": "Palenight (Mild Contrast)",
+    "window.newWindowProfile": "默认",
+    "workbench.iconTheme": "material-icon-theme",
+    "workbench.editor.showTabs": "multiple",
+    "editor.fontFamily": "'0xProto Nerd Font Mono', Consolas, 'Courier New', monospace",
+    "editor.fontSize": 16,
+    // vim
+    "vim.leader": "<space>",
+    "editor.lineNumbers": "relative",
+    "vim.surround": true,
+    "vim.sneak": true,
+    "vim.useSystemClipboard": true,
+    "vim.hlsearch": true,
+    "vim.ignorecase": true,
+    "vim.useCtrlKeys": true,
+    "vim.handleKeys": {
+        "<C-c>": false,
+        "<C-v>": false,
+        "<C-f>": false
+    },
+    "vim.normalModeKeyBindingsNonRecursive": [
+        // 搜索
+        { "before": ["/"], "commands": ["actions.find"] },
+        { "before": ["?"], "commands": ["editor.action.startFindReplaceAction"]},
+        // 显示文档
+        { "before": ["K"], "commands": ["editor.action.showHover"] },
+
+        // undo/redo
+        { "before": ["u"]    , "commands": ["undo"] },
+        { "before": ["<C-r>"], "commands": ["redo"] },
+
+        // 显示下一个文件
+        { "before": ["<TAB>"], "commands": [":bn"]},
+        // 显示上一个文件
+        { "before": ["<S-TAB>"], "commands": [":bp"]},
+
+        // whichkey
+        { "before": ["<leader>"], "commands": ["whichkey.show"] }
+    ],
+    "vim.visualModeKeyBindingsNonRecursive": [
+        // whichkey
+        { "before": ["<leader>"], "commands": ["whichkey.show"] }
+    ]
+}
