@@ -125,5 +125,17 @@
         "key": "ctrl+k",
         "command": "selectPrevSuggestion",
         "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && editorTextFocus"
-    }
+    },
+
+    // Quick Input shortcuts
+    {
+        "key": "ctrl+j",
+        "command": "quickInput.next",
+        "when": "inQuickInput && quickInputType == 'quickPick'"
+    },
+    {
+        "key": "ctrl+k",
+        "command": "quickInput.previous",
+        "when": "inQuickInput && quickInputType == 'quickPick'"
+    },
 ]
