@@ -137,5 +137,5 @@
         "key": "ctrl+k",
         "command": "quickInput.previous",
         "when": "inQuickInput && quickInputType == 'quickPick'"
-    },
+    }
 ]
