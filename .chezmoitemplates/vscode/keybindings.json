@@ -24,6 +24,12 @@
         "when": "editorTextFocus"
     },
     {
+        "key": "alt+f",
+        "name": "quick open with modes",
+        "command": "workbench.action.quickOpenWithModes",
+        "when": "editorTextFocus"
+    },
+    {
         "key": "alt+h",
         "name": "navigate left",
         "command": "workbench.action.navigateLeft"
