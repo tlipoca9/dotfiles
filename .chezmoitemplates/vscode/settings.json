@@ -4,7 +4,6 @@
     "security.workspace.trust.untrustedFiles": "open",
     "chat.commandCenter.enabled": false,
     "window.menuBarVisibility": "compact",
-    "workbench.productIconTheme": "bongocat",
     // shell
     "terminal.integrated.profiles.windows": {
         "Bash": {
@@ -19,6 +18,7 @@
     "workbench.colorTheme": "Palenight (Mild Contrast)",
     "window.newWindowProfile": "默认",
     "workbench.iconTheme": "material-icon-theme",
+    "workbench.productIconTheme": "bongocat",
     "workbench.editor.showTabs": "multiple",
     "editor.fontFamily": "'FiraCode Nerd Font Mono', Consolas, 'Courier New', monospace",
     "editor.fontSize": 16,
