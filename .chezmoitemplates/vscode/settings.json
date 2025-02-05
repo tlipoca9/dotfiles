@@ -20,9 +20,9 @@
     "workbench.iconTheme": "material-icon-theme",
     "workbench.productIconTheme": "bongocat",
     "workbench.editor.showTabs": "multiple",
-    "window.zoomLevel": 2,
+    "window.zoomLevel": 1.5,
     "editor.fontFamily": "'FiraCode Nerd Font Mono', Consolas, 'Courier New', monospace",
-    "editor.fontSize": 12,
+    "editor.fontSize": 14,
     // vim
     "vim.leader": "<space>",
     "editor.lineNumbers": "relative",
