@@ -39,6 +39,10 @@
         { "before": ["?"], "commands": ["editor.action.startFindReplaceAction"]},
         // 显示文档
         { "before": ["K"], "commands": ["editor.action.showHover"] },
+        // 转到定义
+        { "before": ["L"], "commands": ["editor.action.revealDefinition"]},
+        // 转到引用
+        { "before": ["H"], "commands": ["editor.action.goToReferences"]},
 
         // undo/redo
         { "before": ["u"]    , "commands": ["undo"] },
