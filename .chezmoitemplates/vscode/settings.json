@@ -20,7 +20,7 @@
     "window.newWindowProfile": "默认",
     "workbench.iconTheme": "material-icon-theme",
     "workbench.editor.showTabs": "multiple",
-    "editor.fontFamily": "'0xProto Nerd Font Mono', Consolas, 'Courier New', monospace",
+    "editor.fontFamily": "'FiraCode Nerd Font Mono', Consolas, 'Courier New', monospace",
     "editor.fontSize": 16,
     // vim
     "vim.leader": "<space>",
