@@ -1,4 +1,10 @@
 [
+    // disable default shortcuts
+    {
+        "key": "ctrl+j",
+        "command": "-workbench.action.togglePanel"
+    },
+
     // window shortcuts
     {
         "key": "alt+\\",
@@ -50,7 +56,7 @@
         "command": "workbench.action.navigateRight"
     },
     {
-        "key": "alt+t",
+        "key": "alt+=",
         "command": "workbench.action.terminal.toggleTerminal"
     },
     {
@@ -109,25 +115,32 @@
         "command": "deleteFile",
         "when": "explorerViewletVisible && filesExplorerFocus && !inputFocus"
     },
+    {
+        "key": "shift+l",
+        "command": "explorer.openToSide",
+        "when": "explorerViewletFocus && foldersViewVisible && !inputFocus"
+    },
+    {
+        "key": "shift+h",
+        "command": "workbench.files.action.collapseExplorerFolders"
+    },
 
     // code completion shortcuts
     {
         "key": "tab",
         "command": "acceptSelectedSuggestion",
-        "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && textInputFocus"
+        "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && textInputFocus || suggestWidgetVisible && textInputFocus && !suggestWidgetHasFocusedSuggestion"
     },
     {
         "key": "ctrl+j",
         "command": "selectNextSuggestion",
-        "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && editorTextFocus"
+        "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && textInputFocus || suggestWidgetVisible && textInputFocus && !suggestWidgetHasFocusedSuggestion"
     },
     {
         "key": "ctrl+k",
         "command": "selectPrevSuggestion",
-        "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && editorTextFocus"
+        "when": "suggestWidgetMultipleSuggestions && suggestWidgetVisible && textInputFocus || suggestWidgetVisible && textInputFocus && !suggestWidgetHasFocusedSuggestion"
     },
-
-    // Quick Input shortcuts
     {
         "key": "ctrl+j",
         "command": "quickInput.next",
@@ -137,5 +150,15 @@
         "key": "ctrl+k",
         "command": "quickInput.previous",
         "when": "inQuickInput && quickInputType == 'quickPick'"
+    },
+    {
+        "key": "ctrl+j",
+        "command": "selectNextCodeAction",
+        "when": "codeActionMenuVisible"
+    },
+    {
+        "key": "ctrl+k",
+        "command": "selectPrevCodeAction",
+        "when": "codeActionMenuVisible"
     }
 ]
