@@ -20,7 +20,7 @@
     "workbench.iconTheme": "material-icon-theme",
     "workbench.productIconTheme": "bongocat",
     "workbench.editor.showTabs": "multiple",
-    "window.zoomLevel": 3,
+    "window.zoomLevel": 2,
     "editor.fontFamily": "'FiraCode Nerd Font Mono', Consolas, 'Courier New', monospace",
     "editor.fontSize": 12,
     // vim
