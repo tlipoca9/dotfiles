@@ -2,6 +2,9 @@
     // common
     "extensions.ignoreRecommendations": true,
     "security.workspace.trust.untrustedFiles": "open",
+    "chat.commandCenter.enabled": false,
+    "window.menuBarVisibility": "compact",
+    "workbench.productIconTheme": "bongocat",
     // shell
     "terminal.integrated.profiles.windows": {
         "Bash": {
