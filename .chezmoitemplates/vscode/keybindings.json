@@ -166,5 +166,25 @@
         "key": "ctrl+k",
         "command": "selectPrevCodeAction",
         "when": "codeActionMenuVisible"
+    },
+    {
+        "key": "ctrl+j",
+        "command": "workbench.action.terminal.scrollDown",
+        "when": "terminalFocusInAny && terminalHasBeenCreated && !terminalAltBufferActive || terminalFocusInAny && terminalProcessSupported && !terminalAltBufferActive"
+    },
+    {
+        "key": "ctrl+k",
+        "command": "workbench.action.terminal.scrollUp",
+        "when": "terminalFocusInAny && terminalHasBeenCreated && !terminalAltBufferActive || terminalFocusInAny && terminalProcessSupported && !terminalAltBufferActive"
+    },
+    {
+        "key": "ctrl+u",
+        "command": "workbench.action.terminal.scrollUpPage",
+        "when": "terminalFocusInAny && terminalHasBeenCreated && !terminalAltBufferActive || terminalFocusInAny && terminalProcessSupported && !terminalAltBufferActive"
+    },
+    {
+        "key": "ctrl+d",
+        "command": "workbench.action.terminal.scrollDownPage",
+        "when": "terminalFocusInAny && terminalHasBeenCreated && !terminalAltBufferActive || terminalFocusInAny && terminalProcessSupported && !terminalAltBufferActive"
     }
 ]
