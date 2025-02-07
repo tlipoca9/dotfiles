@@ -130,6 +130,6 @@ type = "scoop"
 checker = { type = "command", command = "gum" }
 
 [windows.packages."extras/keyviz"]
-enable = true
+enable = false
 type = "scoop"
 checker = { type = "scoop-apps", bucket = "extras", app = "keyviz" }
