@@ -1,6 +1,24 @@
 {{ if eq .chezmoi.os "windows" -}}
 {{ template "shell_logger" . -}}
 
+function IsScoopInstalled {
+  
+  param (
+    [string]$bucket,
+    [string]$app
+  )
+
+  scoop list $app 6>$null | ForEach-Object {
+    if ($_.Source -eq $bucket -and $_.Name -eq $app) {
+      return "true"
+    }
+  }
+
+  return "false"
+}
+
+
+
 {{ range $id, $options := .windows.packages }}{{ if $options.enable }}{{ if eq $id "scoop" -}}
 $bucketNames = scoop bucket list | ForEach-Object { $_.Name }
 {{ range $options.options.buckets }}
@@ -27,6 +45,8 @@ if (Get-Command {{ .checker.command }} -ErrorAction SilentlyContinue) {
 if ('{{ .checker.font }}' -in $installedFonts) {
 {{ else if eq .checker.type "script" -}}
 if ({{ .checker.script }}) {
+{{ else if eq .checker.type "scoop-apps" -}}
+if ((IsScoopInstalled -bucket "{{ .checker.bucket }}" -app "{{ .checker.app }}" -ErrorAction SilentlyContinue) -eq "true") {
 {{ else }}
 FATAL "Unsupported checker type '{{ .checker.type }}' for '{{ $id }}'."
 {{ end -}}

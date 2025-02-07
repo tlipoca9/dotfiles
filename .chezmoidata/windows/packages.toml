@@ -128,3 +128,8 @@ checker = { type = "font", font = "FiraCode Nerd Font Mono" }
 enable = true
 type = "scoop"
 checker = { type = "command", command = "gum" }
+
+[windows.packages."extras/keyviz"]
+enable = true
+type = "scoop"
+checker = { type = "scoop-apps", bucket = "extras", app = "keyviz" }
