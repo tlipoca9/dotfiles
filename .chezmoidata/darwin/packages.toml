@@ -163,3 +163,8 @@ type = "homebrew"
 checker = { type = "cask", cask = "keycastr" }
 installer = { type = "cask" }
 
+[darwin.packages."nikitabobko/tap/aerospace"]
+enable = true
+type = "homebrew"
+checker = { type = "cask", cask = "nikitabobko/tap/aerospace" }
+installer = { type = "cask" }
