@@ -14,6 +14,22 @@
         }
     },
     "terminal.integrated.defaultProfile.windows": "Bash",
+    "terminal.integrated.profiles.osx": {
+        "bash": {
+            "path": "bash",
+            "args": [
+                "-l"
+            ],
+            "icon": "terminal-bash"
+        },
+        "zsh": {
+            "path": "zsh",
+            "args": [
+                "-l"
+            ]
+        },
+    },
+    "terminal.integrated.defaultProfile.osx": "zsh",
     // theme
     "workbench.colorTheme": "Palenight (Mild Contrast)",
     "window.newWindowProfile": "默认",
@@ -39,29 +55,103 @@
     },
     "vim.normalModeKeyBindingsNonRecursive": [
         // 搜索
-        { "before": ["/"], "commands": ["actions.find"] },
-        { "before": ["?"], "commands": ["editor.action.startFindReplaceAction"]},
+        {
+            "before": [
+                "/"
+            ],
+            "commands": [
+                "actions.find"
+            ]
+        },
+        {
+            "before": [
+                "?"
+            ],
+            "commands": [
+                "editor.action.startFindReplaceAction"
+            ]
+        },
         // 显示文档
-        { "before": ["K"], "commands": ["editor.action.showHover"] },
+        {
+            "before": [
+                "K"
+            ],
+            "commands": [
+                "editor.action.showHover"
+            ]
+        },
         // 转到定义
-        { "before": ["L"], "commands": ["editor.action.revealDefinition"]},
+        {
+            "before": [
+                "L"
+            ],
+            "commands": [
+                "editor.action.revealDefinition"
+            ]
+        },
         // 转到引用
-        { "before": ["H"], "commands": ["editor.action.goToReferences"]},
-
+        {
+            "before": [
+                "H"
+            ],
+            "commands": [
+                "editor.action.goToReferences"
+            ]
+        },
         // undo/redo
-        { "before": ["u"]    , "commands": ["undo"] },
-        { "before": ["<C-r>"], "commands": ["redo"] },
-
+        {
+            "before": [
+                "u"
+            ],
+            "commands": [
+                "undo"
+            ]
+        },
+        {
+            "before": [
+                "<C-r>"
+            ],
+            "commands": [
+                "redo"
+            ]
+        },
         // 显示下一个文件
-        { "before": ["<TAB>"], "commands": [":bn"]},
+        {
+            "before": [
+                "<TAB>"
+            ],
+            "commands": [
+                ":bn"
+            ]
+        },
         // 显示上一个文件
-        { "before": ["<S-TAB>"], "commands": [":bp"]},
-
+        {
+            "before": [
+                "<S-TAB>"
+            ],
+            "commands": [
+                ":bp"
+            ]
+        },
         // whichkey
-        { "before": ["<leader>"], "commands": ["whichkey.show"] }
+        {
+            "before": [
+                "<leader>"
+            ],
+            "commands": [
+                "whichkey.show"
+            ]
+        }
     ],
     "vim.visualModeKeyBindingsNonRecursive": [
         // whichkey
-        { "before": ["<leader>"], "commands": ["whichkey.show"] }
+        {
+            "before": [
+                "<leader>"
+            ],
+            "commands": [
+                "whichkey.show"
+            ]
+        }
     ]
 }

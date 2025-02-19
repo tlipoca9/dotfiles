@@ -142,7 +142,7 @@ installer = { type = "formula" }
 [darwin.packages.font-fira-code-nerd-font]
 enable = true
 type = "homebrew"
-checker = { type = "cask", font = "font-fira-code-nerd-font" }
+checker = { type = "cask", cask = "font-fira-code-nerd-font" }
 installer = { type = "cask" }
 
 [darwin.packages.wezterm]

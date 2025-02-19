@@ -7,66 +7,66 @@
 
     // window shortcuts
     {
-        "key": "alt+\\",
+        "key": "cmd+\\",
         "name": "split vertical",
         "command": "workbench.action.splitEditorRight",
         "when": "editorTextFocus"
     },
     {
-        "key": "alt+-",
+        "key": "cmd+-",
         "name": "split horizontal",
         "command": "workbench.action.splitEditorDown",
         "when": "editorTextFocus"
     },
     {
-        "key": "alt+w",
+        "key": "cmd+w",
         "name": "close panel",
         "command": "workbench.action.closeActiveEditor"
     },
     {
-        "key": "alt+p",
+        "key": "cmd+p",
         "name": "pick panel",
         "command": "workbench.action.showAllEditors",
         "when": "editorTextFocus"
     },
     {
-        "key": "alt+f",
+        "key": "cmd+f",
         "name": "quick open with modes",
         "command": "workbench.action.quickOpenWithModes",
         "when": "editorTextFocus"
     },
     {
-        "key": "alt+h",
+        "key": "cmd+h",
         "name": "navigate left",
         "command": "workbench.action.navigateLeft"
     },
     {
-        "key": "alt+j",
+        "key": "cmd+j",
         "name": "navigate down",
         "command": "workbench.action.navigateDown"
     },
     {
-        "key": "alt+k",
+        "key": "cmd+k",
         "name": "navigate up",
         "command": "workbench.action.navigateUp"
     },
     {
-        "key": "alt+l",
+        "key": "cmd+l",
         "name": "navigate right",
         "command": "workbench.action.navigateRight"
     },
     {
-        "key": "alt+t",
+        "key": "cmd+t",
         "command": "workbench.action.terminal.toggleTerminal"
     },
     {
-        "key": "alt+e",
+        "key": "cmd+e",
         "name": "open explorer",
         "command": "workbench.view.explorer",
         "when": "!sideBarFocus"
     },
     {
-        "key": "alt+e",
+        "key": "cmd+e",
         "name": "close explorer",
         "command": "workbench.action.toggleSidebarVisibility",
         "when": "sideBarFocus"
