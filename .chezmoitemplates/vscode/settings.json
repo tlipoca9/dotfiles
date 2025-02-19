@@ -27,7 +27,7 @@
             "args": [
                 "-l"
             ]
-        },
+        }
     },
     "terminal.integrated.defaultProfile.osx": "zsh",
     // theme
