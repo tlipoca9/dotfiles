@@ -15,8 +15,6 @@ homebrew_checker_exitcode=1
 set +e
 {{ if eq .checker.type "command" -}}
 command -v {{ .checker.command }} >/dev/null 2>&1
-{{ else if eq .checker.type "font" -}}
-echo $font_family_names | sed 's/, /\n/g' | grep -E '^{{ .checker.font }}$' > /dev/null 2>&1
 {{ else if eq .checker.type "cask" -}}
 echo $homebrew_casks | sed 's/ /\n/g' | grep -E '^{{ .checker.cask }}$' > /dev/null 2>&1
 {{ else if eq .checker.type "script" -}}
@@ -53,15 +51,10 @@ set -e
 command -v brew >/dev/null 2>&1
 homebrew_checker_exitcode=$?
 set +e
+
 if [[ $homebrew_checker_exitcode -ne 0 ]]; then
   INFO "'homebrew' is not installed, so skipping the installation of homebrew packages."
 else
-font_family_names=$(osascript << SCPT
-  use framework "AppKit"
-  set fontFamilyNames to (current application's NSFontManager's sharedFontManager's availableFontFamilies) as list
-  return fontFamilyNames
-SCPT
-)
 homebrew_casks=$(brew list --cask)
 {{ range $id, $options := .darwin.packages }}{{ if eq $options.type "homebrew" }}{{ if $options.enable -}}
 {{ template "homebrew_checker" $options -}}

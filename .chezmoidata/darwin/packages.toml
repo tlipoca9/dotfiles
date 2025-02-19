@@ -110,7 +110,7 @@ checker = { type = "command", command = "kcat" }
 installer = { type = "formula" }
 
 [darwin.packages.starship]
-enable = true
+enable = false
 type = "homebrew"
 checker = { type = "command", command = "starship" }
 installer = { type = "formula" }
@@ -142,7 +142,7 @@ installer = { type = "formula" }
 [darwin.packages.font-fira-code-nerd-font]
 enable = true
 type = "homebrew"
-checker = { type = "font", font = "FiraCode Nerd Font Mono" }
+checker = { type = "cask", font = "font-fira-code-nerd-font" }
 installer = { type = "cask" }
 
 [darwin.packages.wezterm]
