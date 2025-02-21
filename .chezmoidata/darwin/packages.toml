@@ -145,6 +145,12 @@ type = "homebrew"
 checker = { type = "cask", cask = "font-fira-code-nerd-font" }
 installer = { type = "cask" }
 
+[darwin.packages.font-jetbrains-mono-nerd-font]
+enable = true
+type = "homebrew"
+checker = { type = "cask", cask = "font-jetbrains-mono-nerd-font" }
+installer = { type = "cask" }
+
 [darwin.packages.wezterm]
 enable = true
 type = "homebrew"
@@ -164,7 +170,7 @@ checker = { type = "cask", cask = "keycastr" }
 installer = { type = "cask" }
 
 [darwin.packages."nikitabobko/tap/aerospace"]
-enable = true
+enable = false
 type = "homebrew"
 checker = { type = "cask", cask = "nikitabobko/tap/aerospace" }
 installer = { type = "cask" }
