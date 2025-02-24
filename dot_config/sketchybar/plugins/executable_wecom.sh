@@ -4,24 +4,13 @@
 WECOM_PROCESS=$(ps aux | grep "WXWork" | grep -v "grep")
 
 if [[ $WECOM_PROCESS != "" ]]; then
-    # 检查企业微信的 Dock 图标是否有未读消息标记
-    UNREAD=$(osascript -e '
-        tell application "System Events"
-            tell process "WXWork"
-                if exists (every window whose name contains "企业微信") then
-                    return "1"
-                else
-                    return "0"
-                end if
-            end tell
-        end tell
-    ')
-    
-    if [[ $UNREAD == "1" ]]; then
-        sketchybar --set wecom label="●" label.drawing=on label.color=0xff2590fe
+    UNREAD=$(lsappinfo -all info -only StatusLabel "企业微信" | sed -nr 's/\"StatusLabel\"=\{ \"label\"=\"(.+)\" \}$/\1/p')
+    if [[ $UNREAD == "" ]]; then
+        sketchybar --set wecom label.drawing=off icon.color=0xff2590fe
     else
-        sketchybar --set wecom label.drawing=off
+        # 企业微信未读消息, 红色标签
+        sketchybar --set wecom label="● $UNREAD" label.drawing=on label.color=0xffd0021b icon.color=0xffd0021b
     fi
 else
-    sketchybar --set wecom label.drawing=off
+    sketchybar --set wecom label.drawing=off icon.color=0xff2590fe
 fi
