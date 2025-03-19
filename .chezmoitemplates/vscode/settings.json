@@ -37,7 +37,11 @@
     "workbench.productIconTheme": "bongocat",
     "workbench.editor.showTabs": "multiple",
     "window.zoomLevel": 1.5,
-    "editor.fontFamily": "'FiraCode Nerd Font Mono', Consolas, 'Courier New', monospace",
+    "editor.fontFamily": "'Maple Mono NF CN', 'FiraCode Nerd Font Mono', Consolas, 'Courier New', monospace",
+    // Enable ligatures
+    "editor.fontLigatures": "'calt'",
+    // Or enable OpenType features
+    "editor.fontLigatures": "'calt', 'cv01', 'ss01', 'zero'",
     "editor.fontSize": 14,
     // vim
     "vim.leader": "<space>",

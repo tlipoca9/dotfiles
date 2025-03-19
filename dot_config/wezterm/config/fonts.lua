@@ -1,8 +1,8 @@
 local wezterm = require('wezterm')
 local platform = require('utils.platform')
 
--- local font = 'Maple Mono SC NF'
-local font_family = 'FiraCode Nerd Font Mono'
+-- local font_family = 'FiraCode Nerd Font Mono'
+local font_family = 'Maple Mono NF CN'
 
 return {
    font = wezterm.font({
