@@ -38,10 +38,8 @@
     "workbench.editor.showTabs": "multiple",
     "window.zoomLevel": 1.5,
     "editor.fontFamily": "'Maple Mono NF CN', 'FiraCode Nerd Font Mono', Consolas, 'Courier New', monospace",
-    // Enable ligatures
-    "editor.fontLigatures": "'calt'",
-    // Or enable OpenType features
-    "editor.fontLigatures": "'calt', 'cv01', 'ss01', 'zero'",
+    // Enable OpenType features
+    "editor.fontLigatures": "'calt', 'cv35', 'ss01', 'ss03', 'ss04'",
     "editor.fontSize": 14,
     // vim
     "vim.leader": "<space>",
