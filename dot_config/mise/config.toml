@@ -1,0 +1,9 @@
+[tools]
+# cli
+neovim = "latest"
+ripgrep = "latest"
+# language
+go = "latest"
+python = "latest"
+# language management
+uv = "latest"

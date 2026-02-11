@@ -8,7 +8,6 @@ buckets = [
   { id = "tlipoca9_scoop-buckets" , url = "https://github.com/tlipoca9/scoop-bucket"  },
 ]
 
-
 [windows.packages."main/git"]
 enable = true
 type = "scoop"
@@ -39,97 +38,40 @@ enable = true
 type = "scoop"
 checker = { type = "command", command = "curl" }
 
-[windows.packages."main/chezmoi"]
+[windows.packages."main/nu"]
 enable = true
 type = "scoop"
-checker = { type = "command", command = "chezmoi" }
+checker = { type = "command", command = "nu" }
 
-[windows.packages."main/neovim"]
+[windows.packages."main/mise"]
 enable = true
 type = "scoop"
-checker = { type = "command", command = "nvim" }
+checker = { type = "command", command = "mise" }
+
+[windows.packages."main/atuin"]
+enable = true
+type = "scoop"
+checker = { type = "command", command = "atuin" }
 
 [windows.packages."main/make"]
 enable = true
 type = "scoop"
 checker = { type = "command", command = "make" }
 
-[windows.packages."main/ripgrep"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "rg" }
-
 [windows.packages."main/mingw"]
 enable = true
 type = "scoop"
 checker = { type = "command", command = "gcc" }
 
-[windows.packages."main/jq"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "jq" }
-
-[windows.packages."main/gitui"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "gitui" }
-
-[windows.packages."main/fd"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "fd" }
-
-[windows.packages."main/eza"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "eza" }
-
-[windows.packages."main/bat"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "bat" }
-
-[windows.packages."main/starship"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "starship" }
-
-[windows.packages."main/fzf"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "fzf" }
 
 [windows.packages."extras/wezterm"]
 enable = true
 type = "scoop"
 checker = { type = "command", command = "wezterm" }
 
-[windows.packages."tlipoca9_scoop-bucket/zsh"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "zsh" }
-
-[windows.packages."main/python"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "python3" }
-
-[windows.packages."main/yq"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "yq" }
-
 [windows.packages."nerd-fonts/FiraCode-NF"]
 enable = true
 type = "scoop"
 checker = { type = "font", font = "FiraCode Nerd Font Mono" }
 
-[windows.packages."main/charm-gum"]
-enable = true
-type = "scoop"
-checker = { type = "command", command = "gum" }
 
-[windows.packages."extras/keyviz"]
-enable = false
-type = "scoop"
-checker = { type = "scoop-apps", bucket = "extras", app = "keyviz" }

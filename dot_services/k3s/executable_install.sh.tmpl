@@ -1,7 +1,0 @@
-{{ if eq .chezmoi.os "linux" -}}
-#!/usr/bin/env bash
-{{ template "shell_logger" . -}}
-{{ if eq .chezmoi.osRelease.id "opencloudos" -}}
-curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable traefik" INSTALL_K3S_SKIP_SELINUX_RPM=true sh -
-{{ end -}}
-{{ end -}}

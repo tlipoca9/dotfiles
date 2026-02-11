@@ -6,8 +6,9 @@ local options = {
 }
 
 if platform.is_win then
-   options.default_prog = { 'D:\\scoop\\shims\\zsh.exe', '-i', '-l' }
+   options.default_prog = { 'nu', '-l' }
    options.launch_menu = {
+      { label = 'Nushell', args = { 'nu', '-l' } },
       { label = 'PowerShell Core', args = { 'pwsh', '-NoLogo' } },
       { label = 'PowerShell Desktop', args = { 'powershell' } },
       { label = 'Command Prompt', args = { 'cmd' } },
@@ -15,24 +16,19 @@ if platform.is_win then
          label = 'Git Bash',
          args = { 'D:\\scoop\\apps\\git\\current\\bin\\bash.exe', '--login', '-i' },
       },
-      {
-         label = "Zsh",
-         args = { 'D:\\scoop\\shims\\zsh.exe', '-i', '-l' },
-      }
    }
 elseif platform.is_mac then
-   options.default_prog = { 'zsh', '-l' }
+   options.default_prog = { '/opt/homebrew/bin/nu', '-l' }
    options.launch_menu = {
-      { label = 'Bash', args = { 'bash', '-l' } },
-      { label = 'Fish', args = { '/opt/homebrew/bin/fish', '-l' } },
       { label = 'Nushell', args = { '/opt/homebrew/bin/nu', '-l' } },
+      { label = 'Bash', args = { 'bash', '-l' } },
       { label = 'Zsh', args = { 'zsh', '-l' } },
    }
 elseif platform.is_linux then
-   options.default_prog = { 'zsh', '-l' }
+   options.default_prog = { 'nu', '-l' }
    options.launch_menu = {
+      { label = 'Nushell', args = { 'nu', '-l' } },
       { label = 'Bash', args = { 'bash', '-l' } },
-      { label = 'Fish', args = { 'fish', '-l' } },
       { label = 'Zsh', args = { 'zsh', '-l' } },
    }
 end

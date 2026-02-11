@@ -19,6 +19,18 @@ function IsScoopInstalled {
 
 
 
+# Configure scoop proxy if 127.0.0.1:10809 is listening
+try {
+  $tcp = New-Object System.Net.Sockets.TcpClient
+  $tcp.Connect("127.0.0.1", 10809)
+  $tcp.Close()
+  scoop config proxy 127.0.0.1:10809
+  INFO "Scoop proxy set to 127.0.0.1:10809"
+} catch {
+  scoop config rm proxy *>$null
+  INFO "Proxy port 10809 not listening, scoop proxy cleared."
+}
+
 {{ range $id, $options := .windows.packages }}{{ if $options.enable }}{{ if eq $id "scoop" -}}
 $bucketNames = scoop bucket list | ForEach-Object { $_.Name }
 {{ range $options.options.buckets }}

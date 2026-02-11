@@ -5,8 +5,6 @@ README.md
 {{ else if eq .chezmoi.os "linux" -}}
 {{ else if eq .chezmoi.os "windows" -}}
 .scripts
-.config/navi
-.config/atuin
 {{ end -}}
 
 
@@ -17,4 +15,6 @@ Library/Application Support/Code/User/keybindings.json
 {{ if ne .chezmoi.os "windows"}}
 AppData/Roaming/Code/User/settings.json
 AppData/Roaming/Code/User/keybindings.json
+AppData/Roaming/CodeBuddy CN/User/settings.json
+AppData/Roaming/CodeBuddy CN/User/keybindings.json
 {{ end }}

@@ -19,10 +19,10 @@ type = "homebrew"
 checker = { type = "command", command = "gcc" }
 installer = { type = "formula" }
 
-[darwin.packages.zsh]
+[darwin.packages.nushell]
 enable = true
 type = "homebrew"
-checker = { type = "command", command = "zsh" }
+checker = { type = "command", command = "nu" }
 installer = { type = "formula" }
 
 [darwin.packages.git]
@@ -37,64 +37,16 @@ type = "homebrew"
 checker = { type = "command", command = "curl" }
 installer = { type = "formula" }
 
-[darwin.packages.chezmoi]
+[darwin.packages.mise]
 enable = true
 type = "homebrew"
-checker = { type = "command", command = "chezmoi" }
+checker = { type = "command", command = "mise" }
 installer = { type = "formula" }
 
-[darwin.packages.neovim]
+[darwin.packages.atuin]
 enable = true
 type = "homebrew"
-checker = { type = "command", command = "nvim" }
-installer = { type = "formula" }
-
-[darwin.packages.bat]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "bat" }
-installer = { type = "formula" }
-
-[darwin.packages.jq]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "jq" }
-installer = { type = "formula" }
-
-[darwin.packages.yq]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "yq" }
-installer = { type = "formula" }
-
-[darwin.packages.eza]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "eza" }
-installer = { type = "formula" }
-
-[darwin.packages.ripgrep]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "rg" }
-installer = { type = "formula" }
-
-[darwin.packages.fd]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "fd" }
-installer = { type = "formula" }
-
-[darwin.packages.fzf]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "fzf" }
-installer = { type = "formula" }
-
-[darwin.packages.gitui]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "gitui" }
+checker = { type = "command", command = "atuin" }
 installer = { type = "formula" }
 
 [darwin.packages.file]
@@ -109,35 +61,6 @@ type = "homebrew"
 checker = { type = "command", command = "kcat" }
 installer = { type = "formula" }
 
-[darwin.packages.starship]
-enable = false
-type = "homebrew"
-checker = { type = "command", command = "starship" }
-installer = { type = "formula" }
-
-[darwin.packages.gum]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "gum" }
-installer = { type = "formula" }
-
-[darwin.packages.atuin]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "atuin" }
-installer = { type = "formula" }
-
-[darwin.packages.navi]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "navi" }
-installer = { type = "formula" }
-
-[darwin.packages.fselect]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "fselect" }
-installer = { type = "formula" }
 
 [darwin.packages.font-fira-code-nerd-font]
 enable = true
@@ -163,14 +86,4 @@ type = "homebrew"
 checker = { type = "cask", cask = "raycast" }
 installer = { type = "cask" }
 
-[darwin.packages.keycastr]
-enable = true
-type = "homebrew"
-checker = { type = "cask", cask = "keycastr" }
-installer = { type = "cask" }
 
-[darwin.packages."nikitabobko/tap/aerospace"]
-enable = false
-type = "homebrew"
-checker = { type = "cask", cask = "nikitabobko/tap/aerospace" }
-installer = { type = "cask" }

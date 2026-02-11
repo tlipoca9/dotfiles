@@ -15,10 +15,10 @@ type = "homebrew"
 checker = { type = "command", command = "gcc" }
 installer = { type = "formula" }
 
-[linux.packages.zsh]
+[linux.packages.nushell]
 enable = true
 type = "homebrew"
-checker = { type = "command", command = "zsh" }
+checker = { type = "command", command = "nu" }
 installer = { type = "formula" }
 
 [linux.packages.git]
@@ -33,64 +33,16 @@ type = "homebrew"
 checker = { type = "command", command = "curl" }
 installer = { type = "formula" }
 
-[linux.packages.chezmoi]
+[linux.packages.mise]
 enable = true
 type = "homebrew"
-checker = { type = "command", command = "chezmoi" }
+checker = { type = "command", command = "mise" }
 installer = { type = "formula" }
 
-[linux.packages.neovim]
+[linux.packages.atuin]
 enable = true
 type = "homebrew"
-checker = { type = "command", command = "nvim" }
-installer = { type = "formula" }
-
-[linux.packages.bat]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "bat" }
-installer = { type = "formula" }
-
-[linux.packages.jq]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "jq" }
-installer = { type = "formula" }
-
-[linux.packages.yq]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "yq" }
-installer = { type = "formula" }
-
-[linux.packages.eza]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "eza" }
-installer = { type = "formula" }
-
-[linux.packages.ripgrep]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "rg" }
-installer = { type = "formula" }
-
-[linux.packages.fd]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "fd" }
-installer = { type = "formula" }
-
-[linux.packages.fzf]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "fzf" }
-installer = { type = "formula" }
-
-[linux.packages.gitui]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "gitui" }
+checker = { type = "command", command = "atuin" }
 installer = { type = "formula" }
 
 [linux.packages.file]
@@ -105,33 +57,4 @@ type = "homebrew"
 checker = { type = "command", command = "kcat" }
 installer = { type = "formula" }
 
-[linux.packages.starship]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "starship" }
-installer = { type = "formula" }
-
-[linux.packages.gum]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "gum" }
-installer = { type = "formula" }
-
-[linux.packages.atuin]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "atuin" }
-installer = { type = "formula" }
-
-[linux.packages.navi]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "navi" }
-installer = { type = "formula" }
-
-[linux.packages.fselect]
-enable = true
-type = "homebrew"
-checker = { type = "command", command = "fselect" }
-installer = { type = "formula" }
 

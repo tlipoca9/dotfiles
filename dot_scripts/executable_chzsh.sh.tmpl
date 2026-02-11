@@ -1,6 +1,0 @@
-#/usr/bin/env bash
-
-command -v zsh > /dev/null 2>&1 || (echo "zsh is not installed" && exit 1)
-
-sudo cat /etc/shells | grep "$(command -v zsh)" || sudo echo "$(command -v zsh)" | sudo tee -a /etc/shells
-chsh -s "$(command -v zsh)"

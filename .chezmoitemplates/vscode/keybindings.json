@@ -1,3 +1,7 @@
+{{ $mod := "cmd" -}}
+{{ if eq .chezmoi.os "windows" -}}
+{{ $mod = "alt" -}}
+{{ end -}}
 [
     // disable default shortcuts
     {
@@ -7,66 +11,76 @@
 
     // window shortcuts
     {
-        "key": "cmd+\\",
+        "key": "{{ $mod }}+\\",
         "name": "split vertical",
         "command": "workbench.action.splitEditorRight",
         "when": "editorTextFocus"
     },
     {
-        "key": "cmd+-",
+        "key": "{{ $mod }}+-",
         "name": "split horizontal",
         "command": "workbench.action.splitEditorDown",
         "when": "editorTextFocus"
     },
     {
-        "key": "cmd+w",
+        "key": "{{ $mod }}+w",
         "name": "close panel",
         "command": "workbench.action.closeActiveEditor"
     },
     {
-        "key": "cmd+p",
+        "key": "{{ $mod }}+p",
         "name": "pick panel",
         "command": "workbench.action.showAllEditors",
         "when": "editorTextFocus"
     },
     {
-        "key": "cmd+f",
+        "key": "{{ $mod }}+f",
         "name": "quick open with modes",
         "command": "workbench.action.quickOpenWithModes",
         "when": "editorTextFocus"
     },
     {
-        "key": "cmd+h",
+        "key": "{{ $mod }}+/",
+        "name": "search in files",
+        "command": "workbench.action.findInFiles"
+    },
+    {
+        "key": "{{ $mod }}+shift+/",
+        "name": "replace in files",
+        "command": "workbench.action.replaceInFiles"
+    },
+    {
+        "key": "{{ $mod }}+h",
         "name": "navigate left",
         "command": "workbench.action.navigateLeft"
     },
     {
-        "key": "cmd+j",
+        "key": "{{ $mod }}+j",
         "name": "navigate down",
         "command": "workbench.action.navigateDown"
     },
     {
-        "key": "cmd+k",
+        "key": "{{ $mod }}+k",
         "name": "navigate up",
         "command": "workbench.action.navigateUp"
     },
     {
-        "key": "cmd+l",
+        "key": "{{ $mod }}+l",
         "name": "navigate right",
         "command": "workbench.action.navigateRight"
     },
     {
-        "key": "cmd+t",
+        "key": "{{ $mod }}+t",
         "command": "workbench.action.terminal.toggleTerminal"
     },
     {
-        "key": "cmd+e",
+        "key": "{{ $mod }}+e",
         "name": "open explorer",
         "command": "workbench.view.explorer",
         "when": "!sideBarFocus"
     },
     {
-        "key": "cmd+e",
+        "key": "{{ $mod }}+e",
         "name": "close explorer",
         "command": "workbench.action.toggleSidebarVisibility",
         "when": "sideBarFocus"
