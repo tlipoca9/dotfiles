@@ -1,0 +1,38 @@
+---
+description: 在进行 Nushell 相关配置、脚本编写或问题排查前，先克隆官方文档仓库并查阅相关文档，确保操作准确。
+alwaysApply: false
+enabled: true
+updatedAt: 2026-02-11T15:24:34.514Z
+provider: 
+---
+
+# Nushell 文档查阅规则
+
+在进行任何 Nushell 相关操作（配置修改、脚本编写、问题排查等）之前，**必须**先执行以下步骤：
+
+## 1. 克隆官方文档仓库
+
+如果 `_tmp/nushell.github.io` 目录不存在，先克隆：
+
+```bash
+git clone https://github.com/nushell/nushell.github.io.git --depth 1 _tmp/nushell.github.io
+```
+
+如果目录已存在则跳过克隆。
+
+## 2. 查阅相关文档
+
+文档目录结构：
+- `_tmp/nushell.github.io/book/` — Nushell Book（核心文档）
+- `_tmp/nushell.github.io/commands/` — 命令参考
+- `_tmp/nushell.github.io/cookbook/` — 实用示例
+
+根据当前任务，在对应目录中搜索并阅读相关文档，确保：
+- 使用的语法和 API 与文档一致
+- 配置项名称和值正确无误
+- 遵循 Nushell 的最佳实践
+
+## 3. 注意事项
+
+- `_tmp/` 目录已在 `.gitignore` 中忽略，不会被提交
+- 优先参考文档内容，而非依赖训练数据中可能过时的知识

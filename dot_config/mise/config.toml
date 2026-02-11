@@ -4,6 +4,7 @@ neovim = "latest"
 ripgrep = "latest"
 # language
 go = "latest"
+rust = "latest"
 python = "latest"
 # language management
 uv = "latest"

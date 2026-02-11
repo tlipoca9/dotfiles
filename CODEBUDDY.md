@@ -2,13 +2,18 @@
 
 ## Overview
 
-This is a **chezmoi**-managed cross-platform dotfiles repository for user **tlipoca9**, targeting macOS, Linux, and Windows.
+This is a **chezmoi**-managed cross-platform dotfiles repository for user **tlipoca9**, targeting macOS, Linux, and Windows. The primary shell is **Nushell**, terminal is **WezTerm**, and editor is **Neovim (AstroNvim v4)** + **VSCode/CodeBuddy**.
 
 ## Commands
 
-### Initialize on a new machine
+### Initialize on a new machine (HTTPS)
 ```bash
 sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin init --apply https://github.com/tlipoca9/dotfiles.git
+```
+
+### Initialize on a new machine (SSH)
+```bash
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin init --apply git@github.com:tlipoca9/dotfiles.git
 ```
 
 ### Apply changes after editing
@@ -47,67 +52,103 @@ chezmoi status
 
 The repository root maps to the home directory (`~`) via chezmoi's naming conventions:
 
-- `dot_` prefix → deployed as `.` (e.g., `dot_zshrc` → `~/.zshrc`)
+- `dot_` prefix → deployed as `.` (e.g., `dot_config` → `~/.config`)
 - `executable_` prefix → deployed with executable permissions
 - `.tmpl` suffix → rendered through Go templates before deployment
-- `run_onchange_` prefix → scripts re-executed when their template data changes
+- `run_onchange_` prefix → scripts re-executed when their content (after template rendering) changes
+
+### Local Chezmoi Configuration (`.chezmoi.toml`)
+
+The root `.chezmoi.toml` configures chezmoi behavior:
+- `diff.pager` set to empty string (inline diff output)
+- **Windows**: `.ps1` templates are interpreted by `pwsh` (PowerShell Core) with `-NoLogo`
+- **Nushell**: `.nu` templates are interpreted by `nu`
+
+This is critical — when adding new install scripts for Windows, use `.ps1.tmpl` extension; for Nushell scripts, use `.nu.tmpl`.
 
 ### Template System
 
-Chezmoi's Go template engine is the core mechanism enabling cross-platform support:
+Chezmoi's Go template engine is the core mechanism enabling cross-platform support.
 
 **Shared templates** live in `.chezmoitemplates/` and are referenced via `{{ template "name" . }}`:
-- `shell_logger` — logging utility functions (log_info, log_warn, log_error, log_fatal) for install scripts
-- `xdgenv` — XDG Base Directory environment variable exports
-- `brew/shellenv` — Homebrew shell environment setup (distinguishes Intel vs ARM Mac paths via `{{ if eq .chezmoi.arch "amd64" }}`)
-- `vscode/settings.json` and `vscode/keybindings.json` — shared VSCode config referenced by both `AppData/` (Windows) and `Library/` (macOS)
+- `shell_logger` — OS-aware logging functions (HINT, INFO, WARN, ERROR, FATAL) used in install scripts. Outputs bash functions on macOS/Linux, PowerShell functions on Windows.
+- `vscode/settings.json` — wraps `vscode/settings-common` in JSON braces, deployed to OS-specific VSCode config paths
+- `vscode/settings-common` — shared VSCode/Vim settings (theme, fonts, keybindings, vim-mode config) included by both VSCode and CodeBuddy templates
+- `vscode/keybindings.json` — shared keybinding config
+- `codebuddy/settings.json` — extends `vscode/settings-common` with CodeBuddy-specific settings (inline chat, completions, etc.)
 
-**OS-conditional logic** uses `{{ if eq .chezmoi.os "darwin" }}` / `"linux"` / `"windows"` throughout templates and in `.chezmoiignore` to control which files are deployed per platform.
+**Template composition pattern**: `codebuddy/settings.json` and `vscode/settings.json` both include `vscode/settings-common` as a shared base, then add editor-specific overrides. This avoids duplication of ~150 lines of common settings.
+
+**OS-conditional logic** uses `{{ if eq .chezmoi.os "darwin" }}` / `"linux"` / `"windows"` throughout templates and in `.chezmoiignore`.
 
 ### Data-Driven Package Management
 
-`.chezmoidata/<os>/packages.toml` defines per-platform package manifests. Each entry has:
-- `enable` — whether to install
-- `type` — installer type (`homebrew`, `scoop`, `go`, `script`, etc.)
-- `checker` — command to verify if already installed
-- `installer` — custom install command (for non-standard types)
+`.chezmoidata/<os>/packages.toml` defines per-platform package manifests keyed as `[<os>.packages.<name>]`. Each entry has:
+- `enable` (bool) — whether to install
+- `type` (string) — installer backend: `homebrew`, `scoop`, or `script`
+- `checker` (object) — how to verify if already installed:
+  - `type: "command"` + `command` — checks if a CLI command exists
+  - `type: "cask"` + `cask` — checks if a Homebrew cask is installed (macOS)
+  - `type: "font"` + `font` — checks if a system font exists (Windows)
+  - `type: "script"` + `script` — runs arbitrary check script
+  - `type: "scoop-apps"` + `bucket`/`app` — checks Scoop app listing (Windows)
+- `installer` — install method (varies by type: `{ type = "formula" }`, `{ type = "cask" }`, or inline script string)
+- `post_install` (optional) — script to run after installation
 
-`.chezmoiscripts/<os>/run_onchange_*` scripts iterate over these data files using `{{ range }}` to generate install commands. The `run_onchange_` prefix ensures packages are re-installed only when the data file changes.
+Platform-specific install scripts in `.chezmoiscripts/<os>/run_onchange_*` iterate these data files with `{{ range }}`. The `run_onchange_` prefix means chezmoi re-runs the script only when the rendered template content changes (i.e., when `packages.toml` is modified).
+
+**Package managers per platform**: Homebrew (macOS, Linux), Scoop (Windows).
 
 ### Platform-Specific File Routing
 
-`.chezmoiignore` conditionally excludes paths per OS:
-- **macOS**: ignores `.scripts`, `.services`
-- **Windows**: ignores `.scripts`, `.services`
-- **Linux**: ignores `Library`, `AppData`, `.config/wezterm`
+`.chezmoiignore` conditionally excludes paths per OS using Go template conditionals:
+- **macOS**: deploys `Library/` paths, ignores `AppData/`, `.scripts`
+- **Windows**: deploys `AppData/` paths, ignores `Library/`, `.scripts`
+- **Linux**: ignores both `Library/` and `AppData/`
+- All platforms ignore `_tmp`, `docs`, `README.md`
 
-VSCode config is a good example of cross-platform routing: the same templates in `.chezmoitemplates/vscode/` are referenced by OS-specific paths (`AppData/Roaming/Code/User/` for Windows, `Library/Application Support/Code/User/` for macOS).
+**Editor config routing example**: VSCode and CodeBuddy share settings via templates:
+- `AppData/Roaming/Code/User/settings.json.tmpl` → includes `vscode/settings.json` (Windows VSCode)
+- `AppData/Roaming/CodeBuddy CN/User/settings.json.tmpl` → includes `codebuddy/settings.json` (Windows CodeBuddy)
+- `Library/Application Support/Code/User/settings.json.tmpl` → includes `vscode/settings.json` (macOS VSCode)
 
 ### Shell Configuration (Nushell)
 
-`dot_config/nushell/` contains the Nushell configuration:
-- `env.nu.tmpl` — environment setup (XDG dirs, PATH, Homebrew) with OS/arch-conditional logic via chezmoi templates
-- `config.nu` — main Nushell config (table style, history, completions, vi edit mode, shell integration)
+`dot_config/nushell/` contains Nushell configuration:
+- `env.nu.tmpl` — chezmoi-templated environment setup:
+  - Maps `USERPROFILE` → `HOME` on Windows
+  - Sets XDG Base Directories (`XDG_CONFIG_HOME`, `XDG_DATA_HOME`, etc.)
+  - Configures Homebrew paths (Intel Mac `/usr/local`, ARM Mac `/opt/homebrew`, Linux `/home/linuxbrew/.linuxbrew`)
+  - Adds mise shims to PATH for tool version management
+  - Auto-generates atuin init/completion files on first run if atuin is available
+- `config.nu` — main config (vi edit mode, rounded table style, fuzzy completions, atuin shell history integration via sourced files)
+
+### Tool Version Management (mise)
+
+`dot_config/mise/config.toml` declares globally managed tool versions via [mise](https://mise.jdx.dev/): neovim, ripgrep, go, rust, python, uv. All set to `latest`. Mise is integrated via shims mode (PATH-based, no per-command hook), configured in `env.nu.tmpl`.
 
 ### WezTerm Configuration
 
-`dot_config/wezterm/` contains a modular Lua configuration:
-- `wezterm.lua` — entry point, composes config from submodules
-- `config/` — separated concerns: `appearance.lua`, `bindings.lua`, `domains.lua`, `fonts.lua`, `general.lua`, `launch.lua`
-- `events/` — WezTerm event handlers for status bar and tab titles
-- `utils/` — helpers for platform detection, GPU adapter selection, math, cell rendering
+`dot_config/wezterm/` uses a modular Lua architecture with a builder pattern:
+- `wezterm.lua` — entry point, registers event handlers then chains config modules via `Config:init():append(...).options`
+- `config/init.lua` — defines the `Config` class with `init()` and `append()` methods for composable configuration
+- `config/` modules — `appearance`, `bindings`, `domains`, `fonts`, `general`, `launch` — each returns a table merged into the final config
+- `events/` — WezTerm event handlers for left/right status bars, tab titles, new-tab button
+- `utils/` — platform detection, GPU adapter selection, math helpers, cell rendering
 
 ### Neovim Configuration
 
-`dot_config/nvim/init.lua` bootstraps **lazy.nvim** and loads **AstroNvim v4** as the base distribution.
+`dot_config/nvim/init.lua` is minimal: bootstraps **lazy.nvim** plugin manager and loads **AstroNvim v4** as the base distribution. No custom plugin overrides in this repo.
 
-### Service Deployment Scripts
+### Shell History (Atuin)
 
-`dot_services/` contains install scripts for Docker, K3s, and v2rayA, each using chezmoi templates for OS/arch-specific logic.
+`dot_config/atuin/config.toml` configures [Atuin](https://atuin.sh/) with the "autumn" theme. Atuin provides cross-shell, cross-machine shell history sync. Integration with Nushell is handled via auto-generated init/completion files in `env.nu.tmpl`.
 
 ## Key Conventions
 
-- All template files (`.tmpl`) use chezmoi's Go template syntax with `.chezmoi.os` and `.chezmoi.arch` for platform branching
-- Package definitions are data-driven TOML, not hardcoded in scripts
-- PowerShell is the template interpreter on Windows (configured in `.chezmoi.toml` with `ps1` → `pwsh`)
-- Cross-platform configs (like VSCode) use shared templates with OS-specific path wrappers
+- All `.tmpl` files use chezmoi Go template syntax with `.chezmoi.os` and `.chezmoi.arch` for platform branching
+- Package definitions are data-driven TOML in `.chezmoidata/`, never hardcoded in install scripts
+- Install scripts use the `shell_logger` template for consistent colored log output across platforms
+- Cross-platform editor configs use a shared template composition pattern — modify `vscode/settings-common` for changes that apply to both VSCode and CodeBuddy
+- When adding a new package: edit the appropriate `.chezmoidata/<os>/packages.toml`, the install script will pick it up automatically via `{{ range }}`
+- The `_tmp` and `docs` directories are always ignored by chezmoi and not deployed to the home directory
