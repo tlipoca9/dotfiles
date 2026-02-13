@@ -22,11 +22,11 @@
     "workbench.iconTheme": "material-icon-theme",
     "workbench.productIconTheme": "bongocat",
     "workbench.editor.showTabs": "multiple",
-    "window.zoomLevel": 1.5,
+    "window.zoomLevel": 1.0,
     "editor.fontFamily": "'Maple Mono NF CN', 'FiraCode Nerd Font Mono', Consolas, 'Courier New', monospace",
     // Enable OpenType features
     "editor.fontLigatures": "'calt', 'cv35', 'ss01', 'ss03', 'ss04'",
-    "editor.fontSize": 14,
+    "editor.fontSize": 12,
     // vim
     "vim.leader": "<space>",
     "editor.lineNumbers": "relative",
