@@ -18,9 +18,12 @@ if platform.is_win then
       },
    }
 elseif platform.is_mac then
-   options.default_prog = { '/opt/homebrew/bin/nu', '-l' }
+   local nu = '/opt/homebrew/bin/nu'
+   local nu_env = os.getenv('HOME') .. '/.config/nushell/env.nu'
+   local nu_config = os.getenv('HOME') .. '/.config/nushell/config.nu'
+   options.default_prog = { nu, '-l', '--env-config', nu_env, '--config', nu_config }
    options.launch_menu = {
-      { label = 'Nushell', args = { '/opt/homebrew/bin/nu', '-l' } },
+      { label = 'Nushell', args = { nu, '-l', '--env-config', nu_env, '--config', nu_config } },
       { label = 'Bash', args = { 'bash', '-l' } },
       { label = 'Zsh', args = { 'zsh', '-l' } },
    }
