@@ -11,21 +11,11 @@
     },
     "terminal.integrated.defaultProfile.windows": "Nu",
     "terminal.integrated.profiles.osx": {
-        "bash": {
-            "path": "bash",
-            "args": [
-                "-l"
-            ],
-            "icon": "terminal-bash"
-        },
-        "zsh": {
-            "path": "zsh",
-            "args": [
-                "-l"
-            ]
+        "Nu": {
+            "path": "nu"
         }
     },
-    "terminal.integrated.defaultProfile.osx": "zsh",
+    "terminal.integrated.defaultProfile.osx": "Nu",
     // theme
     "workbench.colorTheme": "Palenight (Mild Contrast)",
     "window.newWindowProfile": "默认",
