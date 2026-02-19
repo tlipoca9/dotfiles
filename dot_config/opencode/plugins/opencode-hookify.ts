@@ -31,6 +31,20 @@ function parseFrontmatter(content: string): { frontmatter: Record<string, unknow
     const trimmed = line.trim()
     if (!trimmed || trimmed.startsWith("#")) continue
 
+    // Handle multi-line YAML list continuation (e.g., "pattern:\n  - item1\n  - item2")
+    if (trimmed.startsWith("- ")) {
+      const lastKey = Object.keys(frontmatter).pop()
+      if (lastKey) {
+        const lastValue = frontmatter[lastKey]
+        if (Array.isArray(lastValue)) {
+          lastValue.push(trimmed.substring(2).trim())
+        } else if (lastValue === "" || lastValue === null) {
+          frontmatter[lastKey] = [trimmed.substring(2).trim()]
+        }
+        continue
+      }
+    }
+
     const colonIdx = trimmed.indexOf(":")
     if (colonIdx === -1) continue
 
