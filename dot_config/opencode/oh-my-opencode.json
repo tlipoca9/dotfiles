@@ -1,24 +1,24 @@
 {
   "$schema": "https://raw.githubusercontent.com/code-yeongyu/oh-my-opencode/master/assets/oh-my-opencode.schema.json",
   "agents": {
-    "hephaestus": { "model": "codebuddy/claude-opus-4.6" },
-    "oracle": { "model": "codebuddy/gpt-5.2" },
-    "librarian": { "model": "codebuddy/glm-4.7-ioa" },
-    "explore": { "model": "codebuddy/claude-haiku-4.5" },
-    "multimodal-looker": { "model": "codebuddy/gemini-3.0-flash" },
-    "prometheus": { "model": "codebuddy/claude-opus-4.6" },
-    "metis": { "model": "codebuddy/claude-opus-4.5" },
-    "momus": { "model": "codebuddy/claude-opus-4.5" },
-    "atlas": { "model": "codebuddy/claude-opus-4.5" }
+    "hephaestus": { "model": "minimax/MiniMax-M2.5" },
+    "oracle": { "model": "minimax/MiniMax-M2.5" },
+    "librarian": { "model": "minimax/MiniMax-M2.5" },
+    "explore": { "model": "minimax/MiniMax-M2.5" },
+    "multimodal-looker": { "model": "minimax/MiniMax-M2.5" },
+    "prometheus": { "model": "minimax/MiniMax-M2.5" },
+    "metis": { "model": "minimax/MiniMax-M2.5" },
+    "momus": { "model": "minimax/MiniMax-M2.5" },
+    "atlas": { "model": "minimax/MiniMax-M2.5" }
   },
   "categories": {
-    "visual-engineering": { "model": "codebuddy/gemini-3.0-flash" },
-    "ultrabrain": { "model": "codebuddy/claude-opus-4.6" },
-    "deep": { "model": "codebuddy/claude-opus-4.6" },
-    "artistry": { "model": "codebuddy/gemini-3.0-flash" },
-    "quick": { "model": "codebuddy/claude-haiku-4.5" },
-    "unspecified-low": { "model": "codebuddy/claude-haiku-4.5" },
-    "unspecified-high": { "model": "codebuddy/claude-opus-4.5" },
-    "writing": { "model": "codebuddy/claude-opus-4.5" }
+    "visual-engineering": { "model": "minimax/MiniMax-M2.5" },
+    "ultrabrain": { "model": "minimax/MiniMax-M2.5" },
+    "deep": { "model": "minimax/MiniMax-M2.5" },
+    "artistry": { "model": "minimax/MiniMax-M2.5" },
+    "quick": { "model": "minimax/MiniMax-M2.5" },
+    "unspecified-low": { "model": "minimax/MiniMax-M2.5" },
+    "unspecified-high": { "model": "minimax/MiniMax-M2.5" },
+    "writing": { "model": "minimax/MiniMax-M2.5" }
   }
 }
