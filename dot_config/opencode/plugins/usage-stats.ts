@@ -63,7 +63,7 @@ function recordUsage(db: Database, record: UsageRecord): void {
     INSERT INTO usage_stats (tool_name, project, session_id, timestamp, file_path, tool_category, success, duration_ms)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
-  stmt.bind(
+  stmt.run(
     record.tool_name,
     record.project,
     record.session_id,
@@ -72,7 +72,7 @@ function recordUsage(db: Database, record: UsageRecord): void {
     record.tool_category,
     record.success,
     record.duration_ms || null,
-  ).run()
+  )
 }
 
 interface QueryStatsOptions {
@@ -125,7 +125,7 @@ function queryStats(db: Database, options: QueryStatsOptions): UsageRecord[] {
     LIMIT ?
   `)
 
-  return stmt.bind(...params, limit).all() as UsageRecord[]
+  return stmt.all(...params, limit) as UsageRecord[]
 }
 
 function getSummary(db: Database, options: QueryStatsOptions): Record<string, number | string> {
@@ -160,7 +160,7 @@ function getSummary(db: Database, options: QueryStatsOptions): Record<string, nu
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : ""
 
   const totalStmt = db.prepare(`SELECT COUNT(*) as count FROM usage_stats ${whereClause}`)
-  const total = (totalStmt.bind(...params).get() as { count: number }).count
+  const total = (totalStmt.get(...params) as { count: number }).count
 
   const byToolStmt = db.prepare(`
     SELECT tool_name, COUNT(*) as count
@@ -170,7 +170,7 @@ function getSummary(db: Database, options: QueryStatsOptions): Record<string, nu
     ORDER BY count DESC
     LIMIT 10
   `)
-  const byTool = byToolStmt.bind(...params).all() as { tool_name: string; count: number }[]
+  const byTool = byToolStmt.all(...params) as { tool_name: string; count: number }[]
 
   const byCategoryStmt = db.prepare(`
     SELECT tool_category, COUNT(*) as count
@@ -179,7 +179,7 @@ function getSummary(db: Database, options: QueryStatsOptions): Record<string, nu
     GROUP BY tool_category
     ORDER BY count DESC
   `)
-  const byCategory = byCategoryStmt.bind(...params).all() as { tool_category: string; count: number }[]
+  const byCategory = byCategoryStmt.all(...params) as { tool_category: string; count: number }[]
 
   const byProjectStmt = db.prepare(`
     SELECT project, COUNT(*) as count
@@ -189,7 +189,7 @@ function getSummary(db: Database, options: QueryStatsOptions): Record<string, nu
     ORDER BY count DESC
     LIMIT 10
   `)
-  const byProject = byProjectStmt.bind(...params).all() as { project: string; count: number }[]
+  const byProject = byProjectStmt.all(...params) as { project: string; count: number }[]
 
   return {
     total,
@@ -216,7 +216,7 @@ const UsageStatsTool = tool({
     let db: Database
 
     try {
-      db = new Database(dbPath)
+      db = new Database(dbPath, { create: true })
       initDb(db)
     } catch (error) {
       return { error: `Failed to open database: ${error}` }
@@ -271,7 +271,7 @@ export const UsageStatsPlugin: Plugin = async ({ directory, sessionID }) => {
   let db: Database
 
   try {
-    db = new Database(dbPath)
+    db = new Database(dbPath, { create: true })
     initDb(db)
   } catch (error) {
     console.error("[usage-stats] Failed to initialize database:", error)
