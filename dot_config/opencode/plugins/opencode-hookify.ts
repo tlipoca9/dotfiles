@@ -11,6 +11,7 @@ interface HookConfig {
   action: "block" | "warn"
   pattern: string | string[]
   exclude?: string | string[]
+  target?: "new" | "original" | "both"
 }
 
 interface ParsedHook {
@@ -92,6 +93,12 @@ function validateConfig(fm: Record<string, unknown>, sourceFile: string): HookCo
     return null
   }
 
+  const target = fm.target as string | undefined
+  if (target && !["new", "original", "both"].includes(target)) {
+    console.error(`[hookify] ${sourceFile}: target must be "new", "original", or "both"`)
+    return null
+  }
+
   return {
     name,
     hook: hook as HookConfig["hook"],
@@ -100,6 +107,7 @@ function validateConfig(fm: Record<string, unknown>, sourceFile: string): HookCo
     action: action as HookConfig["action"],
     pattern: pattern as string | string[],
     exclude: fm.exclude as string | string[] | undefined,
+    target: target as HookConfig["target"] | undefined,
   }
 }
 
@@ -298,6 +306,31 @@ async function executeHook(
 
   const patterns = toRegexArray(hook.config.pattern)
   const excludes = hook.config.exclude ? toRegexArray(hook.config.exclude) : []
+  const target = hook.config.target ?? "new"
+
+  // Check original file content if target includes "original"
+  if (target === "original" || target === "both") {
+    const filePath = args.filePath as string
+    if (filePath) {
+      try {
+        const originalContent = await readFile(filePath, "utf-8")
+        const firstLine = originalContent.split("\n")[0] ?? ""
+        if (matchesPatterns(firstLine, patterns, excludes)) {
+          const relPath = relative(directory, filePath) || filePath
+          const message = renderMessage(hook.message, {
+            file: relPath,
+            lines: "1",
+          })
+          if (hook.config.action === "block") throw new Error(message)
+        }
+      } catch {
+        // File doesn't exist or can't be read - skip original check
+      }
+    }
+  }
+
+  // Skip new content check if target is only "original"
+  if (target === "original") return
 
   if (tool === "apply_patch") {
     const patchText = (args.patchText as string) ?? ""
