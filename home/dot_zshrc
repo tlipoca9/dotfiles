@@ -1,0 +1,82 @@
+# Homebrew's default prefixes are not on stock macOS's interactive PATH.
+if (( ! ${+commands[brew]} )); then
+  eval "$(/usr/libexec/path_helper -s)"
+fi
+(( ${+commands[brew]} )) && eval "$(brew shellenv)"
+
+[[ -o interactive ]] || return
+
+# Local-only history shared by concurrent shells on this Mac.
+HISTFILE=${XDG_STATE_HOME:-$HOME/.local/state}/zsh/history
+HISTSIZE=100000
+SAVEHIST=100000
+command mkdir -p -- "${HISTFILE:h}"
+command chmod 700 "${HISTFILE:h}"
+
+setopt APPEND_HISTORY
+setopt EXTENDED_HISTORY
+setopt SHARE_HISTORY
+setopt HIST_EXPIRE_DUPS_FIRST
+setopt HIST_FCNTL_LOCK
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
+setopt HIST_REDUCE_BLANKS
+setopt HIST_SAVE_NO_DUPS
+setopt HIST_VERIFY
+
+# Completion styles must be set before ez-compinit runs compinit.
+ZSH_COMPDUMP=${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump
+zstyle ':plugin:ez-compinit' compstyle zshzoo
+zstyle ':plugin:ez-compinit' use-cache yes
+zstyle ':completion:*' menu no
+zstyle ':completion:*:descriptions' format '[%d]'
+
+# Catppuccin Mocha for fzf and fzf-tab.
+typeset -gx FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS:+$FZF_DEFAULT_OPTS }--color=fg:#cdd6f4,bg:#1e1e2e,hl:#f38ba8,fg+:#cdd6f4,bg+:#313244,hl+:#f38ba8,info:#cba6f7,prompt:#89b4fa,pointer:#f5e0dc,marker:#a6e3a1,spinner:#f5e0dc,header:#f38ba8,border:#6c7086"
+zstyle ':fzf-tab:*' fzf-flags '--color=fg:#cdd6f4,bg:#1e1e2e,hl:#f38ba8,fg+:#cdd6f4,bg+:#313244,hl+:#f38ba8,info:#cba6f7,prompt:#89b4fa,pointer:#f5e0dc,marker:#a6e3a1,spinner:#f5e0dc,header:#f38ba8,border:#6c7086'
+
+typeset -gx ANTIDOTE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}/antidote
+typeset -gr DOTFILES_ZSH_CACHE=${XDG_CACHE_HOME:-$HOME/.cache}/zsh/antidote
+typeset -gr DOTFILES_ZSH_PRE_STATIC=$DOTFILES_ZSH_CACHE/pre.zsh
+typeset -gr DOTFILES_ZSH_POST_STATIC=$DOTFILES_ZSH_CACHE/post.zsh
+
+# zsh-vi-mode calls this hook after it has installed its keymaps. Loading fzf
+# and the post bundle here uses the plugin's supported compatibility boundary.
+function zvm_after_init() {
+  (( ${+_DOTFILES_POST_PLUGINS_LOADED} )) && return
+  typeset -g _DOTFILES_POST_PLUGINS_LOADED=1
+
+  # zsh-vi-mode dynamically scopes a scalar named `commands` while invoking
+  # this hook, so use command -v instead of the special $commands hash here.
+  if command -v fzf >/dev/null 2>&1; then
+    source <(fzf --zsh)
+  fi
+
+  if [[ -r $DOTFILES_ZSH_POST_STATIC ]]; then
+    source "$DOTFILES_ZSH_POST_STATIC"
+  else
+    print -ru2 -- "dotfiles: missing Zsh post-plugin bundle; run 'task apply'"
+  fi
+}
+
+function zvm_config() {
+  ZVM_LINE_INIT_MODE=$ZVM_MODE_INSERT
+  ZVM_INSERT_MODE_CURSOR=$ZVM_CURSOR_BEAM
+  ZVM_NORMAL_MODE_CURSOR=$ZVM_CURSOR_BLOCK
+}
+
+if [[ -r $DOTFILES_ZSH_PRE_STATIC ]]; then
+  source "$DOTFILES_ZSH_PRE_STATIC"
+  run-compinit
+else
+  print -ru2 -- "dotfiles: missing Zsh pre-plugin bundle; run 'task apply'"
+fi
+
+if (( ${+commands[zoxide]} )); then
+  eval "$(zoxide init zsh)"
+fi
+
+if (( ${+commands[starship]} )); then
+  eval "$(starship init zsh)"
+fi

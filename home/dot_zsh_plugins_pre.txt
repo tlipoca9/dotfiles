@@ -1,0 +1,3 @@
+mattmc3/ez-compinit pin:5c9b6da88a463573e26e6846ff164026640ef2f6
+zsh-users/zsh-completions pin:9903bae60284072de3fa0e3e20965f22368c5694
+jeffreytse/zsh-vi-mode pin:08bd1c04520418faee2b9d1afbc410ee1a59a8f1

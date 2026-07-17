@@ -1,0 +1,62 @@
+version: "3"
+
+vars:
+  CONFIG: "{{.ROOT_DIR}}/.local/chezmoi.toml"
+  IDENTITY: "{{.ROOT_DIR}}/.local/age/identity.txt"
+  STATE: "{{.ROOT_DIR}}/.local/chezmoistate.boltdb"
+
+tasks:
+  preflight:
+    internal: true
+    preconditions:
+      - sh: test -f "{{.IDENTITY}}"
+        msg: Restore the age identity to {{.IDENTITY}}
+      - sh: test "$(stat -f '%Lp' "{{.ROOT_DIR}}/.local")" = 700
+        msg: The .local directory must have mode 0700
+      - sh: test "$(stat -f '%Lp' "{{.ROOT_DIR}}/.local/age")" = 700
+        msg: The .local/age directory must have mode 0700
+      - sh: test "$(stat -f '%Lp' "{{.IDENTITY}}")" = 600
+        msg: The age identity must have mode 0600
+      - sh: git -C "{{.ROOT_DIR}}" check-ignore -q .local/age/identity.txt
+        msg: The age identity must be ignored by Git
+      - sh: '! git -C "{{.ROOT_DIR}}" ls-files --error-unmatch .local/age/identity.txt >/dev/null 2>&1'
+        msg: The age identity must never be tracked by Git
+
+  configure:
+    internal: true
+    cmds:
+      - task: preflight
+      - mkdir -p "{{.ROOT_DIR}}/.local"
+      - chezmoi --source "{{.ROOT_DIR}}" --persistent-state "{{.STATE}}" init --config-path "{{.CONFIG}}"
+      - chmod 600 "{{.CONFIG}}"
+
+  apply:
+    internal: true
+    cmds:
+      - task: configure
+      - chezmoi --config "{{.CONFIG}}" --source "{{.ROOT_DIR}}" --persistent-state "{{.STATE}}" apply
+      - task: verify-ssh
+      - task: switch-remote
+
+  diff:
+    internal: true
+    cmds:
+      - task: configure
+      - chezmoi --config "{{.CONFIG}}" --source "{{.ROOT_DIR}}" --persistent-state "{{.STATE}}" diff
+
+  verify-ssh:
+    internal: true
+    cmds:
+      - test "$(stat -f '%Lp' "{{.HOME}}/.ssh/id_ed25519")" = 600
+      - test "$(stat -f '%Lp' "{{.HOME}}/.ssh/id_ed25519.pub")" = 644
+      - |
+        derived="$(ssh-keygen -y -f "{{.HOME}}/.ssh/id_ed25519" | awk '{print $1 " " $2}')"
+        declared="$(awk '{print $1 " " $2}' "{{.HOME}}/.ssh/id_ed25519.pub")"
+        test "$derived" = "$declared"
+
+  switch-remote:
+    internal: true
+    status:
+      - test "$(git -C "{{.ROOT_DIR}}" remote get-url origin)" = git@github.com:tlipoca9/dotfiles.git
+    cmds:
+      - git -C "{{.ROOT_DIR}}" remote set-url origin git@github.com:tlipoca9/dotfiles.git

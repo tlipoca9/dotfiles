@@ -1,9 +1,0 @@
-[diff]
-  pager = ""
-
-[interpreters.ps1]
-  command = "pwsh"
-  args = ["-NoLogo"]
-
-[interpreters.nu]
-  command = "nu"

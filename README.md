@@ -1,52 +1,75 @@
 # dotfiles
 
-## init
+Personal macOS development environment managed by [Task](https://taskfile.dev/),
+[Homebrew](https://brew.sh/), and [chezmoi](https://www.chezmoi.io/).
 
-### https
+The repository is public. The SSH private key is committed only as age-encrypted
+ciphertext; its age identity is local to each clone and ignored by Git.
 
-```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin init --apply https://github.com/tlipoca9/dotfiles.git
+## Bootstrap a new Mac
+
+Install the Command Line Tools if Git is not available:
+
+```sh
+xcode-select --install
 ```
 
-### ssh
+Clone this repository over HTTPS into any directory:
 
-```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin init --apply git@github.com:tlipoca9/dotfiles.git
+```sh
+git clone https://github.com/tlipoca9/dotfiles.git
+cd dotfiles
 ```
 
-## init with new user (linux)
+Restore the backed-up age identity inside this clone:
 
-### configure proxy
-```bash
-export PROXY_ADDRESS="http://<proxy_address>:<proxy_port>"
-export HTTP_PROXY=$PROXY_ADDRESS
-export HTTPS_PROXY=$PROXY_ADDRESS
-
-echo "export PROXY_ADDRESS=$PROXY_ADDRESS" >> /etc/bashrc
-echo "export HTTP_PROXY=$PROXY_ADDRESS" >> /etc/bashrc
-echo "export HTTPS_PROXY=$PROXY_ADDRESS" >> /etc/bashrc
-
-echo "export PROXY_ADDRESS=$PROXY_ADDRESS" >> /etc/zshrc
-echo "export HTTP_PROXY=$PROXY_ADDRESS" >> /etc/zshrc
-echo "export HTTPS_PROXY=$PROXY_ADDRESS" >> /etc/zshrc
+```sh
+mkdir -p .local/age
+cp /secure/backup/identity.txt .local/age/identity.txt
+chmod 700 .local .local/age
+chmod 600 .local/age/identity.txt
 ```
 
-### create new sudoers without password
-```bash
-./.scripts/sudoeradd.sh
+Then run:
+
+```sh
+./bootstrap.sh
 ```
 
-### change login shell
-```bash
-sudo su <new_user>
-sudo cat /etc/shells | grep -E "^$(command -v zsh)" || (sudo echo "$(command -v zsh)" | sudo tee -a /etc/shells)
-chsh -s "$(command -v zsh)"
+The script installs the minimal bootstrap dependencies and delegates to
+`task bootstrap`. After the managed SSH key is verified, the repository remote
+is changed from HTTPS to SSH.
+
+> Back up `.local/age/identity.txt` before relying on the encrypted SSH key.
+> Losing every copy of the age identity makes the committed ciphertext
+> unrecoverable. Never add the identity to Git.
+
+## Daily commands
+
+```sh
+task apply      # install missing software and apply managed configuration
+task diff       # preview chezmoi changes
+task update     # explicitly update Homebrew formulae and Zsh plugins
+task doctor     # diagnose the declared local environment
+task check      # run repository checks and smoke tests
 ```
 
-### copy ssh authorized_keys (optional)
-```bash
-sudo su <new_user>
-mkdir -p ~/.ssh
-sudo cp /root/.ssh/authorized_keys ~/.ssh/
-sudo chmod 644 ~/.ssh/authorized_keys
-```
+`task apply` does not upgrade installed software, run Homebrew cleanup, uninstall
+software absent from the Brewfile, or remove unmanaged files from the home
+directory.
+
+## Managed environment
+
+- macOS only; no machine-specific profiles
+- system Zsh with Antidote, fzf-tab, vi mode, Starship, and local shared history
+- Ghostty using Maple Mono NF CN and Catppuccin Mocha
+- official Visual Studio Code with minimal settings and one global theme extension
+- ChatGPT/Codex desktop entry and Codex CLI
+- user Codex skills in `~/.agents/skills`
+- global Codex rules in `~/.codex/AGENTS.md`
+- `~/.ssh/id_ed25519` encrypted with age in the public repository
+
+Project language runtimes, macOS system preferences, Git configuration, and
+application account state are intentionally outside this repository.
+
+See [plan.md](plan.md) for the complete design, evidence, and migration record.

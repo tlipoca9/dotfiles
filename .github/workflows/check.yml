@@ -1,0 +1,32 @@
+name: Check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    env:
+      DOTFILES_CI: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install validation tools
+        run: |
+          formulae="$(brew bundle list --formula --file Brewfile)"
+          HOMEBREW_NO_INSTALL_CLEANUP=1 brew install $formulae
+
+      - name: Prepare pinned Zsh runtime
+        run: >-
+          python3 scripts/zsh_plugins.py bundle
+          home/dot_zsh_plugins_pre.txt
+          home/dot_zsh_plugins_post.txt
+
+      - name: Validate repository
+        run: task check

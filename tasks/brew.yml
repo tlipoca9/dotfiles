@@ -1,0 +1,32 @@
+version: "3"
+
+tasks:
+  apply:
+    internal: true
+    preconditions:
+      - sh: command -v brew >/dev/null
+        msg: Homebrew is required; run ./bootstrap.sh first
+    cmds:
+      - HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew bundle install --no-upgrade --file "{{.ROOT_DIR}}/Brewfile"
+
+  update:
+    internal: true
+    preconditions:
+      - sh: command -v brew >/dev/null
+        msg: Homebrew is required; run ./bootstrap.sh first
+    cmds:
+      - HOMEBREW_NO_INSTALL_CLEANUP=1 brew update
+      - |
+        formulae="$(brew bundle list --formula --file "{{.ROOT_DIR}}/Brewfile")"
+        if [ -n "$formulae" ]; then
+          HOMEBREW_NO_INSTALL_CLEANUP=1 brew upgrade $formulae
+        fi
+      - HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew bundle install --no-upgrade --file "{{.ROOT_DIR}}/Brewfile"
+
+  check:
+    internal: true
+    preconditions:
+      - sh: command -v brew >/dev/null
+        msg: Homebrew is required; run ./bootstrap.sh first
+    cmds:
+      - HOMEBREW_NO_AUTO_UPDATE=1 brew bundle check --file "{{.ROOT_DIR}}/Brewfile"

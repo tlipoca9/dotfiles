@@ -1,1 +1,4 @@
-_tmp/
+/.local/
+/.firecrawl/
+/_tmp/
+.DS_Store

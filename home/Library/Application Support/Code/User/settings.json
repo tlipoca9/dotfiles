@@ -1,0 +1,7 @@
+{
+    "editor.fontFamily": "'Maple Mono NF CN'",
+    "editor.fontSize": 12,
+    "editor.fontLigatures": "'calt', 'cv35', 'ss01', 'ss03', 'ss04'",
+    "workbench.colorTheme": "Catppuccin Mocha",
+    "workbench.iconTheme": "vs-seti"
+}

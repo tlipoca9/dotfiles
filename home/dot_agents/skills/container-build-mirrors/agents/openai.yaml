@@ -1,0 +1,4 @@
+interface:
+  display_name: "Container Build Mirrors"
+  short_description: "Verified China-friendly mirrors for image builds"
+  default_prompt: "Use $container-build-mirrors to write a Containerfile with domestic package mirrors and podman build commands."
