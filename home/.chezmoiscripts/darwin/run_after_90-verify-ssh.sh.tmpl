@@ -1,0 +1,26 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+set -eu
+
+home={{ .chezmoi.destDir | quote }}
+private_key=$home/.ssh/id_ed25519
+public_key=$home/.ssh/id_ed25519.pub
+
+die() {
+  printf 'dotfiles: %s\n' "$*" >&2
+  exit 1
+}
+
+[ -f "$private_key" ] || die "managed SSH private key is missing"
+[ -f "$public_key" ] || die "managed SSH public key is missing"
+[ "$(stat -f '%Lp' "$private_key")" = 600 ] || die "SSH private key must have mode 0600"
+[ "$(stat -f '%Lp' "$public_key")" = 644 ] || die "SSH public key must have mode 0644"
+command -v ssh-keygen >/dev/null 2>&1 || die "ssh-keygen is unavailable"
+
+derived=$(ssh-keygen -y -f "$private_key" | awk '{print $1 " " $2}')
+declared=$(awk '{print $1 " " $2}' "$public_key")
+[ -n "$derived" ] && [ "$derived" = "$declared" ] || die "SSH private and public keys do not match"
+{{- else -}}
+#!/bin/sh
+exit 0
+{{- end }}

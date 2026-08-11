@@ -7,7 +7,7 @@ Homebrew 安装；`pi-lean-ctx` 所需的 `lean-ctx` CLI 也由其官方 Homebre
 提供。扩展以精确 npm 版本写入 chezmoi 管理的 settings 合并脚本。
 认证、项目授权、会话、缓存和已下载包仍由 Pi 在本机维护，不进入公开仓库。
 
-这套边界同时满足两个目标：新 Mac 可通过 `task apply` 重建相同能力；Pi
+这套边界同时满足两个目标：新 Mac 可通过 `chezmoi apply` 重建相同能力；Pi
 升级时产生的运行态字段不会反复污染 dotfiles diff。第三方扩展拥有与 Pi
 进程相同的系统权限，因此版本升级不是日常自动更新，而是一次需要审查的
 源码供应链变更。
@@ -50,14 +50,15 @@ OpenAI 模型。交互式 shell 只暴露 `pi` 和 `codex` 两个 agent 命令�
 
 ## 更新与验证
 
-`task apply` 先通过 Homebrew 安装或保持 Pi CLI，再由 chezmoi 合并 settings，
-最后运行 `pi update --extensions` 安装缺失的精确版本包。`task update` 可以更新
-Homebrew 中的 Pi CLI，但不会越过 package pin 自动升级第三方扩展。
+`chezmoi apply` 先通过声明解释器安装或保持 Pi CLI，再由 chezmoi 合并
+settings，最后运行 `pi update --extensions` 安装 settings 中声明的精确版本包。
+扩展 pins 变化会改变 run_onchange 脚本的渲染校验和并自动重触发；chezmoi 不提供
+越过 package pin 的第三方扩展自动升级流程。
 
 变更扩展版本时，应先核对 npm metadata、Pi peer dependency 和 README 中的
-默认 provider，再修改 pin。提交前运行 `task check`；应用到本机前运行
-`task diff`，应用后运行 `task doctor`。doctor 会验证 CLI、受管 settings 和
-19 个包的实际安装版本。
+默认 provider，再修改 pin。提交前验证仓库中的 TOML、JSON、模板和 shell
+语法；应用到本机前运行 `chezmoi diff`，应用后运行 `chezmoi verify`。上游
+`chezmoi doctor` 用于诊断 chezmoi 本身，而不是另一套自定义环境检查器。
 
 ## 上游依据
 

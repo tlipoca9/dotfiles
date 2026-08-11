@@ -1,0 +1,4 @@
+[darwin.vscode]
+extensions = [
+  "Catppuccin.catppuccin-vsc",
+]

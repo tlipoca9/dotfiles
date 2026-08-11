@@ -1,0 +1,30 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+set -eu
+
+# VS Code declarations are rendered below so changes retrigger this script.
+die() {
+  printf 'dotfiles: %s\n' "$*" >&2
+  exit 1
+}
+
+code_cli=$(command -v code || true)
+if [ -z "$code_cli" ]; then
+  code_cli='/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code'
+fi
+[ -x "$code_cli" ] || die "Visual Studio Code CLI is unavailable"
+
+installed=$("$code_cli" --list-extensions)
+{{- range .darwin.vscode.extensions }}
+extension={{ . | quote }}
+# extension: {{ . }}
+if printf '%s\n' "$installed" | grep -Fxi -- "$extension" >/dev/null 2>&1; then
+  printf 'dotfiles: VS Code extension %s is already installed\n' "$extension"
+else
+  "$code_cli" --install-extension "$extension"
+fi
+{{- end }}
+{{- else -}}
+#!/bin/sh
+exit 0
+{{- end }}

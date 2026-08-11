@@ -1,0 +1,73 @@
+[darwin.packages.age]
+manager = "homebrew"
+kind = "formula"
+check = { command = "age" }
+
+[darwin.packages.antidote]
+manager = "homebrew"
+kind = "formula"
+
+[darwin.packages.chezmoi]
+manager = "homebrew"
+kind = "formula"
+check = { command = "chezmoi" }
+
+[darwin.packages.fzf]
+manager = "homebrew"
+kind = "formula"
+check = { command = "fzf" }
+
+[darwin.packages.lean_ctx]
+manager = "homebrew"
+kind = "formula"
+name = "yvgude/lean-ctx/lean-ctx"
+check = { command = "lean-ctx" }
+
+[darwin.packages.pi_coding_agent]
+manager = "homebrew"
+kind = "formula"
+name = "pi-coding-agent"
+check = { command = "pi" }
+
+[darwin.packages.python]
+manager = "homebrew"
+kind = "formula"
+check = { command = "python3" }
+
+[darwin.packages.ripgrep]
+manager = "homebrew"
+kind = "formula"
+check = { command = "rg" }
+
+[darwin.packages.starship]
+manager = "homebrew"
+kind = "formula"
+check = { command = "starship" }
+
+[darwin.packages.zoxide]
+manager = "homebrew"
+kind = "formula"
+check = { command = "zoxide" }
+
+[darwin.packages.chatgpt]
+manager = "homebrew"
+kind = "cask"
+
+[darwin.packages.codex]
+manager = "homebrew"
+kind = "cask"
+check = { command = "codex" }
+
+[darwin.packages.maple_mono]
+manager = "homebrew"
+kind = "cask"
+name = "font-maple-mono-nf-cn"
+
+[darwin.packages.ghostty]
+manager = "homebrew"
+kind = "cask"
+
+[darwin.packages.visual_studio_code]
+manager = "homebrew"
+kind = "cask"
+name = "visual-studio-code"

@@ -1,8 +1,0 @@
-version: "3"
-
-tasks:
-  run:
-    internal: true
-    desc: Diagnose the declared macOS environment without changing it
-    cmds:
-      - python3 "{{.ROOT_DIR}}/scripts/doctor.py"

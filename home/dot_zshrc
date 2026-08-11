@@ -61,7 +61,7 @@ function zvm_after_init() {
   if [[ -r $DOTFILES_ZSH_POST_STATIC ]]; then
     source "$DOTFILES_ZSH_POST_STATIC"
   else
-    print -ru2 -- "dotfiles: missing Zsh post-plugin bundle; run 'task apply'"
+    print -ru2 -- "dotfiles: missing Zsh post-plugin bundle; run 'chezmoi state delete-bucket --bucket=scriptState && chezmoi apply'"
   fi
 }
 
@@ -75,7 +75,7 @@ if [[ -r $DOTFILES_ZSH_PRE_STATIC ]]; then
   source "$DOTFILES_ZSH_PRE_STATIC"
   run-compinit
 else
-  print -ru2 -- "dotfiles: missing Zsh pre-plugin bundle; run 'task apply'"
+  print -ru2 -- "dotfiles: missing Zsh pre-plugin bundle; run 'chezmoi state delete-bucket --bucket=scriptState && chezmoi apply'"
 fi
 
 if (( ${+commands[zoxide]} )); then

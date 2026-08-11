@@ -1,77 +1,85 @@
 # dotfiles
 
-Personal macOS development environment managed by [Task](https://taskfile.dev/),
-[Homebrew](https://brew.sh/), and [chezmoi](https://www.chezmoi.io/).
+Personal macOS development environment managed directly by
+[chezmoi](https://www.chezmoi.io/) and [Homebrew](https://brew.sh/).
 
-The repository is public. The SSH private key is committed only as age-encrypted
-ciphertext; its age identity is local to each clone and ignored by Git.
+The repository is public. The SSH private key is committed only as
+age-encrypted ciphertext. Its age identity is restored manually on each Mac and
+is never managed by chezmoi or committed to Git.
 
-## Bootstrap a new Mac
+## Initialize a new Mac
 
-Install the Command Line Tools if Git is not available:
-
-```sh
-xcode-select --install
-```
-
-Clone this repository over HTTPS into any directory:
+Restore the backed-up age identity at chezmoi's standard configuration path:
 
 ```sh
-git clone https://github.com/tlipoca9/dotfiles.git
-cd dotfiles
+mkdir -p "$HOME/.config/chezmoi"
+cp /secure/backup/age.txt "$HOME/.config/chezmoi/age.txt"
+chmod 700 "$HOME/.config/chezmoi"
+chmod 600 "$HOME/.config/chezmoi/age.txt"
 ```
 
-Restore the backed-up age identity inside this clone:
+Then install chezmoi and initialize this repository over HTTPS:
 
 ```sh
-mkdir -p .local/age
-cp /secure/backup/identity.txt .local/age/identity.txt
-chmod 700 .local .local/age
-chmod 600 .local/age/identity.txt
+sh -c "$(curl -fsLS get.chezmoi.io)" -- \
+  -b "$HOME/.local/bin" init --apply --use-builtin-git=true \
+  https://github.com/tlipoca9/dotfiles.git
 ```
 
-Then run:
+chezmoi's Darwin before-script checks the Command Line Tools. If they are
+absent, it starts the official installer and stops; finish that installation,
+then run `"$HOME/.local/bin/chezmoi" apply` again. The same script installs a
+missing Homebrew with the official installer and discovers its environment
+through `brew shellenv`.
 
-```sh
-./bootstrap.sh
-```
-
-The script installs the minimal bootstrap dependencies and delegates to
-`task bootstrap`. After the managed SSH key is verified, the repository remote
-is changed from HTTPS to SSH.
-
-> Back up `.local/age/identity.txt` before relying on the encrypted SSH key.
-> Losing every copy of the age identity makes the committed ciphertext
-> unrecoverable. Never add the identity to Git.
+> Back up `~/.config/chezmoi/age.txt` before relying on the encrypted SSH key.
+> Losing every copy makes the committed ciphertext unrecoverable. Never add the
+> identity to this or any other repository.
 
 ## Daily commands
 
 ```sh
-task apply      # install missing software and apply managed configuration
-task diff       # preview chezmoi changes
-task update     # explicitly update Homebrew formulae and Zsh plugins
-task doctor     # diagnose the declared local environment
-task check      # run repository checks and smoke tests
+chezmoi apply    # install missing declarations and apply managed configuration
+chezmoi diff     # preview managed HOME changes
+chezmoi update   # pull the source repository and apply it
+chezmoi doctor   # run upstream chezmoi diagnostics
+chezmoi verify   # verify managed targets match their target state
 ```
 
-`task apply` does not upgrade installed software, run Homebrew cleanup, uninstall
-software absent from `platform/darwin/Brewfile`, or remove unmanaged files from
-the home directory.
+`chezmoi apply` installs only missing Homebrew formulae/casks and declared
+extensions. It does not upgrade installed software, clean Homebrew, uninstall
+undeclared software, or remove unmanaged HOME files. `chezmoi update` is
+chezmoi's pull-and-apply operation; it is not a Homebrew or plugin upgrade
+workflow.
+
+Package and extension interpreters use `run_onchange`, so declaration and pin
+changes rerun automatically. If an exceptional manual deletion removes a
+cached Zsh bundle, clear chezmoi's script state before applying again:
+
+```sh
+chezmoi state delete-bucket --bucket=scriptState
+chezmoi apply
+```
 
 ## Managed environment
 
 - macOS only; no machine-specific profiles
-- system Zsh with Antidote, fzf-tab, vi mode, Starship, and local shared history
+- system Zsh with pinned Antidote plugins, fzf-tab, vi mode, Starship, and local
+  shared history
 - Ghostty using Maple Mono NF CN and Catppuccin Mocha
-- official Visual Studio Code with minimal settings and one global theme extension
+- official Visual Studio Code with minimal settings and one global theme
+  extension
 - ChatGPT/Codex desktop entry and Codex CLI
-- Pi coding agent on OpenAI Codex/GPT models with a pinned extension allowlist
-- user Codex skills in `~/.agents/skills`
+- Pi coding agent on OpenAI Codex/GPT models with an exact extension allowlist
+- vendored user Codex skills in `~/.agents/skills`
 - global Codex rules in `~/.codex/AGENTS.md`
 - `~/.ssh/id_ed25519` encrypted with age in the public repository
 
-Project language runtimes, macOS system preferences, Git configuration, and
-application account state are intentionally outside this repository.
+System packages are declared in
+`home/.chezmoidata/darwin/packages.toml`; VS Code extensions are declared in
+`home/.chezmoidata/darwin/vscode.toml`. Future platforms add real sibling data
+and scripts only when they are implemented.
 
-See [docs/architecture.md](docs/architecture.md) for the maintained repository
-architecture and [docs/pi.md](docs/pi.md) for the Pi package policy.
+Project language runtimes, macOS system preferences, Git configuration, and
+application account state are intentionally outside this repository. See
+[docs/pi.md](docs/pi.md) for the Pi package policy.
