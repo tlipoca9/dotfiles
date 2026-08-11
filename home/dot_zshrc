@@ -4,6 +4,11 @@ if (( ! ${+commands[brew]} )); then
 fi
 (( ${+commands[brew]} )) && eval "$(brew shellenv)"
 
+if [[ -d "$HOME/.iwiki" ]]; then
+  typeset -U path PATH
+  path+=("$HOME/.iwiki")
+fi
+
 [[ -o interactive ]] || return
 
 # Local-only history shared by concurrent shells on this Mac.
