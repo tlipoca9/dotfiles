@@ -1,4 +1,7 @@
 /.local/
 /.firecrawl/
+/.pi-subagents/
 /_tmp/
+__pycache__/
+*.pyc
 .DS_Store

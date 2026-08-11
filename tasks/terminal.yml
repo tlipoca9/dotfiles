@@ -10,8 +10,6 @@ tasks:
         ghostty=''
         if command -v ghostty >/dev/null 2>&1; then
           ghostty=$(command -v ghostty)
-        elif [ -x /Applications/Ghostty.app/Contents/MacOS/ghostty ]; then
-          ghostty=/Applications/Ghostty.app/Contents/MacOS/ghostty
         fi
         if [ -n "$ghostty" ]; then
           "$ghostty" +validate-config --config-file="$config"

@@ -1,0 +1,13 @@
+{
+  "defaults": {
+    "model": null
+  },
+  "phases": {
+    "planning": {
+      "model": null
+    },
+    "executing": {
+      "model": null
+    }
+  }
+}

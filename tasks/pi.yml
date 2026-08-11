@@ -1,0 +1,11 @@
+version: "3"
+
+tasks:
+  apply:
+    internal: true
+    preconditions:
+      - sh: command -v pi >/dev/null
+        msg: Pi is required; run task apply after installing declared Homebrew packages
+    cmds:
+      - pi update --extensions
+      - pi list >/dev/null

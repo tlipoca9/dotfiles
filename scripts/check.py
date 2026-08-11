@@ -8,9 +8,8 @@ import ast
 import importlib.util
 import json
 import os
-import platform
-import re
 import shutil
+import stat
 import subprocess
 import sys
 import sysconfig
@@ -18,8 +17,66 @@ import tempfile
 from collections.abc import Callable, Sequence
 from pathlib import Path
 
+from pi_config import PiConfigError, declared_npm_packages, load_managed_pi_settings
+
 
 PUBLIC_TASKS = {"apply", "bootstrap", "check", "diff", "doctor", "update"}
+APPROVED_CODEX_SKILLS = frozenset(
+    {
+        "ask-matt",
+        "brainstorming",
+        "code-review",
+        "codebase-design",
+        "container-build-mirrors",
+        "diagnosing-bugs",
+        "domain-modeling",
+        "evidence-driven-design",
+        "find-skills",
+        "grill-me",
+        "grill-with-docs",
+        "grilling",
+        "handoff",
+        "implement",
+        "improve-codebase-architecture",
+        "prototype",
+        "research",
+        "setup-matt-pocock-skills",
+        "tdd",
+        "teach",
+        "tencentcloud-yunapi-3-spec",
+        "tencentcloud-yunapi-all-in-one",
+        "tencentcloud-yunapi-gateway-request-id-escalation",
+        "to-issues",
+        "to-prd",
+        "triage",
+        "write-coherent-content",
+        "writing-great-skills",
+        "wxwork",
+    }
+)
+APPROVED_PI_PACKAGES = frozenset(
+    {
+        "@ff-labs/pi-fff",
+        "@narumitw/pi-btw",
+        "@narumitw/pi-chrome-devtools",
+        "@narumitw/pi-goal",
+        "@narumitw/pi-stamp",
+        "@plannotator/pi-extension",
+        "@tmustier/pi-usage-extension",
+        "pi-extmgr",
+        "pi-interactive-shell",
+        "pi-lean-ctx",
+        "pi-lens",
+        "pi-mcp-adapter",
+        "pi-memctx",
+        "pi-observational-memory",
+        "pi-open-tui",
+        "pi-rewind",
+        "pi-simplify",
+        "pi-subagents",
+        "pi-web-access",
+    }
+)
 PRIVATE_KEY_MARKERS = (
     b"-----BEGIN OPENSSH PRIVATE KEY-----",
     b"-----BEGIN PRIVATE KEY-----",
@@ -41,13 +98,13 @@ class RepositoryChecks:
 
     def run(self) -> int:
         checks: Sequence[tuple[str, Callable[[], None]]] = (
-            ("platform", self.check_platform),
             ("source root", self.check_source_root),
             ("shell syntax", self.check_shell_syntax),
             ("Python standard library", self.check_python),
             ("JSON", self.check_json),
+            ("Codex skill allowlist", self.check_codex_skills),
+            ("Pi configuration", self.check_pi),
             ("Taskfile API", self.check_taskfile),
-            ("Brewfile", self.check_brewfile),
             ("age identity tracking", self.check_identity_tracking),
             ("repository secrets", self.check_repository_secrets),
             ("chezmoi source state", self.check_chezmoi),
@@ -111,10 +168,6 @@ class RepositoryChecks:
             raise CheckFailure((result.stderr or result.stdout).strip())
         return result
 
-    def check_platform(self) -> None:
-        if platform.system() != "Darwin":
-            raise CheckFailure("this repository currently supports macOS only")
-
     def check_source_root(self) -> None:
         marker = self.repo_root / ".chezmoiroot"
         if not marker.is_file() or marker.read_text(encoding="utf-8").strip() != "home":
@@ -146,7 +199,6 @@ class RepositoryChecks:
             source = path.read_text(encoding="utf-8")
             try:
                 tree = ast.parse(source, filename=str(path))
-                compile(tree, str(path), "exec")
             except SyntaxError as error:
                 raise CheckFailure(f"{path.relative_to(self.repo_root)}: {error}") from error
             for node in ast.walk(tree):
@@ -171,9 +223,12 @@ class RepositoryChecks:
         if name in standard or name in local or name in sys.builtin_module_names:
             return True
         spec = importlib.util.find_spec(name)
-        if spec is None or spec.origin in {"built-in", "frozen"}:
-            return spec is not None
-        origin = Path(spec.origin).resolve()
+        if spec is None:
+            return False
+        spec_origin = spec.origin
+        if spec_origin is None or spec_origin in {"built-in", "frozen"}:
+            return True
+        origin = Path(spec_origin).resolve()
         stdlib = Path(sysconfig.get_paths()["stdlib"]).resolve()
         try:
             relative = origin.relative_to(stdlib)
@@ -185,10 +240,104 @@ class RepositoryChecks:
         for path in sorted(self.repo_root.rglob("*.json")):
             if ".git" in path.parts or ".local" in path.parts:
                 continue
+            if path.name.startswith("modify_"):
+                continue
             try:
                 json.loads(path.read_text(encoding="utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError) as error:
                 raise CheckFailure(f"{path.relative_to(self.repo_root)}: {error}") from error
+
+    def check_codex_skills(self) -> None:
+        skills_root = self.repo_root / "home" / "dot_agents" / "skills"
+        if not skills_root.is_dir():
+            raise CheckFailure("home/dot_agents/skills is missing")
+        actual = {path.name for path in skills_root.iterdir() if path.is_dir()}
+        if actual != APPROVED_CODEX_SKILLS:
+            missing = sorted(APPROVED_CODEX_SKILLS - actual)
+            unexpected = sorted(actual - APPROVED_CODEX_SKILLS)
+            raise CheckFailure(f"Codex skill allowlist differs: missing={missing}, unexpected={unexpected}")
+        missing_entrypoints = sorted(
+            name for name in APPROVED_CODEX_SKILLS if not (skills_root / name / "SKILL.md").is_file()
+        )
+        if missing_entrypoints:
+            raise CheckFailure(f"vendored Codex skills lack SKILL.md: {missing_entrypoints}")
+
+    def check_pi(self) -> None:
+        source = self.repo_root / "home" / "dot_pi" / "private_agent" / "modify_settings.json"
+        try:
+            source_mode = source.stat().st_mode
+        except OSError as error:
+            raise CheckFailure(f"cannot inspect {source.relative_to(self.repo_root)}: {error}") from error
+        if not source_mode & stat.S_IXUSR:
+            raise CheckFailure("home/dot_pi/private_agent/modify_settings.json must be executable")
+        preserved = {"lastChangelogVersion": "runtime-owned", "futurePiSetting": True}
+        try:
+            settings = load_managed_pi_settings(self.repo_root, preserved)
+            packages = declared_npm_packages(settings)
+        except PiConfigError as error:
+            raise CheckFailure(str(error)) from error
+        if any(settings.get(key) != value for key, value in preserved.items()):
+            raise CheckFailure("Pi settings merge does not preserve runtime-owned fields")
+        expected = {
+            "defaultProvider": "openai-codex",
+            "defaultModel": "gpt-5.6-sol",
+            "defaultThinkingLevel": "high",
+            "enabledModels": ["openai-codex/*", "openai/gpt-*"],
+            "subagents": {"defaultThinking": "low"},
+        }
+        mismatched = {key: settings.get(key) for key, value in expected.items() if settings.get(key) != value}
+        if mismatched:
+            raise CheckFailure(f"managed OpenAI model policy differs: {mismatched}")
+        package_names = {name for name, _ in packages}
+        if len(package_names) != len(packages):
+            raise CheckFailure("Pi package allowlist contains duplicate package names")
+        if package_names != APPROVED_PI_PACKAGES:
+            missing = sorted(APPROVED_PI_PACKAGES - package_names)
+            unexpected = sorted(package_names - APPROVED_PI_PACKAGES)
+            raise CheckFailure(f"Pi package allowlist differs: missing={missing}, unexpected={unexpected}")
+
+        interactive = self.read_json_object("home/dot_pi/private_agent/interactive-shell.json")
+        spawn = interactive.get("spawn")
+        commands = spawn.get("commands") if isinstance(spawn, dict) else None
+        if not isinstance(commands, dict) or set(commands) != {"codex", "pi"}:
+            raise CheckFailure("interactive shell may only spawn Codex or Pi")
+        web = self.read_json_object("home/dot_pi/web-search.json")
+        search_routing = web.get("searchRouting")
+        fetch_routing = web.get("fetchRouting")
+        if (
+            web.get("provider") != "openai"
+            or not isinstance(search_routing, dict)
+            or search_routing.get("providers") != ["openai"]
+            or not isinstance(fetch_routing, dict)
+            or fetch_routing.get("providers") != ["http"]
+            or not str(web.get("summaryModel", "")).startswith("openai-codex/")
+        ):
+            raise CheckFailure("Pi web access is not restricted to OpenAI and local HTTP fetching")
+        for capability in ("youtube", "video"):
+            config = web.get(capability)
+            enabled = config.get("enabled") if isinstance(config, dict) else None
+            if not isinstance(enabled, bool) or enabled:
+                raise CheckFailure(f"Pi {capability} must stay disabled because it requires other providers")
+        plannotator = self.read_json_object("home/dot_pi/private_agent/plannotator.json")
+        defaults = plannotator.get("defaults")
+        phases = plannotator.get("phases")
+        if (
+            not isinstance(defaults, dict)
+            or defaults.get("model", "missing") is not None
+            or not isinstance(phases, dict)
+            or any(not isinstance(phases.get(name), dict) or phases[name].get("model", "missing") is not None for name in ("planning", "executing"))
+        ):
+            raise CheckFailure("Plannotator must inherit the current OpenAI model in every phase")
+
+    def read_json_object(self, relative: str) -> dict[str, object]:
+        path = self.repo_root / relative
+        try:
+            value = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise CheckFailure(f"{relative}: {error}") from error
+        if not isinstance(value, dict):
+            raise CheckFailure(f"{relative} must contain a JSON object")
+        return value
 
     def check_taskfile(self) -> None:
         task = shutil.which("task")
@@ -204,44 +353,6 @@ class RepositoryChecks:
             missing = sorted(PUBLIC_TASKS - names)
             extra = sorted(names - PUBLIC_TASKS)
             raise CheckFailure(f"public tasks differ (missing={missing}, extra={extra})")
-
-    def check_brewfile(self) -> None:
-        brew = shutil.which("brew")
-        if brew is None:
-            raise CheckFailure("Homebrew is not installed")
-        brewfile_path = self.repo_root / "Brewfile"
-        brewfile = str(brewfile_path)
-        entry = re.compile(r'^\s*(brew|cask)\s+["\']([^"\']+)["\']\s*(?:#.*)?$')
-        declared: dict[str, set[str]] = {"brew": set(), "cask": set()}
-        for number, line in enumerate(brewfile_path.read_text(encoding="utf-8").splitlines(), 1):
-            if not line.strip() or line.lstrip().startswith("#"):
-                continue
-            match = entry.fullmatch(line)
-            if match is None:
-                raise CheckFailure(f"unsupported Brewfile entry on line {number}")
-            kind, name = match.groups()
-            if name in declared[kind]:
-                raise CheckFailure(f"duplicate {kind} entry on line {number}: {name}")
-            declared[kind].add(name)
-
-        formulae = set(
-            self.command((brew, "bundle", "list", "--formula", f"--file={brewfile}"))
-            .stdout.strip()
-            .splitlines()
-        )
-        casks = set(
-            self.command((brew, "bundle", "list", "--cask", f"--file={brewfile}"))
-            .stdout.strip()
-            .splitlines()
-        )
-        if formulae != declared["brew"] or casks != declared["cask"]:
-            raise CheckFailure(
-                "Homebrew parsed a different allowlist "
-                f"(formula missing={sorted(declared['brew'] - formulae)}, "
-                f"formula extra={sorted(formulae - declared['brew'])}, "
-                f"cask missing={sorted(declared['cask'] - casks)}, "
-                f"cask extra={sorted(casks - declared['cask'])})"
-            )
 
     def check_identity_tracking(self) -> None:
         identity = ".local/age/identity.txt"
@@ -321,6 +432,11 @@ class RepositoryChecks:
                 ".codex/AGENTS.md",
                 ".config/ghostty/config",
                 ".config/starship.toml",
+                ".pi/agent/interactive-shell.json",
+                ".pi/agent/open-tui.json",
+                ".pi/agent/plannotator.json",
+                ".pi/agent/settings.json",
+                ".pi/web-search.json",
                 ".ssh/id_ed25519.pub",
                 ".zsh_plugins_post.txt",
                 ".zsh_plugins_pre.txt",

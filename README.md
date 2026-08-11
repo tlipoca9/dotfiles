@@ -55,8 +55,8 @@ task check      # run repository checks and smoke tests
 ```
 
 `task apply` does not upgrade installed software, run Homebrew cleanup, uninstall
-software absent from the Brewfile, or remove unmanaged files from the home
-directory.
+software absent from `platform/darwin/Brewfile`, or remove unmanaged files from
+the home directory.
 
 ## Managed environment
 
@@ -65,6 +65,7 @@ directory.
 - Ghostty using Maple Mono NF CN and Catppuccin Mocha
 - official Visual Studio Code with minimal settings and one global theme extension
 - ChatGPT/Codex desktop entry and Codex CLI
+- Pi coding agent on OpenAI Codex/GPT models with a pinned extension allowlist
 - user Codex skills in `~/.agents/skills`
 - global Codex rules in `~/.codex/AGENTS.md`
 - `~/.ssh/id_ed25519` encrypted with age in the public repository
@@ -72,4 +73,5 @@ directory.
 Project language runtimes, macOS system preferences, Git configuration, and
 application account state are intentionally outside this repository.
 
-See [plan.md](plan.md) for the complete design, evidence, and migration record.
+See [docs/architecture.md](docs/architecture.md) for the maintained repository
+architecture and [docs/pi.md](docs/pi.md) for the Pi package policy.

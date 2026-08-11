@@ -1,0 +1,31 @@
+{
+  "provider": "openai",
+  "searchRouting": {
+    "providers": [
+      "openai"
+    ],
+    "fallbackOn": [
+      "transient",
+      "quota",
+      "network",
+      "invalid-response"
+    ]
+  },
+  "fetchRouting": {
+    "providers": [
+      "http"
+    ],
+    "allowRemoteHostedProviders": false
+  },
+  "summaryModel": "openai-codex/gpt-5.6-terra",
+  "allowBrowserCookies": false,
+  "youtube": {
+    "enabled": false
+  },
+  "video": {
+    "enabled": false
+  },
+  "pdf": {
+    "provider": "unpdf"
+  }
+}

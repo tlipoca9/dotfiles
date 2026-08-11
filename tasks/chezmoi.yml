@@ -11,11 +11,11 @@ tasks:
     preconditions:
       - sh: test -f "{{.IDENTITY}}"
         msg: Restore the age identity to {{.IDENTITY}}
-      - sh: test "$(stat -f '%Lp' "{{.ROOT_DIR}}/.local")" = 700
+      - sh: python3 -c 'import stat,sys; raise SystemExit(stat.S_IMODE(__import__("os").stat(sys.argv[1]).st_mode) != int(sys.argv[2], 8))' "{{.ROOT_DIR}}/.local" 700
         msg: The .local directory must have mode 0700
-      - sh: test "$(stat -f '%Lp' "{{.ROOT_DIR}}/.local/age")" = 700
+      - sh: python3 -c 'import stat,sys; raise SystemExit(stat.S_IMODE(__import__("os").stat(sys.argv[1]).st_mode) != int(sys.argv[2], 8))' "{{.ROOT_DIR}}/.local/age" 700
         msg: The .local/age directory must have mode 0700
-      - sh: test "$(stat -f '%Lp' "{{.IDENTITY}}")" = 600
+      - sh: python3 -c 'import stat,sys; raise SystemExit(stat.S_IMODE(__import__("os").stat(sys.argv[1]).st_mode) != int(sys.argv[2], 8))' "{{.IDENTITY}}" 600
         msg: The age identity must have mode 0600
       - sh: git -C "{{.ROOT_DIR}}" check-ignore -q .local/age/identity.txt
         msg: The age identity must be ignored by Git
@@ -47,8 +47,8 @@ tasks:
   verify-ssh:
     internal: true
     cmds:
-      - test "$(stat -f '%Lp' "{{.HOME}}/.ssh/id_ed25519")" = 600
-      - test "$(stat -f '%Lp' "{{.HOME}}/.ssh/id_ed25519.pub")" = 644
+      - python3 -c 'import stat,sys; raise SystemExit(stat.S_IMODE(__import__("os").stat(sys.argv[1]).st_mode) != int(sys.argv[2], 8))' "{{.HOME}}/.ssh/id_ed25519" 600
+      - python3 -c 'import stat,sys; raise SystemExit(stat.S_IMODE(__import__("os").stat(sys.argv[1]).st_mode) != int(sys.argv[2], 8))' "{{.HOME}}/.ssh/id_ed25519.pub" 644
       - |
         derived="$(ssh-keygen -y -f "{{.HOME}}/.ssh/id_ed25519" | awk '{print $1 " " $2}')"
         declared="$(awk '{print $1 " " $2}' "{{.HOME}}/.ssh/id_ed25519.pub")"

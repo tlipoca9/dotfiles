@@ -1,0 +1,66 @@
+version: "3"
+
+vars:
+  BREWFILE: '{{.USER_WORKING_DIR}}/platform/darwin/Brewfile'
+  VSCODE_CLI: /Applications/Visual Studio Code.app/Contents/Resources/app/bin/code
+  VSCODE_EXTENSION: Catppuccin.catppuccin-vsc
+
+tasks:
+  preflight:
+    internal: true
+    cmds:
+      - test "$(uname -s)" = Darwin
+      - command -v brew >/dev/null
+      - command -v task >/dev/null
+      - command -v chezmoi >/dev/null
+      - command -v python3 >/dev/null
+
+  packages-apply:
+    internal: true
+    preconditions:
+      - sh: command -v brew >/dev/null
+        msg: Homebrew is required; run ./bootstrap.sh first
+    cmds:
+      - HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew bundle install --no-upgrade --file "{{.BREWFILE}}"
+
+  packages-update:
+    internal: true
+    preconditions:
+      - sh: command -v brew >/dev/null
+        msg: Homebrew is required; run ./bootstrap.sh first
+    cmds:
+      - HOMEBREW_NO_INSTALL_CLEANUP=1 brew update
+      - |
+        formulae="$(brew bundle list --formula --file "{{.BREWFILE}}")"
+        if [ -n "$formulae" ]; then
+          HOMEBREW_NO_INSTALL_CLEANUP=1 brew upgrade $formulae
+        fi
+      - HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew bundle install --no-upgrade --file "{{.BREWFILE}}"
+
+  packages-check:
+    internal: true
+    cmds:
+      - HOMEBREW_NO_AUTO_UPDATE=1 brew bundle check --file "{{.BREWFILE}}"
+
+  vscode-apply:
+    internal: true
+    cmds:
+      - |
+        code_cli="$(command -v code || true)"
+        if [ -z "$code_cli" ]; then code_cli="{{.VSCODE_CLI}}"; fi
+        if [ ! -x "$code_cli" ]; then
+          printf 'VS Code CLI not found at %s\n' "$code_cli" >&2
+          exit 1
+        fi
+        "$code_cli" --install-extension "{{.VSCODE_EXTENSION}}"
+
+  check:
+    internal: true
+    cmds:
+      - python3 "{{.USER_WORKING_DIR}}/platform/darwin/check.py"
+
+  ci-prepare:
+    cmds:
+      - |
+        formulae="$(brew bundle list --formula --file "{{.BREWFILE}}")"
+        HOMEBREW_NO_INSTALL_CLEANUP=1 brew install $formulae

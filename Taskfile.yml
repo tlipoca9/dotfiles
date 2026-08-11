@@ -1,11 +1,13 @@
 version: "3"
 
 includes:
-  brew: ./tasks/brew.yml
+  platform:
+    taskfile: ./platform/darwin/Taskfile.yml
+    internal: true
   chezmoi: ./tasks/chezmoi.yml
+  pi: ./tasks/pi.yml
   shell: ./tasks/shell.yml
   terminal: ./tasks/terminal.yml
-  vscode: ./tasks/vscode.yml
   doctor: ./tasks/doctor.yml
   check: ./tasks/check.yml
 
@@ -21,10 +23,11 @@ tasks:
     cmds:
       - task: preflight
       - task: chezmoi:preflight
-      - task: brew:apply
+      - task: platform:packages-apply
       - task: chezmoi:apply
       - task: shell:apply
-      - task: vscode:apply
+      - task: pi:apply
+      - task: platform:vscode-apply
       - task: doctor
 
   diff:
@@ -36,8 +39,9 @@ tasks:
     desc: Explicitly update Homebrew formulae and Zsh plugins
     cmds:
       - task: preflight
-      - task: brew:update
+      - task: platform:packages-update
       - task: shell:update
+      - task: pi:apply
       - task: check
       - git diff -- home/dot_zsh_plugins_pre.txt home/dot_zsh_plugins_post.txt
 
@@ -52,12 +56,9 @@ tasks:
       - task: check:run
       - task: shell:check
       - task: terminal:check
+      - task: platform:check
 
   preflight:
     internal: true
     cmds:
-      - test "$(uname -s)" = Darwin
-      - command -v brew >/dev/null
-      - command -v task >/dev/null
-      - command -v chezmoi >/dev/null
-      - command -v python3 >/dev/null
+      - task: platform:preflight
