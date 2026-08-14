@@ -3,23 +3,7 @@
 set -eu
 
 # Package declarations checksum: {{ include ".chezmoidata/darwin/packages.toml" | sha256sum }}
-die() {
-  printf 'dotfiles: %s\n' "$*" >&2
-  exit 1
-}
-
-setup_brew() {
-  if ! command -v brew >/dev/null 2>&1 && [ -x /usr/libexec/path_helper ]; then
-    eval "$(/usr/libexec/path_helper -s)"
-  fi
-  shellenv_file=${XDG_CACHE_HOME:-"$HOME/.cache"}/dotfiles/brew-shellenv
-  if ! command -v brew >/dev/null 2>&1 && [ -r "$shellenv_file" ]; then
-    . "$shellenv_file"
-  fi
-  command -v brew >/dev/null 2>&1 || die "Homebrew is unavailable; run 'chezmoi apply' again after Homebrew installation completes"
-  eval "$(brew shellenv)"
-}
-
+{{ template "darwin-shell-helpers" . }}
 setup_brew
 export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_NO_INSTALL_CLEANUP=1

@@ -2,18 +2,19 @@
 
 Use this workflow whenever a delegated agent will modify files:
 
-1. Keep the parent worktree clean and call `delegate_worktree` once per
-   independent implementation task. Include the full task, constraints, and
-   verification expectations in the prompt.
-2. Treat the returned `worktree_path`, branch, and child result as the worker's
-   handoff. The worker must commit its changes; it must not merge, rebase, push,
-   or start another subagent.
-3. Call `worktree_status` before accepting the handoff. Review the diff and
-   tests from the parent context.
-4. Call `merge_worktree` explicitly for an accepted branch. If it reports a
-   conflict, resolve it in the parent worktree and verify again.
-5. Call `cleanup_worktree` after a successful merge. Use `force: true` only for
-   an intentional discard.
+1. Make the coordinating parent worktree clean. `delegate_worktree` rejects
+   creation otherwise. Send the complete task, constraints, and checks.
+2. Treat the returned absolute path and branch as owned by this parent session.
+   Their irreversible short namespace is revalidated on every later operation;
+   the same session can recover after restart, while another session is refused.
+3. Require the worker to commit without merging, rebasing, pushing, or starting
+   another writer. Inspect the handoff with `worktree_status`.
+4. Merge an accepted clean branch with `merge_worktree` while the parent is
+   clean. If Git reports a conflict, leave it visible and resolve in the parent.
+5. Run `cleanup_worktree` after merge. Parent dirtiness does not block cleanup,
+   but dirty or unmerged child state is refused unless `force: true` deliberately
+   discards it.
 
-The ordinary `subagent` tool inherits the parent's cwd and is not a substitute
-for `delegate_worktree` when the child writes code.
+The four-tool Interface is complete: `delegate_worktree`, `worktree_status`,
+`merge_worktree`, and `cleanup_worktree`. Ordinary `subagent` shares the parent
+cwd and is not a replacement for isolated write delegation.

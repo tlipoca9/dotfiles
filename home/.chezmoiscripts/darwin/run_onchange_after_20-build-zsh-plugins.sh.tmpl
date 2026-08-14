@@ -4,23 +4,7 @@ set -eu
 
 # pre manifest checksum: {{ include "dot_zsh_plugins_pre.txt" | sha256sum }}
 # post manifest checksum: {{ include "dot_zsh_plugins_post.txt" | sha256sum }}
-die() {
-  printf 'dotfiles: %s\n' "$*" >&2
-  exit 1
-}
-
-setup_brew() {
-  if ! command -v brew >/dev/null 2>&1 && [ -x /usr/libexec/path_helper ]; then
-    eval "$(/usr/libexec/path_helper -s)"
-  fi
-  shellenv_file=${XDG_CACHE_HOME:-"$HOME/.cache"}/dotfiles/brew-shellenv
-  if ! command -v brew >/dev/null 2>&1 && [ -r "$shellenv_file" ]; then
-    . "$shellenv_file"
-  fi
-  command -v brew >/dev/null 2>&1 || die "Homebrew is unavailable; run 'chezmoi apply' again after Homebrew installation completes"
-  eval "$(brew shellenv)"
-}
-
+{{ template "darwin-shell-helpers" . }}
 setup_brew
 export HOMEBREW_NO_AUTO_UPDATE=1
 export HOMEBREW_NO_INSTALL_CLEANUP=1
@@ -28,13 +12,19 @@ antidote_script=$(brew --prefix antidote)/share/antidote/antidote.zsh
 [ -r "$antidote_script" ] || die "Antidote entrypoint is unavailable at $antidote_script"
 
 cache_home=${XDG_CACHE_HOME:-"$HOME/.cache"}
-static_dir=$cache_home/zsh/antidote
-manifest_dir=$cache_home/dotfiles/zsh
-mkdir -p "$static_dir" "$manifest_dir"
+bundle_root=$cache_home/zsh/antidote
+generations=$bundle_root/generations
+mkdir -p "$generations"
+staging=$(mktemp -d "$bundle_root/.staging.XXXXXX")
+cleanup_staging() {
+  [ -z "${staging:-}" ] || rm -rf "$staging"
+}
+trap cleanup_staging EXIT HUP INT TERM
+chmod 700 "$staging"
 
-cat >"$manifest_dir/pre.txt" <<'DOTFILES_PRE_PLUGINS'
+cat >"$staging/pre.txt" <<'DOTFILES_PRE_PLUGINS'
 {{ include "dot_zsh_plugins_pre.txt" }}DOTFILES_PRE_PLUGINS
-cat >"$manifest_dir/post.txt" <<'DOTFILES_POST_PLUGINS'
+cat >"$staging/post.txt" <<'DOTFILES_POST_PLUGINS'
 {{ include "dot_zsh_plugins_post.txt" }}DOTFILES_POST_PLUGINS
 
 export ANTIDOTE_CONFIG=/dev/null
@@ -43,18 +33,26 @@ export ANTIDOTE_HOME=$cache_home/antidote
 build_bundle() {
   phase=$1
   manifest=$2
-  temporary=$(mktemp "$static_dir/.$phase.zsh.XXXXXX")
   if ! /bin/zsh -f -c 'emulate -L zsh; setopt errexit pipefail; source "$1"; antidote bundle <"$2"' \
-    dotfiles-zsh-bundle "$antidote_script" "$manifest" >"$temporary"; then
-    rm -f "$temporary"
+    dotfiles-zsh-bundle "$antidote_script" "$manifest" >"$staging/$phase.zsh"; then
     die "cannot build the $phase Antidote bundle"
   fi
-  chmod 600 "$temporary"
-  mv "$temporary" "$static_dir/$phase.zsh"
+  chmod 600 "$staging/$phase.zsh"
 }
 
-build_bundle pre "$manifest_dir/pre.txt"
-build_bundle post "$manifest_dir/post.txt"
+# Publish only after both halves of one generation compile successfully.
+build_bundle pre "$staging/pre.txt"
+build_bundle post "$staging/post.txt"
+rm "$staging/pre.txt" "$staging/post.txt"
+generation=${staging##*/}
+generation=${generation#.staging.}
+final=$generations/$generation
+mv "$staging" "$final"
+staging=
+pointer_tmp=$bundle_root/.current.$generation
+ln -s "generations/$generation" "$pointer_tmp"
+/bin/mv -fh "$pointer_tmp" "$bundle_root/current"
+trap - EXIT HUP INT TERM
 {{- else -}}
 #!/bin/sh
 exit 0

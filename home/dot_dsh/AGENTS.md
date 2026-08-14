@@ -1,15 +1,23 @@
 # DeepSeek Harness operating rules
 
-The coordinating agent owns the current parent worktree. For independent work
-that changes files, call `delegate_worktree`; do not use the ordinary `subagent`
-tool for write work. Each delegated worker receives a separate Git worktree and
-branch, and must commit its intended changes there.
+The coordinating agent owns the parent worktree. Keep it clean before calling
+`delegate_worktree`; creation rejects dirty parent state. Each delegated worker
+must edit and commit only in its assigned worktree and must not merge, rebase,
+push, or recursively delegate writes.
 
-Review the returned branch with `worktree_status`. Only the coordinating agent
-may call `merge_worktree`, and only after the parent worktree is clean. Keep
-conflicts in the parent visible for resolution. Call `cleanup_worktree` only
-after a successful merge, or with `force: true` when deliberately discarding a
-worker's branch.
+Delegated branch and path ownership uses an irreversible short namespace derived
+from the coordinating parent session id. `worktree_status`, `merge_worktree`,
+and `cleanup_worktree` rederive and verify that namespace on every call. This
+works after a DSH restart for the same session and rejects a different session;
+process-local child records are never ownership authority.
 
-The parent agent may still make direct edits when coordinating or resolving a
-merge. The isolation rule applies to delegated write operations.
+Review with `worktree_status`. Merge only a clean delegated worktree into a clean
+parent, explicitly through `merge_worktree`; leave conflicts visible in the
+parent for resolution. After merge use `cleanup_worktree`. Cleanup is allowed
+when the parent has unrelated dirty state, but without `force` it rejects dirty
+or unmerged child work. Use `force: true` only for deliberate discard.
+
+The complete model-facing Interface remains `delegate_worktree`,
+`worktree_status`, `merge_worktree`, and `cleanup_worktree`. Git/path/status/
+ownership behavior belongs in the adjacent deep Git module; `worktree.mjs`
+contains only the DSH/Cordis adapter, child lifecycle, and result adaptation.

@@ -43,8 +43,12 @@ zstyle ':fzf-tab:*' fzf-flags '--color=fg:#cdd6f4,bg:#1e1e2e,hl:#f38ba8,fg+:#cdd
 
 typeset -gx ANTIDOTE_HOME=${XDG_CACHE_HOME:-$HOME/.cache}/antidote
 typeset -gr DOTFILES_ZSH_CACHE=${XDG_CACHE_HOME:-$HOME/.cache}/zsh/antidote
-typeset -gr DOTFILES_ZSH_PRE_STATIC=$DOTFILES_ZSH_CACHE/pre.zsh
-typeset -gr DOTFILES_ZSH_POST_STATIC=$DOTFILES_ZSH_CACHE/post.zsh
+# Resolve the atomic pointer once so pre/post always come from one generation.
+typeset _dotfiles_zsh_current=$DOTFILES_ZSH_CACHE/current
+typeset -gr DOTFILES_ZSH_GENERATION=${_dotfiles_zsh_current:A}
+unset _dotfiles_zsh_current
+typeset -gr DOTFILES_ZSH_PRE_STATIC=$DOTFILES_ZSH_GENERATION/pre.zsh
+typeset -gr DOTFILES_ZSH_POST_STATIC=$DOTFILES_ZSH_GENERATION/post.zsh
 
 # zsh-vi-mode calls this hook after it has installed its keymaps. Loading fzf
 # and the post bundle here uses the plugin's supported compatibility boundary.
