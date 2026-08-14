@@ -1,0 +1,37 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+set -eu
+
+# dsh declaration checksum: {{ include ".chezmoidata/darwin/dsh.toml" | sha256sum }}
+die() {
+  printf 'dotfiles: %s\n' "$*" >&2
+  exit 1
+}
+
+setup_brew() {
+  if ! command -v brew >/dev/null 2>&1 && [ -x /usr/libexec/path_helper ]; then
+    eval "$(/usr/libexec/path_helper -s)"
+  fi
+  shellenv_file=${XDG_CACHE_HOME:-"$HOME/.cache"}/dotfiles/brew-shellenv
+  if ! command -v brew >/dev/null 2>&1 && [ -r "$shellenv_file" ]; then
+    . "$shellenv_file"
+  fi
+  command -v brew >/dev/null 2>&1 || die "Homebrew is unavailable; run 'chezmoi apply' again after Homebrew installation completes"
+  eval "$(brew shellenv)"
+}
+
+setup_brew
+command -v node >/dev/null 2>&1 || die "Node.js is unavailable after package installation"
+command -v npm >/dev/null 2>&1 || die "npm is unavailable after Node.js installation"
+
+if command -v dsh >/dev/null 2>&1; then
+  printf 'dotfiles: dsh is already installed\n'
+else
+  printf 'dotfiles: installing dsh@{{ .darwin.dsh.version }}\n'
+  npm install --global --no-fund --no-audit "@deepseek-ai/dsh@{{ .darwin.dsh.version }}"
+  command -v dsh >/dev/null 2>&1 || die "dsh is unavailable after npm installation"
+fi
+{{- else -}}
+#!/bin/sh
+exit 0
+{{- end }}

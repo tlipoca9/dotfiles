@@ -1,0 +1,2 @@
+name: Git Worktree 委托
+description: 面向编码任务的 Agent；所有独立写操作交给隔离 Git worktree，主 Agent 审查后显式合并。

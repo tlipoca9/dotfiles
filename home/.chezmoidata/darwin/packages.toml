@@ -12,6 +12,11 @@ manager = "homebrew"
 kind = "formula"
 check = { command = "chezmoi" }
 
+[darwin.packages.node]
+manager = "homebrew"
+kind = "formula"
+check = { command = "node" }
+
 [darwin.packages.fzf]
 manager = "homebrew"
 kind = "formula"

@@ -213,6 +213,20 @@ jobs:
           package_checksum=$(shasum -a 256 home/.chezmoidata/darwin/packages.toml | awk '{print $1}')
           grep -Fx "# Package declarations checksum: $package_checksum" "$package_script"
 
+          dsh_patch="$check_root/rendered/cordis.patch.yml"
+          chezmoi "${common[@]}" execute-template \
+            --file home/dot_dsh/cordis.patch.yml.tmpl >"$dsh_patch"
+          grep -Eq '^      name: ".*/\\.dsh/worktree\\.mjs"$' "$dsh_patch"
+          ! grep -F '!!js dshHomePath(' "$dsh_patch"
+          worktree_preset="$check_root/rendered/worktree-agent.cordis.yml"
+          chezmoi "${common[@]}" execute-template \
+            --file home/dot_dsh/dot_agent-presets/worktree/agent.cordis.yml.tmpl \
+            >"$worktree_preset"
+          grep -Eq '^  name: ".*/\\.dsh/worktree\\.mjs"$' "$worktree_preset"
+          grep -F 'id: dsh-worktree-tools' "$worktree_preset"
+          grep -F 'mode: agent' "$worktree_preset"
+          ! grep -F 'name: {{' "$worktree_preset"
+
           checksum_source="$check_root/checksum-source"
           mkdir -p "$checksum_source"
           cp .chezmoiroot "$checksum_source/"
@@ -237,12 +251,12 @@ jobs:
 
           chezmoi "${common[@]}" managed --include=scripts \
             --path-style=source-relative >"$check_root/scripts.txt"
-          test "$(wc -l <"$check_root/scripts.txt" | tr -d ' ')" = 6
+          test "$(wc -l <"$check_root/scripts.txt" | tr -d ' ')" = 7
           order=$(chezmoi "${common[@]}" apply --dry-run --include=scripts --verbose 2>&1 \
             | sed -n 's|^diff --git a/.chezmoiscripts/darwin/\([^ ]*\).*|\1|p' \
             | paste -sd, -)
           test "$order" = \
-            '00-ensure-homebrew.sh,10-install-packages.sh,20-build-zsh-plugins.sh,30-install-vscode-extensions.sh,40-install-pi-extensions.sh,90-verify-ssh.sh'
+            '00-ensure-homebrew.sh,10-install-packages.sh,15-install-dsh.sh,20-build-zsh-plugins.sh,30-install-vscode-extensions.sh,40-install-pi-extensions.sh,90-verify-ssh.sh'
           test "$(chezmoi "${common[@]}" managed --include=encrypted --path-style=relative)" = \
             '.ssh/id_ed25519'
 
