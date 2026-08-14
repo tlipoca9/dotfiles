@@ -3,13 +3,18 @@
 Personal macOS development environment managed directly by
 [chezmoi](https://www.chezmoi.io/) and [Homebrew](https://brew.sh/).
 
-The repository is public. The SSH private key is committed only as
-age-encrypted ciphertext. Its age identity is restored manually on each Mac and
-is never managed by chezmoi or committed to Git.
+This repository rebuilds the environment's **capabilities**, not an identical
+version snapshot. Homebrew formulae/casks and VS Code extensions intentionally
+follow their current upstream versions. Homebrew and DSH are installed only
+when missing; later `chezmoi apply` runs do not upgrade, downgrade, or otherwise
+converge those installed tools.
+
+The repository is public. The managed SSH private key is age-encrypted. Its age
+identity is restored manually on each Mac and is never managed or committed.
 
 ## Initialize a new Mac
 
-Restore the backed-up age identity at chezmoi's standard configuration path:
+Restore the backed-up identity at chezmoi's standard configuration path:
 
 ```sh
 mkdir -p "$HOME/.config/chezmoi"
@@ -18,7 +23,7 @@ chmod 700 "$HOME/.config/chezmoi"
 chmod 600 "$HOME/.config/chezmoi/age.txt"
 ```
 
-Then install chezmoi and initialize this repository over HTTPS:
+Then install chezmoi and initialize over HTTPS:
 
 ```sh
 sh -c "$(curl -fsLS get.chezmoi.io)" -- \
@@ -26,60 +31,59 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- \
   https://github.com/tlipoca9/dotfiles.git
 ```
 
-chezmoi's Darwin before-script checks the Command Line Tools. If they are
-absent, it starts the official installer and stops; finish that installation,
-then run `"$HOME/.local/bin/chezmoi" apply` again. The same script installs a
-missing Homebrew with the official installer and discovers its environment
-through `brew shellenv`.
+The Darwin before-script starts Apple's Command Line Tools installer when
+needed and asks you to apply again after it finishes. It likewise installs a
+missing Homebrew interactively, discovers its prefix, and caches only the
+rendered `brew shellenv` with mode `0600`.
 
-> Back up `~/.config/chezmoi/age.txt` before relying on the encrypted SSH key.
-> Losing every copy makes the committed ciphertext unrecoverable. Never add the
-> identity to this or any other repository.
+> Keep a separate backup of the age identity. Losing every copy makes the
+> encrypted SSH key unrecoverable. Never add the identity to a repository.
 
-## Daily commands
+## Daily use
 
 ```sh
-chezmoi apply    # install missing declarations and apply managed configuration
-chezmoi diff     # preview managed HOME changes
-chezmoi update   # pull the source repository and apply it
-chezmoi doctor   # run upstream chezmoi diagnostics
-chezmoi verify   # verify managed targets match their target state
+chezmoi diff     # always preview changes before applying to the real HOME
+chezmoi apply
+chezmoi verify   # verify after applying
+chezmoi update
+chezmoi doctor   # upstream chezmoi diagnostics
 ```
 
-`chezmoi apply` installs only missing Homebrew formulae/casks and declared
-extensions. It does not upgrade installed software, clean Homebrew, uninstall
-undeclared software, or remove unmanaged HOME files. `chezmoi update` is
-chezmoi's pull-and-apply operation; it is not a Homebrew or plugin upgrade
-workflow.
+`run_onchange` means declaration edits retrigger their installer or builder; it
+is not a continuous state-convergence system. Existing Homebrew packages and
+DSH are left alone. DSH's `install_version` is only the version requested on its
+first, missing-tool installation. Exact Zsh and Pi pins change only when their
+single source declarations are reviewed and edited.
 
-Package and extension interpreters use `run_onchange`, so declaration and pin
-changes rerun automatically. If an exceptional manual deletion removes a
-cached Zsh bundle, clear chezmoi's script state before applying again:
+If a manually deleted Zsh cache must be rebuilt without changing its manifests,
+clear chezmoi's script state and apply again:
 
 ```sh
 chezmoi state delete-bucket --bucket=scriptState
 chezmoi apply
 ```
 
-## Managed environment
+## Local checks
 
-- macOS only; no machine-specific profiles
-- system Zsh with pinned Antidote plugins, fzf-tab, vi mode, Starship, and local
-  shared history
-- Ghostty using Maple Mono NF CN and Catppuccin Mocha
-- official Visual Studio Code with minimal settings and one global theme
-  extension
-- ChatGPT/Codex desktop entry and Codex CLI
-- Pi coding agent on OpenAI Codex/GPT models with an exact extension allowlist
-- vendored user Codex skills in `~/.agents/skills`
-- global Codex rules in `~/.codex/AGENTS.md`
-- `~/.ssh/id_ed25519` encrypted with age in the public repository
+The single offline repository check uses only Python's standard library plus
+already-installed upstream tools. It renders and applies only to temporary
+destinations and never touches the real HOME:
 
-System packages are declared in
-`home/.chezmoidata/darwin/packages.toml`; VS Code extensions are declared in
-`home/.chezmoidata/darwin/vscode.toml`. Future platforms add real sibling data
-and scripts only when they are implemented.
+```sh
+python3 tests/check.py
+```
 
-Project language runtimes, macOS system preferences, Git configuration, and
-application account state are intentionally outside this repository. See
-[docs/pi.md](docs/pi.md) for the Pi package policy.
+## Managed scope
+
+- macOS only, without machine-specific profiles
+- system Zsh with exact, reviewed Antidote plugin commits
+- current Homebrew packages and current VS Code extension releases
+- Pi with exact, reviewed extension pins and preserved runtime state
+- vendored user skills and global Codex/DSH operating rules
+- only `~/.ssh/id_ed25519` and `id_ed25519.pub` under SSH management
+
+System declarations live in `home/.chezmoidata/darwin/packages.toml`; VS Code
+extensions live in `home/.chezmoidata/darwin/vscode.toml`; Pi pins live only in
+`home/dot_pi/private_agent/modify_settings.json`. Project runtimes, macOS
+preferences, Git configuration, application accounts, and unmanaged runtime
+files are outside this repository. See [docs/pi.md](docs/pi.md).
