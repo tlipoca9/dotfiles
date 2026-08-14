@@ -3,7 +3,7 @@
 set -eu
 
 # Managed Pi settings checksum: {{ include "dot_pi/private_agent/modify_settings.json" | sha256sum }}
-# Exact extension pins remain owned by ~/.pi/agent/settings.json.
+# The modifier is the sole declaration of exact pins; settings.json is its derived target.
 {{ template "darwin-shell-helpers" . }}
 setup_brew
 command -v pi >/dev/null 2>&1 || die "Pi CLI is unavailable after package installation"

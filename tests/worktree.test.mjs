@@ -3,7 +3,7 @@ import { execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { promisify } from 'node:util'
 import test from 'node:test'
 
@@ -26,11 +26,13 @@ async function fixture(t) {
   await git(repo, 'add', 'tracked.txt')
   await git(repo, '-c', 'core.hooksPath=/dev/null', 'commit', '-qm', 'base')
   t.after(() => rm(root, { recursive: true, force: true }))
+  const worktreeRoot = join(root, 'worktrees')
   return {
     repo,
+    worktreeRoot,
     owner: { cwd: repo, sessionId: 'parent-session-a' },
     otherOwner: { cwd: repo, sessionId: 'parent-session-b' },
-    module: createWorktreeGit({ worktreeRoot: join(root, 'worktrees') }),
+    module: createWorktreeGit({ worktreeRoot }),
   }
 }
 
@@ -59,34 +61,78 @@ test('rejects delegation from a dirty parent', async t => {
   await assert.rejects(module.create(owner, 'Must reject'), /parent worktree is not clean/)
 })
 
-test('same session can status, merge, and clean up while parent is dirty', async t => {
-  const { module, owner, repo } = await fixture(t)
+test('same session resumes status, merge, and cleanup with a new module instance', async t => {
+  const { module, owner, repo, worktreeRoot } = await fixture(t)
   const allocation = await module.create(owner, 'Lifecycle')
   await commitChild(allocation.path)
 
-  const status = await module.status(owner, allocation.path)
+  const restarted = createWorktreeGit({ worktreeRoot })
+  const status = await restarted.status(owner, allocation.path)
   assert.equal(status.clean, true)
   assert.equal(status.branch, allocation.branch)
 
-  const merged = await module.merge(owner, allocation.path)
+  const merged = await restarted.merge(owner, allocation.path)
   assert.equal(merged.status, 'merged')
   assert.ok(merged.merge_commit)
 
   await writeFile(join(repo, 'parent-runtime-state.txt'), 'dirty parent\n')
-  const cleaned = await module.cleanup(owner, allocation.path)
+  const cleaned = await restarted.cleanup(owner, allocation.path)
   assert.equal(cleaned.status, 'cleaned')
 })
 
-test('status, merge, and cleanup reject a different parent session', async t => {
-  const { module, owner, otherOwner } = await fixture(t)
+test('dirty parent blocks merge without changing delegated status', async t => {
+  const { module, owner, repo } = await fixture(t)
+  const allocation = await module.create(owner, 'Blocked merge')
+  await commitChild(allocation.path)
+  const parentHead = await git(repo, 'rev-parse', 'HEAD')
+  const before = await module.status(owner, allocation.path)
+
+  await writeFile(join(repo, 'parent-runtime-state.txt'), 'dirty parent\n')
+  await assert.rejects(module.merge(owner, allocation.path), /parent worktree is not clean/)
+
+  const after = await module.status(owner, allocation.path)
+  assert.deepEqual(after, before)
+  assert.equal(await git(repo, 'rev-parse', 'HEAD'), parentHead)
+  await module.cleanup(owner, allocation.path, { force: true })
+})
+
+test('new module instance rejects a different parent session', async t => {
+  const { module, owner, otherOwner, worktreeRoot } = await fixture(t)
   const allocation = await module.create(owner, 'Owned work')
   await commitChild(allocation.path)
+  const restarted = createWorktreeGit({ worktreeRoot })
 
-  await assert.rejects(module.status(otherOwner, allocation.path), /does not belong to calling session namespace/)
-  await assert.rejects(module.merge(otherOwner, allocation.path), /does not belong to calling session namespace/)
-  await assert.rejects(module.cleanup(otherOwner, allocation.path, { force: true }), /does not belong to calling session namespace/)
+  await assert.rejects(restarted.status(otherOwner, allocation.path), /does not belong to calling session namespace/)
+  await assert.rejects(restarted.merge(otherOwner, allocation.path), /does not belong to calling session namespace/)
+  await assert.rejects(restarted.cleanup(otherOwner, allocation.path, { force: true }), /does not belong to calling session namespace/)
+
+  await restarted.cleanup(owner, allocation.path, { force: true })
+})
+
+test('all operations reject relative and namespace-escape paths', async t => {
+  const { module, owner, otherOwner } = await fixture(t)
+  const allocation = await module.create(owner, 'Path owner')
+  const sibling = await module.create(otherOwner, 'Namespace sibling')
+  const escaped = `${allocation.path}/../../${basename(dirname(sibling.path))}/${basename(sibling.path)}`
+  const cases = [
+    { name: 'relative', path: 'relative/worktree', pattern: /absolute path/ },
+    { name: 'namespace sibling', path: sibling.path, pattern: /session namespace/ },
+    { name: 'path escape', path: escaped, pattern: /session namespace/ },
+  ]
+  const operations = [
+    ['status', path => module.status(owner, path)],
+    ['merge', path => module.merge(owner, path)],
+    ['cleanup', path => module.cleanup(owner, path, { force: true })],
+  ]
+
+  for (const pathCase of cases) {
+    for (const [operation, invoke] of operations) {
+      await assert.rejects(invoke(pathCase.path), pathCase.pattern, `${operation}: ${pathCase.name}`)
+    }
+  }
 
   await module.cleanup(owner, allocation.path, { force: true })
+  await module.cleanup(otherOwner, sibling.path, { force: true })
 })
 
 test('default cleanup refuses dirty child state and force discards it', async t => {

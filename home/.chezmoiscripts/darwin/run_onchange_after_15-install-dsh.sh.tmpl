@@ -12,12 +12,16 @@ if command -v dsh >/dev/null 2>&1; then
   printf 'dotfiles: dsh is already installed; keeping the installed version\n'
 else
   setup_brew
-  command -v node >/dev/null 2>&1 || die "Node.js is unavailable after package installation"
-  command -v npm >/dev/null 2>&1 || die "npm is unavailable after Node.js installation"
-  install_version={{ printf "'%s'" (replace "'" "'\"'\"'" $installVersion) }}
-  printf 'dotfiles: installing dsh@%s\n' "$install_version"
-  npm install --global --no-fund --no-audit "@deepseek-ai/dsh@$install_version"
-  command -v dsh >/dev/null 2>&1 || die "dsh is unavailable after npm installation"
+  if command -v dsh >/dev/null 2>&1; then
+    printf 'dotfiles: dsh became available after Homebrew shell setup; keeping the installed version\n'
+  else
+    command -v node >/dev/null 2>&1 || die "Node.js is unavailable after package installation"
+    command -v npm >/dev/null 2>&1 || die "npm is unavailable after Node.js installation"
+    install_version={{ printf "'%s'" (replace "'" "'\"'\"'" $installVersion) }}
+    printf 'dotfiles: installing dsh@%s\n' "$install_version"
+    npm install --global --no-fund --no-audit "@deepseek-ai/dsh@$install_version"
+    command -v dsh >/dev/null 2>&1 || die "dsh is unavailable after npm installation"
+  fi
 fi
 {{- else -}}
 #!/bin/sh
