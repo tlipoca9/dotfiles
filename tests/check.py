@@ -19,6 +19,13 @@ HOME_SOURCE = ROOT / "home"
 DATA = HOME_SOURCE / ".chezmoidata" / "darwin"
 SCRIPTS = HOME_SOURCE / ".chezmoiscripts" / "darwin"
 MODIFIER = HOME_SOURCE / "dot_pi" / "private_agent" / "modify_settings.json"
+DSH_PATCH = HOME_SOURCE / "dot_dsh" / "cordis.patch.yml"
+WORKTREE_SKILL = (
+    HOME_SOURCE / "dot_agents" / "skills" / "git-worktree-delegation" / "SKILL.md"
+)
+EXPECTED_DSH_PATCH = (
+    "# Stock DeepSeek Harness configuration: no custom plugins or overrides.\n[]\n"
+)
 SEMVER = re.compile(
     r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
     r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
@@ -227,15 +234,9 @@ def validate_render_and_apply(snapshot: TrackedSnapshot, sandbox: Path,
         assert non_darwin == "#!/bin/sh\nexit 0\n", (source, non_darwin)
         rendered_scripts[source.name] = target
 
-    for template in (
-        "home/dot_dsh/cordis.patch.yml.tmpl",
-        "home/dot_dsh/dot_agent-presets/worktree/agent.cordis.yml.tmpl",
-    ):
-        output = run(*common, "execute-template", "--file", template, env=env).stdout
-        assert "/.dsh/worktree.mjs" in output
-        assert "name: {{" not in output
-
     managed = run(*common, "managed", "--exclude=encrypted,scripts", "--path-style=relative", env=env).stdout.splitlines()
+    assert ".agents/skills/git-worktree-delegation/SKILL.md" in managed
+    assert ".dsh/cordis.patch.yml" in managed
     assert ".pi/agent/settings.json" in managed
     assert ".ssh/id_ed25519.pub" in managed
     assert ".zshrc" in managed
@@ -244,6 +245,10 @@ def validate_render_and_apply(snapshot: TrackedSnapshot, sandbox: Path,
 
     run(*common, "apply", "--exclude=encrypted,scripts", env=env)
     run(*common, "verify", "--exclude=encrypted,scripts", env=env)
+    assert (destination / ".dsh/cordis.patch.yml").read_text() == EXPECTED_DSH_PATCH
+    assert (
+        destination / ".agents/skills/git-worktree-delegation/SKILL.md"
+    ).read_text() == snapshot.required_text(WORKTREE_SKILL)
     assert stat.S_IMODE((destination / ".pi/agent").stat().st_mode) == 0o700
     assert stat.S_IMODE((destination / ".ssh/id_ed25519.pub").stat().st_mode) == 0o644
     assert not (destination / ".ssh/id_ed25519").exists()
@@ -404,6 +409,13 @@ def validate_zsh_generation(script: Path, sandbox: Path,
 def validate_repository_contracts(snapshot: TrackedSnapshot,
                                   env: dict[str, str]) -> None:
     assert snapshot.required_text(ROOT / ".chezmoiroot") == "home\n"
+    assert snapshot.required_text(DSH_PATCH) == EXPECTED_DSH_PATCH
+    skill_text = snapshot.required_text(WORKTREE_SKILL)
+    assert skill_text.startswith(
+        "---\nname: git-worktree-delegation\ndescription: "
+    )
+    assert "\n---\n\n# Git worktree delegation\n" in skill_text
+    assert snapshot.under(WORKTREE_SKILL.parent) == (WORKTREE_SKILL,)
     tracked_relative = tuple(path.relative_to(ROOT) for path in snapshot.paths)
     assert Path(".github/workflows/check.yml") not in tracked_relative
     assert not any(path.parts[:2] == (".github", "workflows") for path in tracked_relative)
@@ -440,10 +452,6 @@ def validate_repository_contracts(snapshot: TrackedSnapshot,
     assert "pi list >/dev/null" in pi_script
     assert "Failed to load extension" not in pi_script
 
-    run("node", "--check", "home/dot_dsh/pi-auth-credentials.mjs", env=env)
-    run("node", "--check", "home/dot_dsh/worktree-git.mjs", env=env)
-    run("node", "--check", "home/dot_dsh/worktree.mjs", env=env)
-    run("node", "--test", "tests/worktree.test.mjs", env=env)
     run("/bin/zsh", "-n", "home/dot_zshrc", env=env)
     empty_tree = run("git", "hash-object", "-t", "tree", "/dev/null", env=env).stdout.strip()
     assert re.fullmatch(r"[0-9a-f]+", empty_tree)
@@ -451,7 +459,7 @@ def validate_repository_contracts(snapshot: TrackedSnapshot,
 
 
 def main() -> int:
-    required = ("chezmoi", "git", "node")
+    required = ("chezmoi", "git")
     missing = [command for command in required if shutil.which(command) is None]
     if missing:
         raise SystemExit(f"missing required local command(s): {', '.join(missing)}")
