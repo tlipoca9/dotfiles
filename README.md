@@ -79,7 +79,7 @@ python3 tests/check.py
 - system Zsh with exact, reviewed Antidote plugin commits
 - current Homebrew packages and current VS Code extension releases
 - Pi with exact, reviewed extension pins and preserved runtime state
-- vendored user skills and global Codex/DSH operating rules
+- vendored user skills and independent global Codex guidance
 - only `~/.ssh/id_ed25519` and `id_ed25519.pub` under SSH management
 
 System declarations live in `home/.chezmoidata/darwin/packages.toml`; VS Code

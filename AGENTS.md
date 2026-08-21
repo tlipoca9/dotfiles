@@ -19,6 +19,8 @@ state convergence.
   `home/dot_pi/private_agent/modify_settings.json`; its modifier must preserve
   runtime-owned fields.
 - Vendored skill directories under `home/dot_agents/skills` are the whitelist.
+- Native Git worktree delegation guidance lives only in
+  `home/dot_agents/skills/git-worktree-delegation/SKILL.md`.
 - `home/dot_codex/AGENTS.md` is independent global user guidance.
 
 ## Apply and check
@@ -54,16 +56,6 @@ must not use the network, decrypt secrets, or mutate the real HOME.
   generations.
 - Pi health follows command exit status, not English output fragments.
 
-## DSH worktree delegation
-
-Keep the coordinating parent clean before creating a delegated worktree. The
-Git module derives an irreversible short branch/path namespace from the parent
-session id and revalidates it for status, merge, and cleanup, so another session
-cannot claim the worktree after a restart. Merge only a clean child into a clean
-parent and leave conflicts visible. Cleanup may continue with a dirty parent,
-but defaults to rejecting dirty or unmerged child state; `force` is deliberate
-discard.
-
 ## Security and preservation
 
 - The age identity is manually restored at `~/.config/chezmoi/age.txt` with mode
@@ -78,6 +70,6 @@ discard.
 - `chezmoi apply` remains non-destructive. Tests exclude encrypted content and
   scripts when applying a temporary destination.
 
-After changes run the local entry point, the focused Node worktree test, Zsh
-syntax, `git diff --check`, and the configured pre-commit hook before handoff.
-Do not stage or commit unless explicitly requested.
+After changes run the local entry point, Zsh syntax, `git diff --check`, and the
+configured pre-commit hook before handoff. Do not stage or commit unless
+explicitly requested.
