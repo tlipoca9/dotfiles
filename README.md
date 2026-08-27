@@ -79,11 +79,17 @@ python3 tests/check.py
 - system Zsh with exact, reviewed Antidote plugin commits
 - current Homebrew packages and current VS Code extension releases
 - Pi with exact, reviewed extension pins and preserved runtime state
-- vendored user skills and independent global Codex guidance
+- vendored user skills deployed only to `~/.agents/skills`, plus independent
+  global Codex guidance; `~/.codex/skills` remains Codex-owned system/runtime
+  state
 - only `~/.ssh/id_ed25519` and `id_ed25519.pub` under SSH management
 
 System declarations live in `home/.chezmoidata/darwin/packages.toml`; VS Code
 extensions live in `home/.chezmoidata/darwin/vscode.toml`; Pi pins live only in
-`home/dot_pi/private_agent/modify_settings.json`. Project runtimes, macOS
+`home/dot_pi/private_agent/modify_settings.json`; user skills live only in
+`home/dot_agents/skills`. Installers and generators must update that chezmoi
+source instead of creating a second user-skill tree under `~/.codex/skills`.
+Skills derived from private conversations are age-encrypted in the public
+source and decrypted only when chezmoi applies them. Project runtimes, macOS
 preferences, Git configuration, application accounts, and unmanaged runtime
 files are outside this repository. See [docs/pi.md](docs/pi.md).

@@ -1,0 +1,7 @@
+interface:
+  display_name: "严审开发"
+  short_description: "由独立实现 Agent 执行，经三审投票与架构复盘后提交"
+  default_prompt: "使用 $develop 完成这项代码开发，并在三审和架构复盘通过后提交。"
+
+policy:
+  allow_implicit_invocation: false

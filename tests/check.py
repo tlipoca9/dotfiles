@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import re
+import runpy
 import shutil
 import stat
 import subprocess
@@ -18,7 +19,14 @@ ROOT = Path(__file__).resolve().parents[1]
 HOME_SOURCE = ROOT / "home"
 DATA = HOME_SOURCE / ".chezmoidata" / "darwin"
 SCRIPTS = HOME_SOURCE / ".chezmoiscripts" / "darwin"
+SKILLS = HOME_SOURCE / "dot_agents" / "skills"
+PRIVATE_SKILLS = {"garyyu-perspective", "tlipoca9-perspective"}
 MODIFIER = HOME_SOURCE / "dot_pi" / "private_agent" / "modify_settings.json"
+BROWSER = HOME_SOURCE / "dot_pi" / "private_agent" / "extensions" / "browser"
+LEAN_CTX_CONFIG_SOURCE = (
+    HOME_SOURCE / "dot_pi" / "private_agent" / "extensions"
+    / "pi-lean-ctx" / "config.json.tmpl"
+)
 DSH_PATCH = HOME_SOURCE / "dot_dsh" / "cordis.patch.yml"
 WORKTREE_SKILL = (
     HOME_SOURCE / "dot_agents" / "skills" / "git-worktree-delegation" / "SKILL.md"
@@ -49,11 +57,12 @@ def run(*args: str | os.PathLike[str], env: dict[str, str] | None = None,
 
 
 class TrackedSnapshot:
-    """One Git-index snapshot with a single-read text cache."""
+    """One repository-worktree snapshot with a single-read text cache."""
 
     def __init__(self) -> None:
         completed = subprocess.run(
-            ["git", "ls-files", "-z"], cwd=ROOT, stdout=subprocess.PIPE,
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+            cwd=ROOT, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, check=False,
         )
         if completed.returncode:
@@ -64,7 +73,11 @@ class TrackedSnapshot:
         relative_paths = tuple(
             Path(os.fsdecode(raw)) for raw in completed.stdout.split(b"\0") if raw
         )
-        self.paths = tuple(ROOT / path for path in relative_paths)
+        self.paths = tuple(
+            ROOT / path
+            for path in relative_paths
+            if os.path.lexists(ROOT / path)
+        )
         self._path_set = frozenset(self.paths)
         self._text: dict[Path, str | None] = {}
         self._read_count: dict[Path, int] = {}
@@ -180,6 +193,65 @@ def validate_declarations(snapshot: TrackedSnapshot) -> None:
     for pin in pins:
         assert owners[pin] == [MODIFIER], (pin, owners[pin])
 
+    modifier_globals = runpy.run_path(str(MODIFIER))
+    browser_source = modifier_globals["BROWSER_EXTENSION_SOURCE"]
+    assert set(browser_source) == {"repository", "commit", "localPolicy"}
+    assert browser_source["repository"] == "https://github.com/amosblomqvist/pi-config.git"
+    assert browser_source["localPolicy"] == "default-on"
+    browser_commit = browser_source["commit"]
+    assert re.fullmatch(r"[0-9a-f]{40}", browser_commit)
+    assert [
+        path for path in snapshot.paths
+        if browser_commit in (snapshot.text(path) or "")
+    ] == [MODIFIER]
+
+    browser_files = snapshot.under(BROWSER)
+    assert tuple(path.name for path in browser_files) == (
+        "README.md", "index.ts", "package-lock.json", "package.json",
+    )
+    browser_package = json.loads(snapshot.required_text(BROWSER / "package.json"))
+    assert browser_package["private"] is True
+    assert browser_package["pi"] == {"extensions": ["./index.ts"]}
+    assert browser_package["dependencies"] == {"playwright-core": "^1.49.0"}
+    browser_lock = json.loads(snapshot.required_text(BROWSER / "package-lock.json"))
+    playwright = browser_lock["packages"]["node_modules/playwright-core"]
+    assert playwright == {
+        "version": "1.60.0",
+        "resolved": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.60.0.tgz",
+        "integrity": "sha512-9bW6zvX/m0lEbgTKJ6YppOKx8H3VOPBMOCFh2irXFOT4BbHgrx5hPjwJYLT40Lu+4qtD36qKc/Hn56StUW57IA==",
+        "license": "Apache-2.0",
+        "bin": {"playwright-core": "cli.js"},
+        "engines": {"node": ">=18"},
+    }
+    browser_index = snapshot.required_text(BROWSER / "index.ts")
+    browser_readme = snapshot.required_text(BROWSER / "README.md")
+    assert 'let enabled = true;' in browser_index
+    assert 'let want = true;' in browser_index
+    assert "managed default is on" in browser_index
+    assert "apply the\n  // managed default" in browser_index
+    assert "flip the\n  // browser tools out" not in browser_index
+    assert 'pi.registerCommand("browser"' in browser_index
+    assert "for (const name of BROWSER_TOOL_NAMES) active.delete(name);" in browser_index
+    assert "pi.setActiveTools(Array.from(active));" in browser_index
+    assert "Default on, opt out per session" in browser_readme
+    assert "`/new` starts enabled" in browser_readme
+    assert "resets to off" not in browser_readme
+    assert not any("pi-chrome-devtools" in pin for pin in pins)
+
+    lean_ctx_package = packages["lean_ctx"]
+    assert lean_ctx_package == {
+        "manager": "homebrew",
+        "kind": "formula",
+        "name": "yvgude/lean-ctx/lean-ctx",
+        "check": {"command": "lean-ctx"},
+    }
+    lean_ctx_config_template = snapshot.required_text(LEAN_CTX_CONFIG_SOURCE)
+    assert '"binary": "{{ output "brew" "--prefix" | trim }}/bin/lean-ctx"' in (
+        lean_ctx_config_template
+    )
+    assert '"ctx_find"' in lean_ctx_config_template
+    assert '"ctx_grep"' in lean_ctx_config_template
+
     plugin_pattern = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+ pin:[0-9a-f]{40}")
     repositories: list[str] = []
     for phase in ("pre", "post"):
@@ -238,10 +310,22 @@ def validate_render_and_apply(snapshot: TrackedSnapshot, sandbox: Path,
     assert ".agents/skills/git-worktree-delegation/SKILL.md" in managed
     assert ".dsh/cordis.patch.yml" in managed
     assert ".pi/agent/settings.json" in managed
+    assert ".pi/agent/extensions/browser/index.ts" in managed
+    assert ".pi/agent/extensions/pi-lean-ctx/config.json" in managed
     assert ".ssh/id_ed25519.pub" in managed
     assert ".zshrc" in managed
     encrypted = run(*common, "managed", "--include=encrypted", "--path-style=relative", env=env).stdout.splitlines()
-    assert encrypted == [".ssh/id_ed25519"]
+    assert ".ssh/id_ed25519" in encrypted
+    assert all(
+        path == ".ssh/id_ed25519"
+        or any(path.startswith(f".agents/skills/{directory}/")
+               for directory in PRIVATE_SKILLS)
+        for path in encrypted
+    )
+    assert all(
+        f".agents/skills/{directory}/SKILL.md" in encrypted
+        for directory in PRIVATE_SKILLS
+    )
 
     run(*common, "apply", "--exclude=encrypted,scripts", env=env)
     run(*common, "verify", "--exclude=encrypted,scripts", env=env)
@@ -250,6 +334,15 @@ def validate_render_and_apply(snapshot: TrackedSnapshot, sandbox: Path,
         destination / ".agents/skills/git-worktree-delegation/SKILL.md"
     ).read_text() == snapshot.required_text(WORKTREE_SKILL)
     assert stat.S_IMODE((destination / ".pi/agent").stat().st_mode) == 0o700
+    assert (
+        destination / ".pi/agent/extensions/browser/index.ts"
+    ).read_text() == snapshot.required_text(BROWSER / "index.ts")
+    assert json.loads(
+        (destination / ".pi/agent/extensions/pi-lean-ctx/config.json").read_text()
+    ) == {
+        "binary": f"{run('brew', '--prefix', env=env).stdout.strip()}/bin/lean-ctx",
+        "disableTools": ["ctx_find", "ctx_grep"],
+    }
     assert stat.S_IMODE((destination / ".ssh/id_ed25519.pub").stat().st_mode) == 0o644
     assert not (destination / ".ssh/id_ed25519").exists()
 
@@ -424,6 +517,57 @@ def validate_repository_contracts(snapshot: TrackedSnapshot,
     assert not any(path.name.startswith("exact_") and path.is_relative_to(HOME_SOURCE)
                    for path in snapshot.paths)
 
+    skill_paths = snapshot.under(SKILLS)
+    assert skill_paths
+    top_level_skills = {
+        path.relative_to(SKILLS).parts[0]
+        for path in skill_paths
+    }
+    assert all(
+        (SKILLS / directory / "SKILL.md") in skill_paths
+        or (SKILLS / directory / "encrypted_SKILL.md.age") in skill_paths
+        for directory in top_level_skills
+    )
+    assert not any(len(path.relative_to(SKILLS).parts) == 1 for path in skill_paths)
+    assert not snapshot.under(HOME_SOURCE / "dot_codex" / "skills")
+    assert not any(
+        path.name in {".DS_Store", "__pycache__"} or path.suffix == ".pyc"
+        for path in skill_paths
+    )
+
+    assert PRIVATE_SKILLS <= top_level_skills
+    for directory in PRIVATE_SKILLS:
+        private_paths = snapshot.under(SKILLS / directory)
+        assert private_paths
+        assert all(path.suffix == ".age" for path in private_paths)
+
+    skill_names: dict[str, Path] = {
+        directory: SKILLS / directory / "encrypted_SKILL.md.age"
+        for directory in PRIVATE_SKILLS
+    }
+    for path in skill_paths:
+        if path.name != "SKILL.md":
+            continue
+        text = snapshot.required_text(path)
+        assert text.startswith("---\n"), path
+        frontmatter, separator, _ = text[4:].partition("\n---\n")
+        assert separator, path
+        fields = {}
+        for line in frontmatter.splitlines():
+            key, colon, value = line.partition(":")
+            if colon and key in {"name", "description"}:
+                fields[key] = value.strip().strip("\"'")
+        assert fields.get("name"), path
+        assert fields.get("description"), path
+        assert fields["name"] not in skill_names, (
+            fields["name"], skill_names.get(fields["name"]), path
+        )
+        skill_names[fields["name"]] = path
+
+    nuwa = snapshot.required_text(SKILLS / "huashu-nuwa" / "SKILL.md")
+    assert "[skills-source]/[person-name]-perspective/SKILL.md" in nuwa
+    assert "写入 `.claude/skills" not in nuwa
+
     ssh_files = sorted(
         path.name for path in snapshot.under(HOME_SOURCE / "dot_ssh")
         if path.parent == HOME_SOURCE / "dot_ssh"
@@ -451,6 +595,14 @@ def validate_repository_contracts(snapshot: TrackedSnapshot,
     )
     assert "pi list >/dev/null" in pi_script
     assert "Failed to load extension" not in pi_script
+    browser_script = snapshot.required_text(
+        SCRIPTS / "run_onchange_after_42-install-pi-browser.sh.tmpl"
+    )
+    assert 'include "dot_pi/private_agent/extensions/browser/package.json"' in browser_script
+    assert 'include "dot_pi/private_agent/extensions/browser/package-lock.json"' in browser_script
+    assert "npm ci --ignore-scripts --no-audit --no-fund" in browser_script
+    assert "./node_modules/.bin/playwright-core install chromium" in browser_script
+    assert "npx playwright" not in browser_script
 
     run("/bin/zsh", "-n", "home/dot_zshrc", env=env)
     empty_tree = run("git", "hash-object", "-t", "tree", "/dev/null", env=env).stdout.strip()

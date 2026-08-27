@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Engine E2E 网络恢复"
+  short_description: "诊断并绕过 iOA 导致的 E2E TLS 与 EOF 抖动"
+  default_prompt: "使用 $agent-engine-e2e-network-recovery 诊断 Agent Engine E2E 的 EOF 或 TLS 故障，并验证公网直连恢复。"

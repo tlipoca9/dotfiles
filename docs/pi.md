@@ -9,23 +9,25 @@
 
 扩展 pins 的唯一事实源是
 `home/dot_pi/private_agent/modify_settings.json`。该 modifier 合并受管字段，同时
-保留输入 JSON 中的 Pi runtime 字段。本文不复制 pin 数量或清单，避免文档与
-实际声明漂移。第三方扩展拥有与 Pi 进程相同的系统权限，因此 pin 变更属于需
-审查的供应链变更，不是日常自动升级。
+保留输入 JSON 中的 Pi runtime 字段。npm 扩展以精确版本安装；需要本地文件的
+扩展以上游提交和明确记录的本地策略修改纳管，依赖由其 lockfile 固定。本文不
+复制 pin 数量或清单，避免文档与实际声明漂移。第三方扩展拥有与 Pi 进程相同
+的系统权限，因此 pin 变更属于需审查的供应链变更，不是日常自动升级。
 
 ## 模型与外部服务
 
 全局默认使用 OpenAI Codex/GPT 模型；可切换范围、thinking level、后台记忆
-模型及各扩展配置均以受管 Pi settings 为准。Web 能力限制在已配置的 OpenAI
-搜索和本地 HTTP 抓取；浏览器 cookie、第三方托管抓取及非当前 provider 的
-示例模型不纳入默认环境。
+模型及各扩展配置均以受管 Pi settings 为准。Web 能力包括已配置的 OpenAI
+搜索、本地 HTTP 抓取，以及默认开启的本地 browser；browser cookie 只保存在
+本机 profile。第三方托管抓取及非当前 provider 的示例模型不纳入默认环境。
 
 ## 应用与验证
 
 `chezmoi apply` 补齐缺失的 Pi CLI，合并 settings，再运行 Pi 自身的 extension
-更新命令以落实精确 pins。Pi 健康检查只相信命令退出码，不解析可能变化的英文
-错误文本。`run_onchange` 只表示声明变化后重跑，不负责持续收敛或越过 pins
-自动升级。
+更新命令以落实精确 npm pins，并为本地 browser 扩展安装锁定依赖和 Chromium。
+browser 默认开启，当前会话可用 `/browser off` 关闭。Pi 健康检查只相信命令
+退出码，不解析可能变化的英文错误文本。`run_onchange` 只表示声明变化后重
+跑，不负责持续收敛或越过 pins 自动升级。
 
 修改 pin 前应核对 npm metadata、Pi engine/peer dependency 和扩展 README，
 并把变更作为代码审查。提交前运行：

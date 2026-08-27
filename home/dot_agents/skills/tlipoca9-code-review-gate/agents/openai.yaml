@@ -1,0 +1,4 @@
+interface:
+  display_name: "tlipoca9 Code Review Gate"
+  short_description: "Require tlipoca9-perspective review for every code change"
+  default_prompt: "Use $tlipoca9-code-review-gate to make this code change and pass the required review before delivery."

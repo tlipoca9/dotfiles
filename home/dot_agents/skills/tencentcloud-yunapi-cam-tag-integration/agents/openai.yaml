@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tencent Cloud YunAPI CAM & Tag"
+  short_description: "YunAPI resource CAM and Tag integration practices"
+  default_prompt: "Use $tencentcloud-yunapi-cam-tag-integration to design or implement CAM and Tag integration for this YunAPI resource."
