@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""Merge dotfiles-owned MCP servers while preserving other OMP MCP state."""
+
+from __future__ import annotations
+
+import json
+import sys
+from typing import Any
+
+MANAGED_SERVERS: dict[str, dict[str, Any]] = {
+    "iWiki": {
+        "url": "https://prod.mcp.it.woa.com/app_iwiki_mcp/mcp3",
+        "auth": "bearer",
+        "bearerTokenStore": True,
+    },
+    "tapd_mcp_http": {
+        "url": "https://mcpgw.knot.woa.com/tapd/",
+        "auth": "bearer",
+        "bearerTokenStore": True,
+        "httpTransport": "streamable-http",
+        "requestTimeoutMs": 20_000,
+    },
+    "gongfeng": {
+        "url": "https://mcpgw.knot.woa.com/gongfeng",
+        "auth": "bearer",
+        "bearerTokenStore": True,
+        "requestTimeoutMs": 60_000,
+    },
+    "zhiyan-log": {
+        "url": "https://mcpgw.knot.woa.com/zhiyan/log",
+        "auth": "bearer",
+        "bearerTokenStore": True,
+        "httpTransport": "streamable-http",
+        "requestTimeoutMs": 60_000,
+    },
+}
+
+
+def merge_server(existing: object, managed: dict[str, Any]) -> dict[str, Any]:
+    server = dict(existing) if isinstance(existing, dict) else {}
+
+    headers = server.get("headers")
+    if isinstance(headers, dict):
+        safe_headers = {
+            key: value
+            for key, value in headers.items()
+            if key.lower() != "authorization"
+        }
+        if safe_headers:
+            server["headers"] = safe_headers
+        else:
+            server.pop("headers", None)
+
+    server.pop("bearerToken", None)
+    server.pop("bearerTokenEnv", None)
+    server.pop("transportType", None)
+    server.pop("type", None)
+    server.pop("timeout", None)
+    server.update(managed)
+    return server
+
+
+def main() -> int:
+    raw = sys.stdin.read()
+    try:
+        config = json.loads(raw) if raw.strip() else {}
+    except json.JSONDecodeError as error:
+        print(f"OMP MCP config is not valid JSON: {error}", file=sys.stderr)
+        return 1
+    if not isinstance(config, dict):
+        print("OMP MCP config must contain a JSON object", file=sys.stderr)
+        return 1
+
+    servers = config.get("mcpServers")
+    servers = dict(servers) if isinstance(servers, dict) else {}
+    for name, managed in MANAGED_SERVERS.items():
+        servers[name] = merge_server(servers.get(name), managed)
+    config["mcpServers"] = servers
+
+    disabled = config.get("disabledServers")
+    disabled = list(disabled) if isinstance(disabled, list) else []
+    config["disabledServers"] = list(
+        dict.fromkeys(
+            [name for name in disabled if isinstance(name, str)]
+            + list(MANAGED_SERVERS)
+        )
+    )
+
+    settings = config.get("settings")
+    settings = dict(settings) if isinstance(settings, dict) else {}
+    settings["hostConfigDiscovery"] = "off"
+    config["settings"] = settings
+
+    json.dump(config, sys.stdout, ensure_ascii=False, indent=2)
+    sys.stdout.write("\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

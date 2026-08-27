@@ -18,9 +18,10 @@ state convergence.
 - Pi extension pins live only in
   `home/dot_pi/private_agent/modify_settings.json.tmpl`; its modifier must preserve
   runtime-owned fields.
-- OMP's independent Task Wayfinder gate lives under
-  `home/dot_omp/private_agent/`; read `docs/omp.md` before changing its wrapper or
-  read-only reviewer contract.
+- OMP's migrated MCP declarations and independent Task Wayfinder gate live under
+  `home/dot_omp/private_agent/`; its adapter pin and discovery-isolation
+  interpreter live in `run_onchange_after_41-configure-omp.sh.tmpl`. Read
+  `docs/omp.md` before changing them.
 - Shared user skills under `home/dot_agents/skills` and Codex-specific skills
   under `home/dot_codex/skills` are separate whitelists. Keep a skill in only
   one tree; `hatch-pet` is Codex-specific.
@@ -67,7 +68,8 @@ upstream commands.
   files and keep `private_agent` so managed agent directories are mode `0700`.
 - Pi and OMP auth, trust, sessions, caches, package/plugin directories, and model
   configuration remain runtime state.
-- Skill, Pi pin, and OMP gate updates are supply-chain changes reviewed as code.
+- Skill, Pi pin, OMP pin/MCP, and OMP gate updates are supply-chain changes
+  reviewed as code.
 - `chezmoi apply` remains non-destructive.
 
 After changes run the relevant upstream capability checks, Zsh syntax when Zsh

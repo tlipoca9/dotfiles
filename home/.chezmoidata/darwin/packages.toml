@@ -7,6 +7,11 @@ check = { command = "age" }
 manager = "homebrew"
 kind = "formula"
 
+[darwin.packages.bun]
+manager = "homebrew"
+kind = "formula"
+check = { command = "bun" }
+
 [darwin.packages.chezmoi]
 manager = "homebrew"
 kind = "formula"
@@ -17,10 +22,25 @@ manager = "homebrew"
 kind = "formula"
 check = { command = "node" }
 
+[darwin.packages.fd]
+manager = "homebrew"
+kind = "formula"
+check = { command = "fd" }
+
 [darwin.packages.fzf]
 manager = "homebrew"
 kind = "formula"
 check = { command = "fzf" }
+
+[darwin.packages.gh]
+manager = "homebrew"
+kind = "formula"
+check = { command = "gh" }
+
+[darwin.packages.jq]
+manager = "homebrew"
+kind = "formula"
+check = { command = "jq" }
 
 [darwin.packages.lean_ctx]
 manager = "homebrew"
@@ -56,10 +76,25 @@ kind = "formula"
 name = "rust-analyzer"
 check = { command = "rust-analyzer" }
 
+[darwin.packages.shellcheck]
+manager = "homebrew"
+kind = "formula"
+check = { command = "shellcheck" }
+
+[darwin.packages.shfmt]
+manager = "homebrew"
+kind = "formula"
+check = { command = "shfmt" }
+
 [darwin.packages.starship]
 manager = "homebrew"
 kind = "formula"
 check = { command = "starship" }
+
+[darwin.packages.yq]
+manager = "homebrew"
+kind = "formula"
+check = { command = "yq" }
 
 [darwin.packages.zoxide]
 manager = "homebrew"

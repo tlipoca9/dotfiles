@@ -1,0 +1,25 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+set -eu
+
+# Managed OMP discovery providers: claude,codex
+# Managed OMP plugin pins: typebox@1.3.3,pi-mcp-adapter@2.29.0
+# Managed OMP MCP checksum: {{ include "dot_omp/private_agent/modify_mcp.json.tmpl" | sha256sum }}
+{{ template "darwin-shell-helpers" . }}
+setup_brew
+command -v omp >/dev/null 2>&1 || die "OMP CLI is unavailable after package installation"
+command -v bun >/dev/null 2>&1 || die "Bun is unavailable after package installation"
+command -v python3 >/dev/null 2>&1 || die "Python is unavailable after package installation"
+
+disabled_providers=$(
+  omp config get disabledProviders --json |
+    python3 -c 'import json, sys; value = json.load(sys.stdin).get("value", []); value = value if isinstance(value, list) else []; print(json.dumps(value + [name for name in ("claude", "codex") if name not in value], separators=(",", ":")))'
+)
+omp config set disabledProviders "$disabled_providers" >/dev/null
+omp plugin install npm:typebox@1.3.3 --json >/dev/null
+omp plugin install npm:pi-mcp-adapter@2.29.0 --json >/dev/null
+omp plugin doctor --json >/dev/null
+{{- else -}}
+#!/bin/sh
+exit 0
+{{- end }}
