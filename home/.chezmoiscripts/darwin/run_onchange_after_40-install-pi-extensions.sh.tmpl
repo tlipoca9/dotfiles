@@ -2,7 +2,7 @@
 #!/bin/sh
 set -eu
 
-# Managed Pi settings checksum: {{ include "dot_pi/private_agent/modify_settings.json" | sha256sum }}
+# Managed Pi settings checksum: {{ include "dot_pi/private_agent/modify_settings.json.tmpl" | sha256sum }}
 # The modifier is the sole declaration of exact pins; settings.json is its derived target.
 {{ template "darwin-shell-helpers" . }}
 setup_brew

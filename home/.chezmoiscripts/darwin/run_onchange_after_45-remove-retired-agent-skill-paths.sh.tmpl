@@ -1,0 +1,25 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+set -eu
+
+# Exact migration allowlist. The non-exact parent directories remain unmanaged.
+for relative_path in \
+  develop \
+  develop-from-contract \
+  git-worktree-delegation \
+  gongfeng-development-loop \
+  hatch-pet \
+  huashu-nuwa/examples \
+  to-issues \
+  to-prd \
+  wxwork
+do
+  target="$HOME/.agents/skills/$relative_path"
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    rm -rf "$target"
+  fi
+done
+{{- else -}}
+#!/bin/sh
+exit 0
+{{- end }}

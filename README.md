@@ -63,33 +63,25 @@ chezmoi state delete-bucket --bucket=scriptState
 chezmoi apply
 ```
 
-## Local checks
-
-The single offline repository check uses only Python's standard library plus
-already-installed upstream tools. It renders and applies only to temporary
-destinations and never touches the real HOME:
-
-```sh
-python3 tests/check.py
-```
-
 ## Managed scope
 
 - macOS only, without machine-specific profiles
 - system Zsh with exact, reviewed Antidote plugin commits
 - current Homebrew packages and current VS Code extension releases
 - Pi with exact, reviewed extension pins and preserved runtime state
-- vendored user skills deployed only to `~/.agents/skills`, plus independent
-  global Codex guidance; `~/.codex/skills` remains Codex-owned system/runtime
-  state
+- shared vendored skills deployed to `~/.agents/skills`, plus explicitly
+  whitelisted Codex-specific skills deployed to `~/.codex/skills`
 - only `~/.ssh/id_ed25519` and `id_ed25519.pub` under SSH management
 
 System declarations live in `home/.chezmoidata/darwin/packages.toml`; VS Code
 extensions live in `home/.chezmoidata/darwin/vscode.toml`; Pi pins live only in
-`home/dot_pi/private_agent/modify_settings.json`; user skills live only in
-`home/dot_agents/skills`. Installers and generators must update that chezmoi
-source instead of creating a second user-skill tree under `~/.codex/skills`.
+`home/dot_pi/private_agent/modify_settings.json.tmpl`; shared user skills live only
+in `home/dot_agents/skills`. Installers and generators must update the matching
+chezmoi source instead of creating duplicate runtime copies. Codex-specific
+skills live only in `home/dot_codex/skills`.
 Skills derived from private conversations are age-encrypted in the public
-source and decrypted only when chezmoi applies them. Project runtimes, macOS
-preferences, Git configuration, application accounts, and unmanaged runtime
-files are outside this repository. See [docs/pi.md](docs/pi.md).
+source and decrypted only when chezmoi applies them. A one-time, exact
+allowlist migration removes known retired or moved skill paths; it does not use
+exact-directory semantics or sweep unrelated runtime files. Project runtimes,
+macOS preferences, Git configuration, application accounts, and unmanaged
+runtime files are outside this repository. See [docs/pi.md](docs/pi.md).

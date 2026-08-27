@@ -1,4 +1,0 @@
-interface:
-  display_name: "WXWork"
-  short_description: "查询企业微信本地聊天记录，并整理成摘要、风险和待办"
-  default_prompt: "Use $wxwork to summarize today's Enterprise WeChat conversations and extract decisions, risks, and follow-ups."

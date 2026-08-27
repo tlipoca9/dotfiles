@@ -1,4 +1,0 @@
-interface:
-  display_name: "契约驱动开发"
-  short_description: "冻结行为契约，由独立架构师设计代码架构后分层完成开发"
-  default_prompt: "使用 $develop-from-contract 冻结用户批准的行为契约，由两名独立架构师分别设计契约层和实现层的代码架构，再完成可信 RED → GREEN。"

@@ -2,7 +2,7 @@
 #!/bin/sh
 set -eu
 
-# Browser source declaration checksum: {{ include "dot_pi/private_agent/modify_settings.json" | sha256sum }}
+# Browser source declaration checksum: {{ include "dot_pi/private_agent/modify_settings.json.tmpl" | sha256sum }}
 # Browser package checksum: {{ include "dot_pi/private_agent/extensions/browser/package.json" | sha256sum }}
 # Browser dependency checksum: {{ include "dot_pi/private_agent/extensions/browser/package-lock.json" | sha256sum }}
 {{ template "darwin-shell-helpers" . }}

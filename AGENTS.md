@@ -16,25 +16,22 @@ state convergence.
 - Zsh pins live only in `home/dot_zsh_plugins_pre.txt` and
   `home/dot_zsh_plugins_post.txt`.
 - Pi extension pins live only in
-  `home/dot_pi/private_agent/modify_settings.json`; its modifier must preserve
+  `home/dot_pi/private_agent/modify_settings.json.tmpl`; its modifier must preserve
   runtime-owned fields.
-- Vendored skill directories under `home/dot_agents/skills` are the whitelist.
-- Native Git worktree delegation guidance lives only in
-  `home/dot_agents/skills/git-worktree-delegation/SKILL.md`.
+- Shared user skills under `home/dot_agents/skills` and Codex-specific skills
+  under `home/dot_codex/skills` are separate whitelists. Keep a skill in only
+  one tree; `hatch-pet` is Codex-specific.
+- Retired or moved skill targets are removed only by the exact allowlist in
+  `run_onchange_after_45-remove-retired-agent-skill-paths.sh.tmpl`; parent skill
+  directories remain non-exact so unrelated runtime state survives.
 - `home/dot_codex/AGENTS.md` is independent global user guidance.
 
 ## Apply and check
 
-Use upstream chezmoi directly—no bootstrap wrapper, Taskfile, or custom doctor.
-Before a real-HOME apply run `chezmoi diff`; after it run `chezmoi verify`.
-Repository validation uses one offline, temporary-HOME entry point:
-
-```sh
-python3 tests/check.py
-```
-
-The check uses Python's standard library and installed upstream commands. It
-must not use the network, decrypt secrets, or mutate the real HOME.
+Use upstream chezmoi directly—no bootstrap wrapper, Taskfile, custom doctor, or
+repository-wide check script. Before a real-HOME apply run `chezmoi diff`; after
+it run `chezmoi verify`. Validate changed capabilities with their actual
+upstream commands.
 
 ## Package and script rules
 
@@ -67,9 +64,8 @@ must not use the network, decrypt secrets, or mutate the real HOME.
   keep `private_agent` so `~/.pi/agent` is mode `0700`.
 - Pi auth, trust, sessions, caches, and package directories remain runtime state.
 - Skill and Pi pin updates are supply-chain changes reviewed as code.
-- `chezmoi apply` remains non-destructive. Tests exclude encrypted content and
-  scripts when applying a temporary destination.
+- `chezmoi apply` remains non-destructive.
 
-After changes run the local entry point, Zsh syntax, `git diff --check`, and the
-configured pre-commit hook before handoff. Do not stage or commit unless
-explicitly requested.
+After changes run the relevant upstream capability checks, Zsh syntax when Zsh
+files change, `git diff --check`, and the configured pre-commit hook before
+handoff. Do not stage or commit unless explicitly requested.

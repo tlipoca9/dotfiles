@@ -44,6 +44,12 @@ manager = "homebrew"
 kind = "formula"
 check = { command = "rg" }
 
+[darwin.packages.rust_analyzer]
+manager = "homebrew"
+kind = "formula"
+name = "rust-analyzer"
+check = { command = "rust-analyzer" }
+
 [darwin.packages.starship]
 manager = "homebrew"
 kind = "formula"

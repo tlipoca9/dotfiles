@@ -1,0 +1,14 @@
+interface:
+    display_name: "Wayfinder"
+    short_description: "Map a large effort as decision tickets"
+
+dependencies:
+    tools:
+        - type: "mcp"
+          value: "gongfeng"
+          description: "Gongfeng issue operations for git.woa.com wayfinding maps"
+          transport: "streamable_http"
+          url: "https://git.woa.com/api/mcp/mcp"
+
+policy:
+    allow_implicit_invocation: false
