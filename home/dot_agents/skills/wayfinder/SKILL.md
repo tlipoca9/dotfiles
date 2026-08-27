@@ -44,7 +44,7 @@ The whole map at low resolution, loaded once per session. Open tickets are **not
 
 ## Pitfall log
 
-<!-- shared operational memory lives in append-only map comments headed "WAYFINDER PITFALL"; every session reads them before work -->
+<!-- shared operational memory lives in the tracker's append-only pitfall log; every session reads it before work -->
 
 ## Not yet specified
 
@@ -57,11 +57,11 @@ The whole map at low resolution, loaded once per session. Open tickets are **not
 
 ### Pitfall log
 
-The map's comments are the effort's append-only **pitfall log**: shared operational memory for non-obvious, reusable obstacles such as image-build failures, deployment traps, environment constraints, permission errors, and tool/API quirks. Decisions still live in tickets; cross-ticket execution knowledge lives here so every agent sees one canonical stream without concurrent body edits.
+The map's tracker-specific append-only **pitfall log** is shared operational memory for non-obvious, reusable obstacles such as image-build failures, deployment traps, environment constraints, permission errors, and tool/API quirks. Trackers with comments use map comments headed `WAYFINDER PITFALL`; a tracker without mini-item comments may define a serialized map-description log in `docs/agents/issue-tracker.md`. Decisions still live in tickets; cross-ticket execution knowledge lives here so every agent sees one canonical stream.
 
-Before running commands or diagnosing the chosen ticket, read every map comment headed `WAYFINDER PITFALL`. At the first unexpected failure, search those entries again by symptom and component **before trying another fix**. Reuse a matching resolution, verify it in the current context, and cite it rather than creating a duplicate.
+Before running commands or diagnosing the chosen ticket, read every pitfall-log entry from the tracker-specific location. At the first unexpected failure, search those entries again by symptom and component **before trying another fix**. Reuse a matching resolution, verify it in the current context, and cite it rather than creating a duplicate.
 
-A new reusable pitfall candidate is reported as soon as its cause or safe workaround is known, or before handoff if it remains unresolved. An execution-bearing map has exactly one **map supervisor** for its whole active execution; every concurrent agent on that map runs beneath it and sends candidates to it. Starting a second supervisor or standalone execution session on the same map is blocked until the active supervisor hands off. The map supervisor is the log's only writer: it re-reads the latest comments and compares the normalized `Scope + Symptom + Cause` key immediately before appending. A match reuses the existing entry; otherwise it writes exactly one comment. A truly standalone, non-overlapping session performs the same recheck itself. Record one root cause per comment and redact secrets:
+A new reusable pitfall candidate is reported as soon as its cause or safe workaround is known, or before handoff if it remains unresolved. An execution-bearing map has exactly one **map supervisor** for its whole active execution; every concurrent agent on that map runs beneath it and sends candidates to it. Starting a second supervisor or standalone execution session on the same map is blocked until the active supervisor hands off. The map supervisor is the log's only writer: it re-reads the latest tracker-specific log and compares the normalized `Scope + Symptom + Cause` key immediately before appending. A match reuses the existing entry; otherwise it writes exactly one entry. A truly standalone, non-overlapping session performs the same recheck itself. Record one root cause per entry and redact secrets:
 
 ```markdown
 ### WAYFINDER PITFALL
@@ -93,7 +93,7 @@ A session **claims** a ticket by assigning it to the dev driving the map, **firs
 
 Blocking uses the tracker's **native** dependency relationship: essential because it renders the frontier _visually_ in the tracker's own UI, so the human sees what's takeable without opening the map. Only a tracker that lacks native blocking falls back to a body convention. A ticket is **unblocked** when every ticket blocking it is closed; the **frontier** is the open, unblocked, unclaimed children, the edge of the known.
 
-The answer isn't part of the body; it's recorded on resolution (see [Work through the map](#work-through-the-map)). Assets created while resolving a ticket are linked from the issue, not pasted in.
+The answer is recorded in the tracker-specific resolution location defined by `docs/agents/issue-tracker.md` (see [Work through the map](#work-through-the-map)). Trackers with comments keep it out of the body; TAPD mini appends it under `## Resolution` in the Ticket description. Assets created while resolving a ticket are linked from the issue, not pasted in.
 
 ## Ticket Types
 
@@ -123,7 +123,7 @@ Fog only ever gathers _toward_ the destination. The destination fixes the scope,
 
 Out-of-scope work never graduates (the frontier stops at the destination), so it returns only if the destination is redrawn, and then as a fresh effort, not a resumption.
 
-Ruling something out of scope is a scoping act, not a step on the route. When a ticket that already exists turns out to sit past the destination (mis-scoped in while charting, or exposed by a resolution), **close it** (a closed ticket is unambiguously off the frontier) and leave one line in the **Out of scope** section: the gist plus why it's out of scope, linking the closed ticket. It stays out of **Decisions so far**, which records the route actually walked; a scope boundary isn't a step on it.
+Ruling something out of scope is a scoping act, not a step on the route. When a ticket that already exists turns out to sit past the destination (incorrectly scoped while charting, or exposed by a resolution), **close it** (a closed ticket is unambiguously off the frontier) and leave one line in the **Out of scope** section: the gist plus why it's out of scope, linking the closed ticket. It stays out of **Decisions so far**, which records the route actually walked; a scope boundary isn't a step on it.
 
 ## Invocation
 
@@ -144,10 +144,10 @@ User invokes with a loose idea.
 
 User invokes with a map (URL or number). A ticket is **optional**: without one, you pick the next decision, not the user.
 
-1. Load the **map**: the low-res body plus every `WAYFINDER PITFALL` map comment, not every ticket body.
+1. Load the **map**: the low-res body plus every entry in the tracker-specific pitfall log, not every ticket body.
 2. Choose the ticket. If the user named one, use it. Otherwise take the first frontier ticket in order. **Claim it**: assign it to yourself before any work.
 3. Resolve it. Before commands or diagnosis, apply any relevant pitfall entry. At the first unexpected failure, search the pitfall log again before another attempt. **Zoom as needed**: fetch the full body of any related or closed ticket on demand; call the Skill tool for whichever skills the `## Notes` block names. If in doubt, call the Skill tool twice, for "grilling" and "domain-modeling".
-4. Route reusable-obstacle candidates through the map supervisor's deduplicating single-writer path (or perform that recheck directly only when no overlapping session exists), then record the resolution: post the answer with its `Pitfalls` disclosure as a **resolution comment**, **close** the issue, and **append a context pointer** to the map's Decisions-so-far.
+4. Route reusable-obstacle candidates through the map supervisor's deduplicating single-writer path (or perform that recheck directly only when no overlapping session exists), then record the resolution in the tracker-specific location defined by `docs/agents/issue-tracker.md`, **close** the issue, and **append a context pointer** to the map's Decisions-so-far.
 5. Add newly-surfaced tickets (create-then-wire); graduate any fog the answer has made specifiable, clearing each graduated patch from **Not yet specified** so it lives only as its new ticket. If the answer reveals that a ticket (this one or another) sits beyond the destination, **rule it out of scope** rather than resolving it on the route. If the decision invalidates other parts of the map, update or delete those tickets.
 6. In the handoff, disclose every pitfall this session recorded, reused, or left unresolved; say `Pitfalls: None` when there were none.
 

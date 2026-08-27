@@ -1,5 +1,6 @@
 declare module "node:fs" {
   export function existsSync(path: string): boolean;
+  export function readFileSync(path: string, encoding: "utf8"): string;
   export function lstatSync(path: string): { isFile(): boolean };
   export function realpathSync(path: string): string;
 }
@@ -29,6 +30,15 @@ declare module "@earendil-works/pi-coding-agent" {
       handler: (event: {
         systemPrompt: string;
         systemPromptOptions: { selectedTools?: string[] };
+      }) => unknown,
+    ): void;
+    on(
+      event: "tool_result",
+      handler: (event: {
+        toolName: string;
+        input: unknown;
+        content: unknown;
+        isError?: boolean;
       }) => unknown,
     ): void;
     on(

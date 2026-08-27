@@ -7,7 +7,7 @@ description: "Configure this repo for the engineering skills: set up its issue t
 
 Scaffold the per-repo configuration that the engineering skills assume:
 
-- **Issue tracker**: where issues live (GitHub, GitLab, Gongfeng, and local markdown are supported out of the box)
+- **Issue tracker**: where issues live (GitHub, GitLab, Gongfeng, TAPD mini, and local markdown are supported out of the box)
 - **Triage labels**: the strings used for the five canonical triage roles
 - **Domain docs**: where `CONTEXT.md` and ADRs live, and the consumer rules for reading them
 
@@ -43,6 +43,7 @@ Default posture: match the repository's remote. If a `git remote` points at GitH
 - **GitHub**: issues live in the repo's GitHub Issues (uses the `gh` CLI)
 - **GitLab**: issues live in the repo's GitLab Issues (uses the [`glab`](https://gitlab.com/gitlab-org/cli) CLI)
 - **Gongfeng**: issues live in the `git.woa.com` project (uses the configured Gongfeng MCP)
+- **TAPD mini**: maps and tickets are TAPD Light Collaboration mini-items in one declared workspace (uses the configured `tapd_mcp_http` MCP and overrides remote-based selection)
 - **Local markdown**: issues live as files under `.scratch/<feature>/` in this repo (good for solo projects or repos without a remote)
 - **Other** (Jira, Linear, etc.): ask the user to describe the workflow in one paragraph; the skill will record it as freeform prose
 
@@ -106,6 +107,7 @@ Then write the docs files using the seed templates in this skill folder as a sta
 - [issue-tracker-github.md](./issue-tracker-github.md): GitHub issue tracker
 - [issue-tracker-gitlab.md](./issue-tracker-gitlab.md): GitLab issue tracker
 - [issue-tracker-gongfeng.md](./issue-tracker-gongfeng.md): Gongfeng issue tracker
+- [issue-tracker-tapd-mini.md](./issue-tracker-tapd-mini.md): TAPD Light Collaboration tracker
 - [issue-tracker-local.md](./issue-tracker-local.md): local-markdown issue tracker
 - [triage-labels.md](./triage-labels.md): label mapping (only if `triage` is installed)
 - [domain.md](./domain.md): domain doc consumer rules + layout

@@ -8,7 +8,7 @@ The hard gate covers initial model-issued `subagent` tool executions. Management
 
 A single `reviewer`, `oracle`, or `advisor` child may declare the `one-shot-read-only` exemption. Writers, artifact-producing scouts/researchers, multiple children or stages, worktrees, and explicitly long runs require a map plus one ticket per literal child key. Only supported pi-subagents builtins are accepted so the child policy extension and native supervisor channel are guaranteed.
 
-Tracker selection follows the workflow repository's `origin`:
+Tracker selection first checks `docs/agents/issue-tracker.md`. Frontmatter declaring `tracker: tapd_mini` with a numeric `workspace_id` overrides origin detection. Without that declaration:
 
 - `github.com` → GitHub
 - `git.woa.com` → Gongfeng
@@ -57,15 +57,15 @@ The only exemption is:
 }
 ```
 
-Local `ref` values are repository-relative regular files, must resolve inside the repository, and must exist. GitHub and Gongfeng refs are HTTPS issue URLs under the current repository/project. Before launch, the extension reads every GitHub ref with `gh issue view`; Gongfeng refs must survive a non-redirecting successful `curl` read of the exact issue URL. Missing, inaccessible, or authentication-redirected maps/tickets block the workflow.
+Local `ref` values are repository-relative regular files, must resolve inside the repository, and must exist. GitHub and Gongfeng refs are HTTPS issue URLs under the current repository/project. TAPD mini bindings use the canonical machine ref `https://tapd.woa.com/tapd_fe/t/index/<workspace_id>?mini_item_id=<item_id>` and must match the declared workspace. The `mini_item_id` query parameter is the gate's item identity; the URL opens the workspace and is not claimed to be a TAPD UI deep link. Before launch, the extension reads every GitHub ref with `gh issue view`. For Gongfeng, the parent reads every ref with `gongfeng_get_issue_detail`; the extension accepts those MCP results for five minutes and matches their `project_id`/`issue_iid` to the binding. TAPD mini uses the same five-minute evidence window with `mini_items_get` and additionally requires the Map to be a root mini-item and each Ticket's `parent_id` to equal the Map ID. Command-line HTTP clients are not an authentication substitute.
 
 ## Shared pitfall log
 
-Tracked children use append-only comments on the map as shared operational memory. Before commands or diagnosis, each child reads every comment headed `WAYFINDER PITFALL`; after an unexpected failure it searches the same entries by symptom and component before another attempt. New reusable obstacles record the ticket, scope, symptom, cause, resolution, verification, and resolved/unresolved status.
+Tracked children use the map's tracker-specific pitfall log as shared operational memory. GitHub and Gongfeng use append-only comments headed `WAYFINDER PITFALL`; TAPD mini uses entries appended under the Map description's `## Pitfall log` because its MCP comment tools do not accept mini-items. Before commands or diagnosis, each child reads every entry; after an unexpected failure it searches them by symptom and component before another attempt. New reusable obstacles record the ticket, scope, symptom, cause, resolution, verification, and resolved/unresolved status.
 
-An execution-bearing map has one retained map-supervisor workflow for its whole active execution. Every concurrent execution agent runs beneath it, and later work resumes it rather than starting a second supervisor. Children never write the shared log directly. They send each complete candidate to the map supervisor with `contact_supervisor` reason `pitfall_report`. The map supervisor is the map's single writer: immediately before writing it re-reads the latest comments and compares normalized scope + symptom + cause, then either returns the existing entry or appends exactly one new comment. Ticket resolutions and the supervisor handoff disclose new, reused, and unresolved entries, or explicitly state `Pitfalls: None`.
+An execution-bearing map has one retained map-supervisor workflow for its whole active execution. Every concurrent execution agent runs beneath it, and later work resumes it rather than starting a second supervisor. Children never write the shared log directly. They send each complete candidate to the map supervisor with `contact_supervisor` reason `pitfall_report`. The map supervisor is the map's single writer: immediately before writing it re-reads the tracker-specific log and compares normalized scope + symptom + cause, then either returns the existing entry or appends exactly one new entry. Ticket resolutions and the supervisor handoff disclose new, reused, and unresolved entries, or explicitly state `Pitfalls: None`.
 
-Local tracker refs are rejected for worktree-isolated workflows because each worktree would see a different file rather than one canonical log. Use GitHub/Gongfeng tracking or run without worktree isolation.
+Local tracker refs are rejected for worktree-isolated workflows because each worktree would see a different file rather than one canonical log. Use GitHub/Gongfeng/TAPD mini tracking or run without worktree isolation.
 
 ## Clarification
 

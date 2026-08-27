@@ -8,6 +8,7 @@ import {
   LONG_RUNNING_THRESHOLD_MS,
   WAYFINDER_BINDING_NAMESPACE,
   WAYFINDER_EXTENSION_ACK_ID,
+  applyIssueTrackerDocument,
   childPolicyPrompt,
   injectChildBindings,
   inspectWorkflowScript,
@@ -31,6 +32,34 @@ function githubBinding(tickets) {
       map: {
         name: "Plan migration",
         ref: "https://github.com/acme/widgets/issues/100",
+      },
+      tickets,
+    },
+  };
+}
+
+function gongfengBinding(tickets) {
+  return {
+    [WAYFINDER_BINDING_NAMESPACE]: {
+      mode: "tracked",
+      tracker: "gongfeng",
+      map: {
+        name: "Plan migration",
+        ref: "https://git.woa.com/acme/widgets/issues/100",
+      },
+      tickets,
+    },
+  };
+}
+
+function tapdMiniBinding(tickets) {
+  return {
+    [WAYFINDER_BINDING_NAMESPACE]: {
+      mode: "tracked",
+      tracker: "tapd_mini",
+      map: {
+        name: "Plan migration",
+        ref: "https://tapd.woa.com/tapd_fe/t/index/70230031?mini_item_id=100",
       },
       tickets,
     },
@@ -67,6 +96,32 @@ test("selects GitHub, Gongfeng, and local trackers from origin", () => {
     "local",
   );
   assert.equal(repositoryIdentity("/repo").tracker, "local");
+});
+
+test("a repository tracker document explicitly selects TAPD mini", () => {
+  const github = repositoryIdentity("/repo", "git@github.com:acme/widgets.git");
+  assert.deepEqual(
+    applyIssueTrackerDocument(
+      github,
+      '---\ntracker: tapd_mini\nworkspace_id: "70230031"\n---\n',
+    ),
+    {
+      ...github,
+      tracker: "tapd_mini",
+      workspaceId: "70230031",
+    },
+  );
+
+  assert.match(
+    applyIssueTrackerDocument(github, "---\ntracker: tapd_mini\n---\n")
+      .configurationError,
+    /numeric workspace_id/,
+  );
+  assert.match(
+    applyIssueTrackerDocument(github, "---\ntracker: github\n---\n")
+      .configurationError,
+    /cannot override/,
+  );
 });
 
 test("extracts literal sequential and parallel workflow lanes", () => {
@@ -261,6 +316,65 @@ test("validates tracked ticket order, repository, and URL ownership", () => {
   );
 });
 
+test("validates TAPD mini workspace ref shape and identity uniqueness", () => {
+  const base = repositoryIdentity("/repo", "git@github.com:acme/widgets.git");
+  const repo = applyIssueTrackerDocument(
+    base,
+    '---\ntracker: tapd_mini\nworkspace_id: "70230031"\n---\n',
+  );
+  const script = "return runs.run('implementation', { agent: 'worker' });";
+  const binding = tapdMiniBinding([
+    {
+      key: "implementation",
+      name: "Implement migration",
+      ref: "https://tapd.woa.com/tapd_fe/t/index/70230031?mini_item_id=101",
+    },
+  ]);
+  const refs = [
+    binding[WAYFINDER_BINDING_NAMESPACE].map.ref,
+    binding[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref,
+  ];
+  assert.equal(
+    gate(script, binding, [repo], { verifiedRemoteRefs: refs }).ok,
+    true,
+  );
+
+  const wrongWorkspace = structuredClone(binding);
+  wrongWorkspace[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref =
+    "https://tapd.woa.com/tapd_fe/t/index/999?mini_item_id=101";
+  assert.match(
+    gate(script, wrongWorkspace, [repo], {
+      verifiedRemoteRefs: [
+        wrongWorkspace[WAYFINDER_BINDING_NAMESPACE].map.ref,
+        wrongWorkspace[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref,
+      ],
+    }).reason,
+    /does not belong to TAPD mini workspace/,
+  );
+
+  const missingItem = structuredClone(binding);
+  missingItem[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref =
+    "https://tapd.woa.com/tapd_fe/t/index/70230031";
+  assert.match(
+    gate(script, missingItem, [repo], {
+      verifiedRemoteRefs: [
+        missingItem[WAYFINDER_BINDING_NAMESPACE].map.ref,
+        missingItem[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref,
+      ],
+    }).reason,
+    /numeric mini_item_id/,
+  );
+
+  const invalidDoc = {
+    ...repo,
+    configurationError: "invalid tracker declaration",
+  };
+  assert.match(
+    gate(script, binding, [invalidDoc], { verifiedRemoteRefs: refs }).reason,
+    /invalid tracker declaration/,
+  );
+});
+
 test("requires real repository-relative local map and ticket files", () => {
   const root = mkdtempSync(join(tmpdir(), "wayfinder-policy-"));
   mkdirSync(join(root, ".scratch", "migration", "issues"), { recursive: true });
@@ -346,15 +460,106 @@ test("injects one child-scoped binding per literal workflow object", () => {
   assert.match(injected, /"ticket":\{"key":"review"/);
 });
 
-test("extension hard-blocks missing or unreadable bindings and injects approved child bindings", async () => {
+test("extension reads a repository TAPD mini tracker declaration", async () => {
+  const root = mkdtempSync(join(tmpdir(), "wayfinder-tapd-mini-"));
+  mkdirSync(join(root, "docs", "agents"), { recursive: true });
+  writeFileSync(
+    join(root, "docs", "agents", "issue-tracker.md"),
+    '---\ntracker: tapd_mini\nworkspace_id: "70230031"\n---\n',
+  );
   const handlers = new Map();
-  let githubReadable = true;
+  const commands = [];
   const pi = {
     on(name, handler) {
       handlers.set(name, handler);
     },
     events: { emit() {} },
     async exec(command, args) {
+      commands.push(command);
+      if (args.includes("--show-toplevel")) {
+        return { code: 0, stdout: `${root}\n`, stderr: "", killed: false };
+      }
+      return {
+        code: 0,
+        stdout: "git@github.com:acme/widgets.git\n",
+        stderr: "",
+        killed: false,
+      };
+    },
+  };
+  subagentWayfinder(pi);
+  const input = {
+    workflowScript: "return runs.run('implementation', { agent: 'worker' });",
+    extensionBindings: tapdMiniBinding([
+      {
+        key: "implementation",
+        name: "Implement migration",
+        ref: "https://tapd.woa.com/tapd_fe/t/index/70230031?mini_item_id=101",
+      },
+    ]),
+  };
+  const toolCall = handlers.get("tool_call");
+  const context = { cwd: root, hasUI: false, ui: { notify() {} } };
+  const withoutEvidence = await toolCall(
+    { toolName: "subagent", input },
+    context,
+  );
+  assert.equal(withoutEvidence.block, true);
+  assert.match(withoutEvidence.reason, /freshly read through MCP/);
+
+  const recordMiniItem = (id, parentId) =>
+    handlers.get("tool_result")({
+      toolName: "mcp",
+      input: {
+        server: "tapd_mcp_http",
+        tool: "mini_items_get",
+        args: { workspace_id: "70230031", id },
+      },
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            status: 1,
+            data: [
+              {
+                MiniItem: {
+                  id,
+                  workspace_id: "70230031",
+                  parent_id: parentId,
+                },
+              },
+            ],
+          }),
+        },
+      ],
+      isError: false,
+    });
+
+  recordMiniItem("100", "0");
+  recordMiniItem("101", "999");
+  const wrongParent = await toolCall({ toolName: "subagent", input }, context);
+  assert.equal(wrongParent.block, true);
+  assert.match(wrongParent.reason, /parent_id 100/);
+
+  recordMiniItem("101", "100");
+  const result = await toolCall({ toolName: "subagent", input }, context);
+  assert.equal(result, undefined);
+  assert.equal(commands.includes("gh"), false);
+  assert.match(input.workflowScript, /"tracker":"tapd_mini"/);
+});
+
+test("extension hard-blocks missing or unreadable bindings and injects approved child bindings", async () => {
+  const handlers = new Map();
+  const commands = [];
+  let githubReadable = true;
+  let remote = "git@github.com:acme/widgets.git";
+  const pi = {
+    on(name, handler) {
+      handlers.set(name, handler);
+    },
+    events: { emit() {} },
+    async exec(command, args) {
+      commands.push(command);
       if (command === "gh") {
         return githubReadable
           ? { code: 0, stdout: `${args[2]}\n`, stderr: "", killed: false }
@@ -365,7 +570,7 @@ test("extension hard-blocks missing or unreadable bindings and injects approved 
       }
       return {
         code: 0,
-        stdout: "git@github.com:acme/widgets.git\n",
+        stdout: `${remote}\n`,
         stderr: "",
         killed: false,
       };
@@ -403,8 +608,7 @@ test("extension hard-blocks missing or unreadable bindings and injects approved 
   assert.match(approvedInput.workflowScript, /extensionBindings:/);
 
   const trackedInput = {
-    workflowScript:
-      "return runs.run('implementation', { agent: 'worker', });",
+    workflowScript: "return runs.run('implementation', { agent: 'worker', });",
     extensionBindings: githubBinding([
       {
         key: "implementation",
@@ -422,8 +626,7 @@ test("extension hard-blocks missing or unreadable bindings and injects approved 
 
   githubReadable = false;
   const unreadableInput = {
-    workflowScript:
-      "return runs.run('implementation', { agent: 'worker', });",
+    workflowScript: "return runs.run('implementation', { agent: 'worker', });",
     extensionBindings: githubBinding([
       {
         key: "implementation",
@@ -439,15 +642,68 @@ test("extension hard-blocks missing or unreadable bindings and injects approved 
   assert.equal(unreadable.block, true);
   assert.match(unreadable.reason, /missing or unreadable/);
 
+  remote = "git@git.woa.com:acme/widgets.git";
+  commands.length = 0;
+  const gongfengInput = {
+    workflowScript: "return runs.run('implementation', { agent: 'worker', });",
+    extensionBindings: gongfengBinding([
+      {
+        key: "implementation",
+        name: "Implement migration",
+        ref: "https://git.woa.com/acme/widgets/issues/101",
+      },
+    ]),
+  };
+  const gongfengWithoutEvidence = await toolCall(
+    { toolName: "subagent", input: gongfengInput },
+    context,
+  );
+  assert.equal(gongfengWithoutEvidence.block, true);
+  assert.match(gongfengWithoutEvidence.reason, /freshly read through MCP/);
+
+  const recordGongfengIssue = (projectId, issueIid) =>
+    handlers.get("tool_result")({
+      toolName: "mcp",
+      input: {
+        tool: "gongfeng_get_issue_detail",
+        args: { project_id: projectId, issue_iid: Number(issueIid) },
+      },
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            data: { id: `issue-${issueIid}`, iid: issueIid, title: "Issue" },
+          }),
+        },
+      ],
+      isError: false,
+    });
+
+  recordGongfengIssue("other/widgets", "100");
+  recordGongfengIssue("other/widgets", "101");
+  const wrongProject = await toolCall(
+    { toolName: "subagent", input: gongfengInput },
+    context,
+  );
+  assert.equal(wrongProject.block, true);
+  assert.match(wrongProject.reason, /freshly read through MCP/);
+
+  recordGongfengIssue("acme/widgets", "100");
+  recordGongfengIssue("acme/widgets", "101");
+  const gongfeng = await toolCall(
+    { toolName: "subagent", input: gongfengInput },
+    context,
+  );
+  assert.equal(gongfeng, undefined);
+  assert.equal(commands.includes("curl"), false);
+  assert.match(gongfengInput.workflowScript, /extensionBindings:/);
+
   const parentPrompt = handlers.get("before_agent_start")({
     systemPrompt: "base",
     systemPromptOptions: { selectedTools: ["subagent"] },
   });
   assert.match(parentPrompt.systemPrompt, /Subagent Wayfinder gate/);
-  assert.match(
-    parentPrompt.systemPrompt,
-    /Block launch if any ref cannot be verified/,
-  );
+  assert.match(parentPrompt.systemPrompt, /do not share its authentication/);
   assert.match(parentPrompt.systemPrompt, /grilling/);
   assert.match(parentPrompt.systemPrompt, /WAYFINDER PITFALL/);
   assert.match(

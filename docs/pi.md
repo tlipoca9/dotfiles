@@ -26,7 +26,8 @@
 Pi 的初始 `subagent(...)` 执行由本地 `subagent-wayfinder` extension 门禁。
 单次 `reviewer`/`oracle` 只读调用可明确豁免；写入、并行、多阶段、worktree
 或显式长时工作必须先建立或关联一个 Wayfinder map，并为每个字面量 child key
-准备一个 ticket。Tracker 由工作仓库的 `origin` 决定：GitHub 使用 GitHub Issues，
+准备一个 ticket。Tracker 优先采用工作仓库 `docs/agents/issue-tracker.md` 的显式
+`tapd_mini` 声明；未声明时再由 `origin` 推断：GitHub 使用 GitHub Issues，
 `git.woa.com` 使用 Gongfeng，其他或无远端使用 local markdown。跨仓库工作拆成
 独立 workflow/map。
 
@@ -34,7 +35,9 @@ Pi 的初始 `subagent(...)` 执行由本地 `subagent-wayfinder` extension 门�
 子 Agent 遇到影响范围、行为、架构、权限或验收的真实歧义时，先查 ticket、map
 和仓库证据；仍无法确定才用 native supervisor channel 发出一次一个问题的
 `interview_request`。主 Agent 能从已定决策回答就直接回复，否则使用 `grilling`
-一次向用户澄清一个问题。详细协议和已知入口边界见
+一次向用户澄清一个问题。仓库可在 `docs/agents/issue-tracker.md` 的 frontmatter
+中声明 `tapd_mini` 和 `workspace_id`，覆盖远端推断；Map 使用根 mini-item，Ticket
+通过 `parent_id` 归属 Map。详细协议和已知入口边界见
 `home/dot_pi/private_agent/extensions/subagent-wayfinder/README.md`。
 
 ## 应用与验证

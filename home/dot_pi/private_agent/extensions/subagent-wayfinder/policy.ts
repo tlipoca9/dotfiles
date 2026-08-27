@@ -5,7 +5,7 @@ export const WAYFINDER_BINDING_NAMESPACE = "tlipoca9.wayfinder/1";
 export const WAYFINDER_EXTENSION_ACK_ID = "tlipoca9.subagent-wayfinder";
 export const LONG_RUNNING_THRESHOLD_MS = 10 * 60 * 1000;
 
-export type Tracker = "local" | "github" | "gongfeng";
+export type Tracker = "local" | "github" | "gongfeng" | "tapd_mini";
 
 type Primitive = string | number | boolean | null;
 
@@ -48,6 +48,8 @@ export type RepositoryIdentity = {
   tracker: Tracker;
   remote?: string;
   projectPath?: string;
+  workspaceId?: string;
+  configurationError?: string;
 };
 
 export type ArtifactReference = {
@@ -286,11 +288,14 @@ function parseObject(tokens: Token[], start: number): ParsedObject | undefined {
     }
     const key = String(keyToken.value);
     if (!tokenIs(tokens[index + 1], ":")) {
-      errors.push(`Object property '${key}' must use explicit key: value syntax.`);
+      errors.push(
+        `Object property '${key}' must use explicit key: value syntax.`,
+      );
       index += 1;
       continue;
     }
-    if (properties.has(key)) errors.push(`Object property '${key}' is duplicated.`);
+    if (properties.has(key))
+      errors.push(`Object property '${key}' is duplicated.`);
     const valueStart = index + 2;
     const value = primitiveValue(tokens[valueStart]);
     const next = tokens[valueStart + 1];
@@ -382,7 +387,9 @@ function laneFromObject(
 }
 
 function laneLiteralErrors(object: ParsedObject, key: string): string[] {
-  const errors = object.errors.map((error) => `Workflow child '${key}': ${error}`);
+  const errors = object.errors.map(
+    (error) => `Workflow child '${key}': ${error}`,
+  );
   const expected: Array<[string, Primitive | undefined]> = [
     ["agent", stringProperty(object, "agent")],
     ["cwd", stringProperty(object, "cwd")],
@@ -548,6 +555,66 @@ export function repositoryIdentity(
   return { root: resolve(root), tracker: "local", remote };
 }
 
+function unquoteFrontmatterValue(value: string): string {
+  const trimmed = value.trim();
+  if (
+    trimmed.length >= 2 &&
+    ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'")))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
+export function applyIssueTrackerDocument(
+  identity: RepositoryIdentity,
+  contents: string,
+): RepositoryIdentity {
+  const frontmatter = contents.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+  if (!frontmatter) return identity;
+
+  const values = new Map<string, string>();
+  for (const line of frontmatter[1]!.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const separator = trimmed.indexOf(":");
+    if (separator < 1) {
+      return {
+        ...identity,
+        configurationError:
+          "docs/agents/issue-tracker.md has invalid YAML frontmatter.",
+      };
+    }
+    const key = trimmed.slice(0, separator).trim();
+    if (values.has(key)) {
+      return {
+        ...identity,
+        configurationError: `docs/agents/issue-tracker.md repeats '${key}'.`,
+      };
+    }
+    values.set(key, unquoteFrontmatterValue(trimmed.slice(separator + 1)));
+  }
+
+  const tracker = values.get("tracker");
+  if (!tracker) return identity;
+  if (tracker !== "tapd_mini") {
+    return {
+      ...identity,
+      configurationError: `docs/agents/issue-tracker.md cannot override the origin-derived tracker with '${tracker}'.`,
+    };
+  }
+  const workspaceId = values.get("workspace_id");
+  if (!workspaceId || !/^\d+$/.test(workspaceId)) {
+    return {
+      ...identity,
+      configurationError:
+        "tapd_mini requires a numeric workspace_id in docs/agents/issue-tracker.md frontmatter.",
+    };
+  }
+  return { ...identity, tracker: "tapd_mini", workspaceId };
+}
+
 function record(value: unknown): Record<string, unknown> | undefined {
   return value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -603,7 +670,8 @@ export function parseWayfinderBinding(
   if (
     object.tracker !== "local" &&
     object.tracker !== "github" &&
-    object.tracker !== "gongfeng"
+    object.tracker !== "gongfeng" &&
+    object.tracker !== "tapd_mini"
   )
     return undefined;
   const map = artifactReference(object.map);
@@ -664,6 +732,25 @@ function validateRemoteReference(
   } catch {
     return `Wayfinder ref '${ref}' must be an absolute issue URL.`;
   }
+  if (repository.tracker === "tapd_mini") {
+    const workspaceId = repository.workspaceId;
+    const pathname = decodeURIComponent(url.pathname).replace(/^\/+|\/+$/g, "");
+    if (
+      url.protocol !== "https:" ||
+      url.hostname.toLowerCase() !== "tapd.woa.com"
+    ) {
+      return `Wayfinder ref '${ref}' must use https://tapd.woa.com.`;
+    }
+    if (!workspaceId || pathname !== `tapd_fe/t/index/${workspaceId}`) {
+      return `Wayfinder ref '${ref}' does not belong to TAPD mini workspace '${workspaceId ?? "unknown"}'.`;
+    }
+    const itemId = url.searchParams.get("mini_item_id");
+    if (!itemId || !/^\d+$/.test(itemId)) {
+      return `Wayfinder ref '${ref}' must include a numeric mini_item_id.`;
+    }
+    return undefined;
+  }
+
   const expectedHost =
     repository.tracker === "github" ? "github.com" : "git.woa.com";
   if (
@@ -693,12 +780,18 @@ function validateReference(
     : validateRemoteReference(repository, ref);
 }
 
-function canonicalReference(repository: RepositoryIdentity, ref: string): string {
+function canonicalReference(
+  repository: RepositoryIdentity,
+  ref: string,
+): string {
   if (repository.tracker === "local") {
     return realpathSync(resolve(repository.root, ref));
   }
   try {
     const url = new URL(ref);
+    if (repository.tracker === "tapd_mini") {
+      return `tapd_mini:${repository.workspaceId}:${url.searchParams.get("mini_item_id")}`;
+    }
     url.hash = "";
     url.search = "";
     url.hostname = url.hostname.toLowerCase();
@@ -751,6 +844,10 @@ export function validateWayfinderGate(input: GateInput): GateResult {
     }
     return { ok: true, binding };
   }
+  const configurationError = input.repositories.find(
+    (repository) => repository.configurationError,
+  )?.configurationError;
+  if (configurationError) return { ok: false, reason: configurationError };
   const roots = new Set(
     input.repositories.map((repository) => repository.root),
   );
@@ -777,7 +874,7 @@ export function validateWayfinderGate(input: GateInput): GateResult {
     return {
       ok: false,
       reason:
-        "Local Wayfinder refs are worktree-local and cannot provide one canonical shared pitfall log. Use GitHub/Gongfeng tracking or run without worktree isolation.",
+        "Local Wayfinder refs are worktree-local and cannot provide one canonical shared pitfall log. Use GitHub/Gongfeng/TAPD mini tracking or run without worktree isolation.",
     };
   }
   if (binding.tickets.length !== lanes.length) {
@@ -875,7 +972,8 @@ export function parseChildBinding(
       object.mode !== "tracked" ||
       (object.tracker !== "local" &&
         object.tracker !== "github" &&
-        object.tracker !== "gongfeng")
+        object.tracker !== "gongfeng" &&
+        object.tracker !== "tapd_mini")
     )
       return undefined;
     const map = artifactReference(object.map);
@@ -895,5 +993,9 @@ export function childPolicyPrompt(
     return "## Wayfinder child contract\n\nThis is an approved one-shot read-only Wayfinder exemption. Do not mutate project or source files.";
   }
   const scope = `Wayfinder map: ${binding.map.name} (${binding.map.ref})\nYour ticket: ${binding.ticket.name} [${binding.ticket.key}] (${binding.ticket.ref})\nWork only within this ticket's question and approved boundaries.`;
-  return `## Wayfinder child contract\n\n${scope}\n\nBefore running commands or diagnosing, read the map and all map comments headed "WAYFINDER PITFALL". Apply relevant entries. At the first unexpected failure, search those entries again by symptom and component before trying another fix. Do not write the shared pitfall log directly. Send every new reusable resolved or unresolved obstacle to contact_supervisor with reason "pitfall_report" and a complete Ticket, Scope, Symptom, Cause, Resolution, Verification, and Status entry; redact secrets. The supervisor rechecks the latest log, deduplicates by normalized Scope + Symptom + Cause, writes at most one entry, and replies with the new or reused entry reference. Wait for that acknowledgement before completion. Disclose every pitfall recorded, reused, or unresolved in the ticket resolution and final response, or state "Pitfalls: None".\n\nBefore escalating ambiguity, inspect the ticket/map context and relevant repository evidence. If a material ambiguity still affects scope, behavior, architecture, authority, or acceptance, call contact_supervisor with reason "interview_request". Ask exactly one focused question in that request and wait for the reply. After the reply, continue this ticket; if a separate ambiguity appears later, send a new one-question request. Never bundle questions or guess through an unresolved decision.`;
+  const pitfallSource =
+    binding.tracker === "tapd_mini"
+      ? 'the map description section headed "## Pitfall log"'
+      : 'all map comments headed "WAYFINDER PITFALL"';
+  return `## Wayfinder child contract\n\n${scope}\n\nBefore running commands or diagnosing, read the map and ${pitfallSource}. Apply relevant entries. At the first unexpected failure, search those entries again by symptom and component before trying another fix. Do not write the shared pitfall log directly. Send every new reusable resolved or unresolved obstacle to contact_supervisor with reason "pitfall_report" and a complete Ticket, Scope, Symptom, Cause, Resolution, Verification, and Status entry; redact secrets. The supervisor rechecks the latest log, deduplicates by normalized Scope + Symptom + Cause, writes at most one entry, and replies with the new or reused entry reference. Wait for that acknowledgement before completion. Disclose every pitfall recorded, reused, or unresolved in the ticket resolution and final response, or state "Pitfalls: None".\n\nBefore escalating ambiguity, inspect the ticket/map context and relevant repository evidence. If a material ambiguity still affects scope, behavior, architecture, authority, or acceptance, call contact_supervisor with reason "interview_request". Ask exactly one focused question in that request and wait for the reply. After the reply, continue this ticket; if a separate ambiguity appears later, send a new one-question request. Never bundle questions or guess through an unresolved decision.`;
 }
