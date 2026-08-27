@@ -33,15 +33,6 @@ declare module "@earendil-works/pi-coding-agent" {
       }) => unknown,
     ): void;
     on(
-      event: "tool_result",
-      handler: (event: {
-        toolName: string;
-        input: unknown;
-        content: unknown;
-        isError?: boolean;
-      }) => unknown,
-    ): void;
-    on(
       event: "tool_call",
       handler: (
         event: { toolName: string; input: unknown },

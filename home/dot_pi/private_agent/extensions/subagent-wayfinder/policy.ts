@@ -89,7 +89,6 @@ export type GateInput = {
   topLevelTimeoutMs?: number;
   topLevelMaxRuntimeMs?: number;
   topLevelWorktree?: boolean;
-  verifiedRemoteRefs?: string[];
 };
 
 export type GateResult =
@@ -732,9 +731,14 @@ function validateRemoteReference(
   } catch {
     return `Wayfinder ref '${ref}' must be an absolute issue URL.`;
   }
+  let pathname: string;
+  try {
+    pathname = decodeURIComponent(url.pathname).replace(/^\/+|\/+$/g, "");
+  } catch {
+    return `Wayfinder ref '${ref}' has invalid URL path encoding.`;
+  }
   if (repository.tracker === "tapd_mini") {
     const workspaceId = repository.workspaceId;
-    const pathname = decodeURIComponent(url.pathname).replace(/^\/+|\/+$/g, "");
     if (
       url.protocol !== "https:" ||
       url.hostname.toLowerCase() !== "tapd.woa.com"
@@ -760,12 +764,11 @@ function validateRemoteReference(
     return `Wayfinder ref '${ref}' must use https://${expectedHost}.`;
   }
   const project = repository.projectPath;
-  const pathname = decodeURIComponent(url.pathname).replace(/^\/+|\/+$/g, "");
   if (!project || !pathname.startsWith(`${project}/`)) {
     return `Wayfinder ref '${ref}' does not belong to repository '${project ?? "unknown"}'.`;
   }
   const suffix = pathname.slice(project.length);
-  if (!/(?:^|\/)issues\/\d+(?:$|\/)/.test(suffix)) {
+  if (!/^\/issues\/\d+$/.test(suffix)) {
     return `Wayfinder ref '${ref}' is not an issue URL.`;
   }
   return undefined;
@@ -792,11 +795,12 @@ function canonicalReference(
     if (repository.tracker === "tapd_mini") {
       return `tapd_mini:${repository.workspaceId}:${url.searchParams.get("mini_item_id")}`;
     }
-    url.hash = "";
-    url.search = "";
-    url.hostname = url.hostname.toLowerCase();
-    url.pathname = url.pathname.replace(/\/+$/, "");
-    return url.toString();
+    const project = repository.projectPath;
+    const pathname = decodeURIComponent(url.pathname).replace(/^\/+|\/+$/g, "");
+    const issueIid = project
+      ? /^\/issues\/(\d+)$/.exec(pathname.slice(project.length))?.[1]
+      : undefined;
+    return issueIid ? `${repository.tracker}:${project}:${issueIid}` : ref;
   } catch {
     return ref;
   }
@@ -896,17 +900,10 @@ export function validateWayfinderGate(input: GateInput): GateResult {
     ...binding.tickets.map((ticket) => ticket.ref),
   ];
   const repository = input.repositories[0]!;
-  const verifiedRemoteRefs = new Set(input.verifiedRemoteRefs ?? []);
   const canonicalRefs: string[] = [];
   for (const ref of refs) {
     const error = validateReference(repository, ref);
     if (error) return { ok: false, reason: error };
-    if (repository.tracker !== "local" && !verifiedRemoteRefs.has(ref)) {
-      return {
-        ok: false,
-        reason: `Remote Wayfinder ref '${ref}' was not read successfully through the '${repository.tracker}' tracker.`,
-      };
-    }
     canonicalRefs.push(canonicalReference(repository, ref));
   }
   if (new Set(canonicalRefs).size !== canonicalRefs.length) {

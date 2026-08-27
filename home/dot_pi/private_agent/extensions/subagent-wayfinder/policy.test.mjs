@@ -264,31 +264,21 @@ test("validates tracked ticket order, repository, and URL ownership", () => {
       ref: "https://github.com/acme/widgets/issues/102",
     },
   ]);
-  const verifiedRemoteRefs = [
-    binding[WAYFINDER_BINDING_NAMESPACE].map.ref,
-    ...binding[WAYFINDER_BINDING_NAMESPACE].tickets.map((ticket) => ticket.ref),
-  ];
-  assert.match(
-    gate(script, binding, [repo, repo]).reason,
-    /was not read successfully/,
-  );
-  assert.equal(
-    gate(script, binding, [repo, repo], { verifiedRemoteRefs }).ok,
-    true,
-  );
+  assert.equal(gate(script, binding, [repo, repo]).ok, true);
 
   const remoteAlias = structuredClone(binding);
   remoteAlias[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref =
     `${remoteAlias[WAYFINDER_BINDING_NAMESPACE].map.ref}?alias=ticket`;
   assert.match(
-    gate(script, remoteAlias, [repo, repo], {
-      verifiedRemoteRefs: [
-        remoteAlias[WAYFINDER_BINDING_NAMESPACE].map.ref,
-        ...remoteAlias[WAYFINDER_BINDING_NAMESPACE].tickets.map(
-          (ticket) => ticket.ref,
-        ),
-      ],
-    }).reason,
+    gate(script, remoteAlias, [repo, repo]).reason,
+    /resolve to distinct artifacts/,
+  );
+
+  const encodedAlias = structuredClone(binding);
+  encodedAlias[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref =
+    "https://github.com/acme/widgets/issues/%31%30%30";
+  assert.match(
+    gate(script, encodedAlias, [repo, repo]).reason,
     /resolve to distinct artifacts/,
   );
 
@@ -303,16 +293,22 @@ test("validates tracked ticket order, repository, and URL ownership", () => {
   const other = structuredClone(binding);
   other[WAYFINDER_BINDING_NAMESPACE].tickets[1].ref =
     "https://github.com/other/repo/issues/102";
+  assert.match(gate(script, other, [repo, repo]).reason, /does not belong/);
+
+  const malformedEncoding = structuredClone(binding);
+  malformedEncoding[WAYFINDER_BINDING_NAMESPACE].tickets[1].ref =
+    "https://github.com/acme/widgets/issues/%ZZ";
   assert.match(
-    gate(script, other, [repo, repo], {
-      verifiedRemoteRefs: [
-        other[WAYFINDER_BINDING_NAMESPACE].map.ref,
-        ...other[WAYFINDER_BINDING_NAMESPACE].tickets.map(
-          (ticket) => ticket.ref,
-        ),
-      ],
-    }).reason,
-    /does not belong/,
+    gate(script, malformedEncoding, [repo, repo]).reason,
+    /invalid URL path encoding/,
+  );
+
+  const noncanonicalPath = structuredClone(binding);
+  noncanonicalPath[WAYFINDER_BINDING_NAMESPACE].tickets[1].ref =
+    "https://github.com/acme/widgets/arbitrary/issues/102/extra";
+  assert.match(
+    gate(script, noncanonicalPath, [repo, repo]).reason,
+    /not an issue URL/,
   );
 });
 
@@ -330,25 +326,13 @@ test("validates TAPD mini workspace ref shape and identity uniqueness", () => {
       ref: "https://tapd.woa.com/tapd_fe/t/index/70230031?mini_item_id=101",
     },
   ]);
-  const refs = [
-    binding[WAYFINDER_BINDING_NAMESPACE].map.ref,
-    binding[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref,
-  ];
-  assert.equal(
-    gate(script, binding, [repo], { verifiedRemoteRefs: refs }).ok,
-    true,
-  );
+  assert.equal(gate(script, binding, [repo]).ok, true);
 
   const wrongWorkspace = structuredClone(binding);
   wrongWorkspace[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref =
     "https://tapd.woa.com/tapd_fe/t/index/999?mini_item_id=101";
   assert.match(
-    gate(script, wrongWorkspace, [repo], {
-      verifiedRemoteRefs: [
-        wrongWorkspace[WAYFINDER_BINDING_NAMESPACE].map.ref,
-        wrongWorkspace[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref,
-      ],
-    }).reason,
+    gate(script, wrongWorkspace, [repo]).reason,
     /does not belong to TAPD mini workspace/,
   );
 
@@ -356,12 +340,7 @@ test("validates TAPD mini workspace ref shape and identity uniqueness", () => {
   missingItem[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref =
     "https://tapd.woa.com/tapd_fe/t/index/70230031";
   assert.match(
-    gate(script, missingItem, [repo], {
-      verifiedRemoteRefs: [
-        missingItem[WAYFINDER_BINDING_NAMESPACE].map.ref,
-        missingItem[WAYFINDER_BINDING_NAMESPACE].tickets[0].ref,
-      ],
-    }).reason,
+    gate(script, missingItem, [repo]).reason,
     /numeric mini_item_id/,
   );
 
@@ -370,7 +349,7 @@ test("validates TAPD mini workspace ref shape and identity uniqueness", () => {
     configurationError: "invalid tracker declaration",
   };
   assert.match(
-    gate(script, binding, [invalidDoc], { verifiedRemoteRefs: refs }).reason,
+    gate(script, binding, [invalidDoc]).reason,
     /invalid tracker declaration/,
   );
 });
@@ -498,60 +477,19 @@ test("extension reads a repository TAPD mini tracker declaration", async () => {
       },
     ]),
   };
-  const toolCall = handlers.get("tool_call");
-  const context = { cwd: root, hasUI: false, ui: { notify() {} } };
-  const withoutEvidence = await toolCall(
+  const result = await handlers.get("tool_call")(
     { toolName: "subagent", input },
-    context,
+    { cwd: root, hasUI: false, ui: { notify() {} } },
   );
-  assert.equal(withoutEvidence.block, true);
-  assert.match(withoutEvidence.reason, /freshly read through MCP/);
-
-  const recordMiniItem = (id, parentId) =>
-    handlers.get("tool_result")({
-      toolName: "mcp",
-      input: {
-        server: "tapd_mcp_http",
-        tool: "mini_items_get",
-        args: { workspace_id: "70230031", id },
-      },
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            status: 1,
-            data: [
-              {
-                MiniItem: {
-                  id,
-                  workspace_id: "70230031",
-                  parent_id: parentId,
-                },
-              },
-            ],
-          }),
-        },
-      ],
-      isError: false,
-    });
-
-  recordMiniItem("100", "0");
-  recordMiniItem("101", "999");
-  const wrongParent = await toolCall({ toolName: "subagent", input }, context);
-  assert.equal(wrongParent.block, true);
-  assert.match(wrongParent.reason, /parent_id 100/);
-
-  recordMiniItem("101", "100");
-  const result = await toolCall({ toolName: "subagent", input }, context);
   assert.equal(result, undefined);
   assert.equal(commands.includes("gh"), false);
+  assert.equal(handlers.has("tool_result"), false);
   assert.match(input.workflowScript, /"tracker":"tapd_mini"/);
 });
 
-test("extension hard-blocks missing or unreadable bindings and injects approved child bindings", async () => {
+test("extension hard-blocks invalid bindings without reading remote refs and injects approved child bindings", async () => {
   const handlers = new Map();
   const commands = [];
-  let githubReadable = true;
   let remote = "git@github.com:acme/widgets.git";
   const pi = {
     on(name, handler) {
@@ -560,11 +498,6 @@ test("extension hard-blocks missing or unreadable bindings and injects approved 
     events: { emit() {} },
     async exec(command, args) {
       commands.push(command);
-      if (command === "gh") {
-        return githubReadable
-          ? { code: 0, stdout: `${args[2]}\n`, stderr: "", killed: false }
-          : { code: 1, stdout: "", stderr: "not found", killed: false };
-      }
       if (args.includes("--show-toplevel")) {
         return { code: 0, stdout: "/repo\n", stderr: "", killed: false };
       }
@@ -624,24 +557,6 @@ test("extension hard-blocks missing or unreadable bindings and injects approved 
   assert.equal(tracked, undefined);
   assert.match(trackedInput.workflowScript, /extensionBindings:/);
 
-  githubReadable = false;
-  const unreadableInput = {
-    workflowScript: "return runs.run('implementation', { agent: 'worker', });",
-    extensionBindings: githubBinding([
-      {
-        key: "implementation",
-        name: "Implement migration",
-        ref: "https://github.com/acme/widgets/issues/101",
-      },
-    ]),
-  };
-  const unreadable = await toolCall(
-    { toolName: "subagent", input: unreadableInput },
-    context,
-  );
-  assert.equal(unreadable.block, true);
-  assert.match(unreadable.reason, /missing or unreadable/);
-
   remote = "git@git.woa.com:acme/widgets.git";
   commands.length = 0;
   const gongfengInput = {
@@ -654,42 +569,6 @@ test("extension hard-blocks missing or unreadable bindings and injects approved 
       },
     ]),
   };
-  const gongfengWithoutEvidence = await toolCall(
-    { toolName: "subagent", input: gongfengInput },
-    context,
-  );
-  assert.equal(gongfengWithoutEvidence.block, true);
-  assert.match(gongfengWithoutEvidence.reason, /freshly read through MCP/);
-
-  const recordGongfengIssue = (projectId, issueIid) =>
-    handlers.get("tool_result")({
-      toolName: "mcp",
-      input: {
-        tool: "gongfeng_get_issue_detail",
-        args: { project_id: projectId, issue_iid: Number(issueIid) },
-      },
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            data: { id: `issue-${issueIid}`, iid: issueIid, title: "Issue" },
-          }),
-        },
-      ],
-      isError: false,
-    });
-
-  recordGongfengIssue("other/widgets", "100");
-  recordGongfengIssue("other/widgets", "101");
-  const wrongProject = await toolCall(
-    { toolName: "subagent", input: gongfengInput },
-    context,
-  );
-  assert.equal(wrongProject.block, true);
-  assert.match(wrongProject.reason, /freshly read through MCP/);
-
-  recordGongfengIssue("acme/widgets", "100");
-  recordGongfengIssue("acme/widgets", "101");
   const gongfeng = await toolCall(
     { toolName: "subagent", input: gongfengInput },
     context,
@@ -703,7 +582,7 @@ test("extension hard-blocks missing or unreadable bindings and injects approved 
     systemPromptOptions: { selectedTools: ["subagent"] },
   });
   assert.match(parentPrompt.systemPrompt, /Subagent Wayfinder gate/);
-  assert.match(parentPrompt.systemPrompt, /do not share its authentication/);
+  assert.match(parentPrompt.systemPrompt, /does not contact the tracker/);
   assert.match(parentPrompt.systemPrompt, /grilling/);
   assert.match(parentPrompt.systemPrompt, /WAYFINDER PITFALL/);
   assert.match(
