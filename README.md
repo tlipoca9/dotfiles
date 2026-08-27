@@ -69,14 +69,16 @@ chezmoi apply
 - system Zsh with exact, reviewed Antidote plugin commits
 - current Homebrew packages and current VS Code extension releases
 - Pi with exact, reviewed extension pins and preserved runtime state
+- Oh My Pi with an independent Task Wayfinder gate and preserved runtime state
 - shared vendored skills deployed to `~/.agents/skills`, plus explicitly
   whitelisted Codex-specific skills deployed to `~/.codex/skills`
 - only `~/.ssh/id_ed25519` and `id_ed25519.pub` under SSH management
 
 System declarations live in `home/.chezmoidata/darwin/packages.toml`; VS Code
 extensions live in `home/.chezmoidata/darwin/vscode.toml`; Pi pins live only in
-`home/dot_pi/private_agent/modify_settings.json.tmpl`; shared user skills live only
-in `home/dot_agents/skills`. Installers and generators must update the matching
+`home/dot_pi/private_agent/modify_settings.json.tmpl`; OMP's Task Wayfinder gate
+lives only in `home/dot_omp/private_agent/`; shared user skills live only in
+`home/dot_agents/skills`. Installers and generators must update the matching
 chezmoi source instead of creating duplicate runtime copies. Codex-specific
 skills live only in `home/dot_codex/skills`.
 Skills derived from private conversations are age-encrypted in the public
@@ -84,4 +86,5 @@ source and decrypted only when chezmoi applies them. A one-time, exact
 allowlist migration removes known retired or moved skill paths; it does not use
 exact-directory semantics or sweep unrelated runtime files. Project runtimes,
 macOS preferences, Git configuration, application accounts, and unmanaged
-runtime files are outside this repository. See [docs/pi.md](docs/pi.md).
+runtime files are outside this repository. See [docs/pi.md](docs/pi.md) and
+[docs/omp.md](docs/omp.md).

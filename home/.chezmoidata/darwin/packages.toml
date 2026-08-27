@@ -34,6 +34,12 @@ kind = "formula"
 name = "pi-coding-agent"
 check = { command = "pi" }
 
+[darwin.packages.oh_my_pi]
+manager = "homebrew"
+kind = "formula"
+name = "can1357/tap/omp"
+check = { command = "omp" }
+
 [darwin.packages.python]
 manager = "homebrew"
 kind = "formula"

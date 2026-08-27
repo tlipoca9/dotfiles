@@ -18,6 +18,9 @@ state convergence.
 - Pi extension pins live only in
   `home/dot_pi/private_agent/modify_settings.json.tmpl`; its modifier must preserve
   runtime-owned fields.
+- OMP's independent Task Wayfinder gate lives under
+  `home/dot_omp/private_agent/`; read `docs/omp.md` before changing its wrapper or
+  read-only reviewer contract.
 - Shared user skills under `home/dot_agents/skills` and Codex-specific skills
   under `home/dot_codex/skills` are separate whitelists. Keep a skill in only
   one tree; `hatch-pet` is Codex-specific.
@@ -51,7 +54,7 @@ upstream commands.
 - Zsh startup is offline. Build both pinned bundle halves before atomically
   publishing one generation; do not roll back or automatically prune old
   generations.
-- Pi health follows command exit status, not English output fragments.
+- Pi and OMP health follow command exit status, not English output fragments.
 
 ## Security and preservation
 
@@ -60,10 +63,11 @@ upstream commands.
 - Manage only `~/.ssh/id_ed25519` and `id_ed25519.pub`. Never add SSH config,
   known_hosts, another key, or log private material.
 - Do not use exact-directory semantics for `.codex`, `.agents`, `.ssh`, `.pi`,
-  or VS Code user directories. Preserve unmanaged application/runtime files and
-  keep `private_agent` so `~/.pi/agent` is mode `0700`.
-- Pi auth, trust, sessions, caches, and package directories remain runtime state.
-- Skill and Pi pin updates are supply-chain changes reviewed as code.
+  `.omp`, or VS Code user directories. Preserve unmanaged application/runtime
+  files and keep `private_agent` so managed agent directories are mode `0700`.
+- Pi and OMP auth, trust, sessions, caches, package/plugin directories, and model
+  configuration remain runtime state.
+- Skill, Pi pin, and OMP gate updates are supply-chain changes reviewed as code.
 - `chezmoi apply` remains non-destructive.
 
 After changes run the relevant upstream capability checks, Zsh syntax when Zsh
