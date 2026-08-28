@@ -1,5 +1,14 @@
 # AGENTS.md
 
+## Language
+
+Use Chinese by default when the user has not requested another language. Keep
+proper nouns in English.
+
+Use English when the artifact or context explicitly calls for it, including
+code comments and skill authoring. When editing existing content, preserve its
+established language unless the task requires changing it.
+
 ## Durable repository state
 
 Repository contents are long-lived state.

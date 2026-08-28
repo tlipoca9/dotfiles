@@ -1,7 +1,6 @@
 .agents/skills/find-skills
 .agents/skills/huashu-nuwa
 .agents/skills/lean-ctx
-.agents/skills/prototype
 .agents/skills/tencentcloud-rainbow-all-in-one
 .agents/skills/tencentcloud-tag-all-in-one
 .agents/skills/tencentcloud-yunapi-3-spec

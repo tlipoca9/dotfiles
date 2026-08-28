@@ -1,53 +1,84 @@
 ---
 name: explore-before-code
-description: Investigate implementation uncertainty before writing production code. Use when the correct design or behavior cannot be established from the current repository alone.
+description: >-
+  Investigate material implementation uncertainty before writing production code. Use when
+  correctness or design depends on facts that cannot be established from the current repository,
+  including unfamiliar APIs, platform behavior, community implementation patterns, or empirical
+  feasibility. When `research` or `prototype` is being considered for implementation uncertainty,
+  use this skill instead when the goal is to unblock production code rather than produce a
+  standalone report or throwaway artifact.
 ---
 
 # Explore Before Code
 
 Do not guess implementation details that can be established with evidence.
 
-Use this skill when implementing a change depends on assumptions that cannot be proven from the current repository, including:
+Use this skill only when production implementation depends on a material
+assumption that the current repository cannot establish.
 
-- unfamiliar APIs, protocols, libraries, or platform behavior
-- uncertainty about whether an approach actually works
-- functionality likely to have established community implementations
-- behavior that depends on the OS, runtime, network, CLI, SDK, or external service
-- architectural choices where existing implementations can provide useful evidence
+Do not invoke it for routine changes whose behavior, constraints, and
+conventions are already clear from the repository.
 
-Do not invoke this workflow for routine changes whose behavior and conventions are already clear from the repository.
+## 1. Inspect the repository first
 
-## 1. Establish what is unknown
+Read the relevant code, tests, configuration, documentation, and dependency
+versions before searching externally.
 
-Inspect the relevant repository code first.
+Determine whether the repository already defines the required behavior or
+contains an established implementation pattern.
 
-Identify the specific question that must be answered before implementation.
+Do not use external conventions to override repository-specific contracts.
 
-Do not broaden the investigation beyond what is necessary for the task.
+## 2. Define the uncertainty
 
-## 2. Look for prior art
+Reduce the uncertainty to one or more concrete questions whose answers could
+change the implementation.
 
-Before inventing a non-trivial implementation, check whether the problem already has established implementations.
+Examples include:
 
-Prefer evidence in this order:
+- What behavior does this API guarantee?
+- How do mature implementations handle this failure mode?
+- Does this mechanism work in the target runtime or operating environment?
+- Is the proposed abstraction necessary, or is there an established simpler
+  approach?
 
-1. standards and official documentation
-2. upstream source code
-3. mature open-source implementations
-4. reputable technical references
+Do not broaden the investigation into a general technology survey.
 
-Inspect actual source when implementation details matter. Do not rely on search snippets or summaries when the source is available.
+## 3. Gather appropriate evidence
 
-The goal is not to copy code. The goal is to understand established behavior, constraints, failure modes, and common design patterns.
+Choose evidence according to the type of uncertainty.
 
-## 3. Resolve empirical uncertainty experimentally
+Prefer sources in this order:
 
-If the question is "does this actually work?", prefer an executable experiment over further speculation.
+1. standards and formal specifications
+2. official documentation for the relevant version
+3. upstream source code and tests
+4. mature open-source implementations
+5. reputable technical references
+
+When established community implementations are likely to exist, inspect them
+before inventing a non-trivial mechanism.
+
+Inspect actual source code when implementation details matter. Do not rely on
+search-result snippets, summaries, or remembered behavior when primary sources
+are available.
+
+Use prior art to understand constraints, failure modes, and design patterns.
+Do not treat another project's implementation as automatically correct for the
+current repository.
+
+Do not copy external code unless its license, attribution requirements, and
+compatibility with the repository are understood.
+
+## 4. Resolve empirical uncertainty experimentally
+
+When the question is whether something actually works, prefer a small
+executable experiment over further speculation.
 
 Use the smallest practical mechanism, such as:
 
 - a temporary script
-- a minimal program
+- a minimal standalone program
 - an existing CLI
 - `curl`
 - `openssl`
@@ -57,32 +88,57 @@ Use the smallest practical mechanism, such as:
 - system inspection tools
 - a disposable local environment
 
-Experiments should answer one concrete question.
+An experiment should answer one concrete question.
 
-Do not add production abstractions, tests, error handling, or generality to exploratory code.
+Keep exploratory code disposable. Do not add production abstractions, tests,
+general error handling, or unrelated functionality to it.
 
-Prefer temporary locations outside the repository. If repository context is required, remove exploratory artifacts when the question is answered.
+Prefer temporary locations outside the repository. If repository context is
+required, remove all exploratory files and outputs when the question is
+answered.
 
-Uncertainty that can be resolved experimentally should be resolved experimentally, not by reasoning harder.
+Do not run destructive experiments or mutate production, shared, or external
+systems without explicit permission.
 
-## 4. Implement from evidence
+Uncertainty that can be resolved experimentally should be resolved
+experimentally, not by reasoning harder.
 
-Once the relevant uncertainty is resolved:
+## 5. Decide from evidence
 
-- choose the simplest design consistent with the evidence
-- adapt it to the repository's existing architecture and conventions
-- implement production code normally
-- add durable tests for behavior or regressions where appropriate
+Separate:
 
-Do not preserve research or prototype machinery merely because it was useful during implementation.
+- observed facts
+- behavior established by source or specification
+- experimental results
+- remaining inference
 
-## 5. Leave only durable results
+Stop investigating once the material uncertainty is resolved.
+
+Choose the simplest design that is consistent with the evidence and the
+repository's existing architecture.
+
+Do not introduce abstractions merely because they appeared in an external
+implementation.
+
+If material uncertainty remains unresolved, do not silently present an
+assumption as fact. State the uncertainty and constrain the implementation
+accordingly.
+
+## 6. Implement and clean up
+
+Implement production code normally after obtaining sufficient evidence.
+
+Add durable tests for behavior, contracts, invariants, or regressions where
+appropriate.
 
 Before finishing:
 
-- remove temporary scripts, prototypes, fixtures, outputs, and investigation artifacts
-- do not create research reports unless explicitly requested
-- preserve externally discovered knowledge only when future maintainers genuinely need it
-- use code comments, documentation, tests, or ADRs only when the information has lasting value
+- remove temporary scripts, prototypes, fixtures, outputs, and investigation
+  artifacts
+- do not add a research report unless explicitly requested
+- preserve only conclusions future maintainers genuinely need
+- use a code comment, durable documentation, or an ADR only when the rationale
+  has lasting value
 
-The repository should contain the result of the investigation, not the investigation process.
+The repository should contain the result of the investigation, not the
+investigation process.
