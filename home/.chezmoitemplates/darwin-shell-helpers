@@ -9,6 +9,8 @@ setup_brew() {
   fi
   shellenv_file=${XDG_CACHE_HOME:-"$HOME/.cache"}/dotfiles/brew-shellenv
   if ! command -v brew >/dev/null 2>&1 && [ -r "$shellenv_file" ]; then
+    # The cache path is derived at runtime.
+    # shellcheck disable=SC1090
     . "$shellenv_file"
   fi
   command -v brew >/dev/null 2>&1 || die "Homebrew is unavailable; run 'chezmoi apply' again after Homebrew installation completes"

@@ -3,7 +3,11 @@
 set -eu
 
 # VS Code declarations are rendered below so changes retrigger this script.
-{{ template "darwin-shell-helpers" . }}
+die() {
+  printf 'dotfiles: %s\n' "$*" >&2
+  exit 1
+}
+
 code_cli=$(command -v code || true)
 if [ -z "$code_cli" ]; then
   code_cli='/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code'

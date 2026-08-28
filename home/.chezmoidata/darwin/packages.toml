@@ -42,23 +42,11 @@ manager = "homebrew"
 kind = "formula"
 check = { command = "jq" }
 
-[darwin.packages.lean_ctx]
-manager = "homebrew"
-kind = "formula"
-name = "yvgude/lean-ctx/lean-ctx"
-check = { command = "lean-ctx" }
-
 [darwin.packages.pi_coding_agent]
 manager = "homebrew"
 kind = "formula"
 name = "pi-coding-agent"
 check = { command = "pi" }
-
-[darwin.packages.oh_my_pi]
-manager = "homebrew"
-kind = "formula"
-name = "can1357/tap/omp"
-check = { command = "omp" }
 
 [darwin.packages.python]
 manager = "homebrew"

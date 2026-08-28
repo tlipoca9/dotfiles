@@ -1,4 +1,0 @@
-interface:
-  display_name: "Tencent Cloud Tag All in One"
-  short_description: "检索并解释腾讯云资源标签的接入、鉴权、分账、治理与排障知识"
-  default_prompt: "Use $tencentcloud-tag-all-in-one to find and explain the relevant Tencent Cloud Tag knowledge with current internal sources."

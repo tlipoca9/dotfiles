@@ -1,4 +1,4 @@
 interface:
   display_name: "Brainstorming"
-  short_description: "Clarify ideas before design or implementation"
-  default_prompt: "Use $brainstorming to turn this idea into an approved design before implementation."
+  short_description: "Resolve material design choices before implementation"
+  default_prompt: "Use $brainstorming to explore the unresolved choices in this idea and produce an approved design."

@@ -28,7 +28,7 @@ cat >"$staging/post.txt" <<'DOTFILES_POST_PLUGINS'
 {{ include "dot_zsh_plugins_post.txt" }}DOTFILES_POST_PLUGINS
 
 export ANTIDOTE_CONFIG=/dev/null
-export ANTIDOTE_HOME=$cache_home/antidote
+export ANTIDOTE_HOME="$cache_home/antidote"
 
 build_bundle() {
   phase=$1

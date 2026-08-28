@@ -1,54 +1,55 @@
 ---
 name: brainstorming
-description: "Brainstorm before creative or ambiguous implementation work: creating features, changing behavior, building UI/components, designing architecture, or turning rough ideas into scoped designs. Use to explore intent, constraints, alternatives, risks, and approval gates before implementation."
+description: "Explore a design when the user explicitly asks to brainstorm or when implementation has unresolved choices that would materially change behavior, scope, architecture, or UI direction. Do not use for clear, bounded tasks whose decisions are already settled or recoverable from current repository evidence."
 ---
 
 # Brainstorming
 
-Turn a rough request into an approved design before implementation starts.
+Turn a genuinely ambiguous request into an approved design before implementation starts.
 
-Do not write code, scaffold files, modify behavior, or perform implementation work until the user has approved the design. For very small changes, the design can be a few sentences, but the approval gate still applies.
+## Activation gate
+
+Inspect the request and available repository evidence before opening a design discussion.
+
+- Use this workflow when the user explicitly asks to brainstorm, compare approaches, or design before implementation.
+- Also use it when an unresolved choice would materially change customer-visible behavior, scope, compatibility, architecture, data flow, or UI direction.
+- Do not use it merely because work is creative, touches a feature, changes code, or could be described in more than one way.
+- If current evidence yields one clear, bounded implementation, exit this skill and proceed normally without requesting design approval.
+
+Once this workflow is active, do not implement the unsettled behavior until the decisions that materially affect it are approved. Continue read-only inspection while resolving them.
 
 ## Workflow
 
-1. Explore the current context.
+1. Inspect the current context.
    - Read the relevant files, docs, configuration, recent local changes, or command output needed to understand the request.
-   - If the request spans multiple independent systems, stop and decompose it into smaller pieces before designing the first piece.
-   - Completion criterion: the project shape, relevant constraints, and likely scope are clear enough to ask targeted questions.
+   - Resolve factual questions from available evidence instead of asking the user.
+   - Completion criterion: facts, settled decisions, genuine choices, and constraints are separated.
 
-2. Ask clarifying questions one at a time.
-   - Prefer multiple-choice questions when the options are clear.
-   - Use open-ended questions when the user's intent, constraints, or success criteria are still unclear.
-   - Do not bundle unrelated questions into one message.
-   - Completion criterion: purpose, in-scope behavior, out-of-scope behavior, constraints, and success criteria are known or explicitly marked as assumptions.
+2. Ask only decision questions that current evidence cannot settle.
+   - Include a recommended answer and the consequence of each viable choice.
+   - Group independent questions when that shortens the round without creating dependency confusion.
+   - Completion criterion: every choice that would materially alter the design is answered or explicitly delegated to a stated assumption.
 
-3. Propose 2-3 viable approaches.
+3. Propose alternatives only where they are real.
    - Lead with the recommended approach and explain why.
-   - Include trade-offs, risks, complexity, and what each approach preserves or gives up.
-   - Remove unnecessary features aggressively.
-   - Completion criterion: the user can choose an approach or ask for a revision from a concrete option set.
+   - Compare trade-offs, risks, complexity, and what each option preserves or gives up.
+   - Do not manufacture 2–3 approaches when evidence leaves one coherent design.
+   - Completion criterion: the user can approve the recommendation or choose a materially different alternative.
 
-4. Present the design in sections sized to the problem.
+4. Present the smallest design that closes the ambiguity.
    - Cover architecture, components, data flow, error handling, migration or compatibility concerns, and testing where relevant.
-   - For straightforward work, keep sections short.
-   - For nuanced work, present one section at a time and ask whether it looks right before continuing.
-   - Completion criterion: every section needed for implementation has been reviewed, revised if needed, and approved by the user.
+   - Omit sections that do not affect the requested outcome.
+   - Completion criterion: behavior, boundaries, important failure paths, and validation are concrete enough to implement.
 
 5. Capture the approved design when useful.
-   - If the design is substantial, write it to a project-appropriate spec path, using the repository's existing docs conventions if present.
-   - If no convention exists, use `docs/specs/YYYY-MM-DD-<topic>-design.md`.
-   - Do not create a spec for a tiny change unless it would reduce ambiguity or the user asks for one.
-   - Completion criterion: the final design is either documented or compact enough to remain clear in the conversation.
+   - Persist it only when the user requests a design document or the repository has a durable convention that this decision genuinely belongs in.
+   - Do not create task-local design notes or invent a new documentation location.
+   - Completion criterion: the decision is recoverable at the appropriate durable location, or is compact enough to remain in the conversation.
 
-6. Self-review before implementation.
+6. Review and request approval.
    - Check for unfinished markers, contradictions, ambiguous requirements, oversized scope, unrequested features, and missing validation.
-   - Fix issues inline before asking for final approval.
-   - Completion criterion: there are no known design gaps that would predictably derail implementation.
-
-7. Wait for approval.
-   - Ask the user to approve the design or request changes.
-   - If the user requests changes, revise the design and repeat the self-review.
-   - Completion criterion: the user explicitly approves proceeding.
+   - Ask for approval of the material decisions, not ceremonial approval of already-settled details.
+   - Completion criterion: the user approves the design or all previously unresolved choices, after which implementation may proceed.
 
 ## Design Standards
 
@@ -68,4 +69,4 @@ When reporting a design, separate:
 - Options: viable approaches with trade-offs.
 - Recommendation: the chosen approach and why.
 - Design: concrete behavior, boundaries, data flow, errors, and tests.
-- Open questions: anything still blocking approval.
+- Open questions: only decisions that still block implementation.

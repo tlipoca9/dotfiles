@@ -1,11 +1,28 @@
 ---
 name: agent-engine-e2e-network-recovery
-description: Diagnose and recover Agent Engine root E2E failures involving intermittent EOF, SSL connection timeout, TLS handshake timeout, TencentCloud ClientError.NetworkError, missing Customs request logs, or different behavior through iOA/SmartVPN versus a physical network interface. Use when separating application failures from local network-path failures, validating public endpoints with fresh connections, running E2E through a source-bound direct CONNECT proxy, or defining durable iOA domain-bypass rules.
+description: Use only while running or diagnosing root E2E in a checkout of `git.woa.com/agentpass/agent-engine` when it fails with intermittent EOF, SSL/TLS connection or handshake timeout, TencentCloud ClientError.NetworkError, missing Customs request logs, or different iOA/SmartVPN versus physical-network behavior. Do not use for other repositories, ordinary application failures, or standalone endpoint diagnostics.
 ---
 
 # Agent Engine E2E Network Recovery
 
 Treat network-path health as a prerequisite for interpreting E2E business failures. Establish where the request stopped, compare equivalent tunnel and direct paths, and only change business code when the request reached the service.
+
+## Activation Gate
+
+Use this workflow only when all three conditions hold:
+
+1. The current checkout has a configured Git remote whose normalized host and path are exactly `git.woa.com/agentpass/agent-engine`.
+2. The failing command is this repository's root E2E runner or an E2E suite launched through it.
+3. The observed failure matches one of the network-path symptoms in the description.
+
+Confirm the repository before applying any instructions below:
+
+```bash
+git rev-parse --show-toplevel
+git remote --verbose
+```
+
+Accept HTTPS, SCP-like SSH, and `ssh://` remote forms only when they resolve to that exact host and repository path. A similarly named fork, another Agent Engine repository, a copied script, or an endpoint probe outside the repository does not satisfy the gate. If any condition is false, leave this skill and use ordinary repository diagnosis instead.
 
 ## Preserve the Evidence Boundary
 

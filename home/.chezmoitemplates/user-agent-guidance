@@ -1,0 +1,111 @@
+# AGENTS.md
+
+## Durable repository state
+
+Repository contents are long-lived state.
+
+Only add or keep code, tests, documentation, scripts, configuration, or other
+artifacts when they serve a purpose beyond the current task and conversation.
+
+Do not persist task-local artifacts such as:
+
+- scratch files
+- temporary scripts or debug helpers
+- investigation notes or intermediate plans
+- generated reports or command output
+- ad-hoc fixtures or test data
+- exploratory programs
+- temporary tests
+
+Use temporary locations outside the repository when such artifacts are needed.
+
+When you encounter a clearly task-local artifact in the area affected by the
+current task, remove it rather than preserving, extending, documenting, or
+testing it.
+
+Do not perform unrelated repository-wide cleanup. If an existing artifact may
+have an intentional long-term purpose and that purpose is unclear, leave it
+unchanged.
+
+Before finishing, inspect the task's diff and remove artifacts whose only
+purpose was the implementation process.
+
+## Tests and verification
+
+Tests should protect durable behavior, contracts, invariants, or regressions.
+
+Do not add or keep a test solely because a file, helper, implementation detail,
+temporary scaffold, or task-local artifact exists.
+
+TDD applies to durable behavior, not temporary implementation scaffolding.
+Prefer tests that remain meaningful after reasonable refactoring.
+
+Do not change, weaken, skip, or bypass a test merely to make the implementation
+pass. A test may change when the intended behavior has changed or independent
+evidence shows that the test is incorrect.
+
+Verification must be capable of failing and must exercise the behavior layer
+being claimed.
+
+Do not claim that something works, passes, or is verified unless a relevant
+check was actually executed after the final change. State clearly what was
+verified and what remains unverified.
+
+## Documentation
+
+Documentation must stand on its own.
+
+Write the current repository truth, not the history of the conversation,
+investigation, or implementation process.
+
+Do not assume the reader has access to prior discussion. Do not reference
+"what we discussed", "the previous proposal", or other unstated context.
+
+Include rejected alternatives or historical reasoning only when they are
+necessary to understand the current design. Use an ADR or another dedicated
+historical record when decision history itself must be preserved.
+
+Source comments are documentation. Comments should explain durable,
+non-obvious constraints, invariants, or rationale. Do not use comments as
+change logs, implementation journals, or records of the conversation that
+produced the code.
+
+## Change scope
+
+Keep changes focused on the task, but do not preserve a bad design merely to
+minimize the diff.
+
+Fix the underlying design when it directly contributes to the problem, would
+otherwise force new code to reinforce a flawed pattern, or can be substantially
+simplified within the affected area.
+
+Prefer the smallest coherent solution, not the smallest diff.
+
+Do not perform unrelated cleanup, speculative redesign, or broad architectural
+changes that are not required by the task.
+
+If a significant architectural problem is discovered outside the necessary
+scope, report it rather than silently expanding the task.
+
+## Working tree safety
+
+Assume unrelated working-tree changes belong to the user or another agent.
+
+Do not revert, overwrite, delete, stage, or reformat changes outside the current
+task.
+
+Never use repository-wide destructive operations such as:
+
+- `git reset --hard`
+- `git checkout -- .`
+- `git restore .`
+- `git clean`
+- `git stash`
+
+Do not commit, amend, rebase, or push unless explicitly requested.
+
+When staging is requested, stage only the specific files changed for the
+current task. Do not use `git add .` or `git add -A`.
+
+If unrelated or concurrent changes conflict with the task, report the conflict
+instead of discarding or silently resolving those changes.

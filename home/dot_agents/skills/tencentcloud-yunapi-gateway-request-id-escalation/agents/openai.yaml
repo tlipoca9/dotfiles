@@ -1,4 +1,0 @@
-interface:
-  display_name: "TencentCloud YunAPI Gateway Request ID Escalation"
-  short_description: "Escalate opaque YunAPI failures with request IDs"
-  default_prompt: "Use $tencentcloud-yunapi-gateway-request-id-escalation to handle an opaque TencentCloud YunAPI InternalError without guessing."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Explore Before Code"
+  short_description: "Resolve implementation uncertainty with evidence"
+  default_prompt: "Use $explore-before-code to resolve the key uncertainty before implementing this change."

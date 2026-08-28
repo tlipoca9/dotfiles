@@ -8,6 +8,34 @@ import sys
 from typing import Any
 
 MANAGED_SERVERS: dict[str, dict[str, Any]] = {
+    "chrome-devtools": {
+        "command": "npx",
+        "args": [
+            "-y",
+            "chrome-devtools-mcp@1.8.0",
+            "--headless",
+            "--no-usage-statistics",
+        ],
+        "lifecycle": "lazy",
+        "requestTimeoutMs": 120_000,
+    },
+    "playwright": {
+        "command": "npx",
+        "args": ["-y", "@playwright/mcp@0.0.79", "--headless"],
+        "lifecycle": "lazy",
+        "requestTimeoutMs": 120_000,
+    },
+    "firecrawl": {
+        "command": "npx",
+        "args": ["-y", "firecrawl-mcp@3.24.0"],
+        "env": {
+            "FIRECRAWL_API_KEY": (
+                "!/bin/cat ${HOME}/.config/firecrawl/api-key"
+            ),
+        },
+        "lifecycle": "lazy",
+        "requestTimeoutMs": 600_000,
+    },
     "iWiki": {
         "url": "https://prod.mcp.it.woa.com/app_iwiki_mcp/mcp3",
         "auth": "bearer",
@@ -38,6 +66,21 @@ MANAGED_SERVERS: dict[str, dict[str, Any]] = {
 
 def merge_server(existing: object, managed: dict[str, Any]) -> dict[str, Any]:
     server = dict(existing) if isinstance(existing, dict) else {}
+
+    if "command" in managed:
+        for key in (
+            "url",
+            "socket",
+            "httpTransport",
+            "headers",
+            "requestHeadersCommand",
+            "auth",
+            "oauth",
+        ):
+            server.pop(key, None)
+    elif "url" in managed:
+        for key in ("command", "args", "cwd", "socket"):
+            server.pop(key, None)
 
     headers = server.get("headers")
     if isinstance(headers, dict):

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Coherent Standalone Writing"
-  short_description: "Create self-contained, causally coherent writing"
-  default_prompt: "Use $write-coherent-content to produce a self-contained, causally coherent document."

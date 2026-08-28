@@ -1,4 +1,0 @@
-interface:
-  display_name: "TencentCloud YunAPI 3.0 Spec"
-  short_description: "Review Tencent Cloud YunAPI 3.0 API specifications"
-  default_prompt: "Use $tencentcloud-yunapi-3-spec to review this Tencent Cloud API definition for YunAPI 3.0 compliance."

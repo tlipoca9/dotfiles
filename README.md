@@ -5,9 +5,9 @@ Personal macOS development environment managed directly by
 
 This repository rebuilds the environment's **capabilities**, not an identical
 version snapshot. Homebrew formulae/casks and VS Code extensions intentionally
-follow their current upstream versions. Homebrew and DSH are installed only
+follow their current upstream versions. Homebrew packages are installed only
 when missing; later `chezmoi apply` runs do not upgrade, downgrade, or otherwise
-converge those installed tools.
+converge installed tools.
 
 The repository is public. The managed SSH private key is age-encrypted. Its age
 identity is restored manually on each Mac and is never managed or committed.
@@ -31,8 +31,8 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- \
   https://github.com/tlipoca9/dotfiles.git
 ```
 
-The Darwin before-script starts Apple's Command Line Tools installer when
-needed and asks you to apply again after it finishes. It likewise installs a
+The Darwin package installer starts Apple's Command Line Tools installer when
+needed and asks you to apply again after it finishes. It also installs a
 missing Homebrew interactively, discovers its prefix, and caches only the
 rendered `brew shellenv` with mode `0600`.
 
@@ -50,10 +50,9 @@ chezmoi doctor   # upstream chezmoi diagnostics
 ```
 
 `run_onchange` means declaration edits retrigger their installer or builder; it
-is not a continuous state-convergence system. Existing Homebrew packages and
-DSH are left alone. DSH's `install_version` is only the version requested on its
-first, missing-tool installation. Exact Zsh and Pi pins change only when their
-single source declarations are reviewed and edited.
+is not a continuous state-convergence system. Existing Homebrew packages are
+left alone. Exact Zsh and Pi pins change only when their single source
+declarations are reviewed and edited.
 
 If a manually deleted Zsh cache must be rebuilt without changing its manifests,
 clear chezmoi's script state and apply again:
@@ -69,22 +68,19 @@ chezmoi apply
 - system Zsh with exact, reviewed Antidote plugin commits
 - current Homebrew packages and current VS Code extension releases
 - Pi with exact, reviewed extension pins and preserved runtime state
-- Oh My Pi with an independent Task Wayfinder gate and preserved runtime state
 - shared vendored skills deployed to `~/.agents/skills`, plus explicitly
   whitelisted Codex-specific skills deployed to `~/.codex/skills`
 - only `~/.ssh/id_ed25519` and `id_ed25519.pub` under SSH management
 
 System declarations live in `home/.chezmoidata/darwin/packages.toml`; VS Code
 extensions live in `home/.chezmoidata/darwin/vscode.toml`; Pi pins live only in
-`home/dot_pi/private_agent/modify_settings.json.tmpl`; OMP's Task Wayfinder gate
-lives only in `home/dot_omp/private_agent/`; shared user skills live only in
-`home/dot_agents/skills`. Installers and generators must update the matching
-chezmoi source instead of creating duplicate runtime copies. Codex-specific
-skills live only in `home/dot_codex/skills`.
+`home/dot_pi/private_agent/modify_settings.json.tmpl`; shared user skills live
+only in `home/dot_agents/skills`. Installers and generators must update the
+matching chezmoi source instead of creating duplicate runtime copies.
+Codex-specific skills live only in `home/dot_codex/skills`.
 Skills derived from private conversations are age-encrypted in the public
-source and decrypted only when chezmoi applies them. A one-time, exact
-allowlist migration removes known retired or moved skill paths; it does not use
-exact-directory semantics or sweep unrelated runtime files. Project runtimes,
-macOS preferences, Git configuration, application accounts, and unmanaged
-runtime files are outside this repository. See [docs/pi.md](docs/pi.md) and
-[docs/omp.md](docs/omp.md).
+source and decrypted only when chezmoi applies them. The repository retains
+only current declarations and durable lifecycle automation; completed
+migrations and retired capabilities remain available through Git history.
+Project runtimes, macOS preferences, Git configuration, application accounts,
+and unmanaged runtime files are outside this repository.
