@@ -1,7 +1,7 @@
 ---
 name: tlipoca9-code-review-gate
 description: >-
-  Require every code change to pass a final review using $tlipoca9-perspective before Codex
+  Require every code change to pass a final review using $evidence-driven-review before Codex
   claims completion or hands the change off. Use whenever a task creates, modifies, deletes,
   or renames source code, tests, executable scripts, migrations, build or CI definitions, or
   runtime configuration in any repository, regardless of change size. Also use when continuing
@@ -11,10 +11,9 @@ description: >-
 
 # tlipoca9 Code Review Gate
 
-Treat `$tlipoca9-perspective` as a required final quality gate for code changes. Implement and
+Treat `$evidence-driven-review` as a required final quality gate for code changes. Implement and
 verify the requested change normally, then review the final diff against the user's request and
-current evidence. Do not substitute a generic review, test success, or the implementer's confidence
-for this gate.
+current evidence. Do not substitute test success or the implementer's confidence for this gate.
 
 ## Establish the review boundary
 
@@ -24,7 +23,7 @@ Before the first mutation:
 2. Record which existing changes predate the task. Preserve them and exclude them from the
    completion claim. If old and new work overlap in one hunk, review the whole hunk conservatively.
 3. State the requested observable result and the evidence needed to support it.
-4. Tell the user that the `tlipoca9-perspective` review gate will run before delivery.
+4. Tell the user that the `evidence-driven-review` gate will run before delivery.
 
 If no code changes remain at delivery, do not manufacture a review result. State that the gate was
 not applicable because the final code diff is empty.
@@ -34,8 +33,8 @@ not applicable because the final code diff is empty.
 Run the gate only after implementation, formatting, autofixes, code generation, and task-level
 verification are complete:
 
-1. Read `/Users/tlipoca9/.agents/skills/tlipoca9-perspective/SKILL.md` completely and activate
-   `$tlipoca9-perspective` using its **Review or diagnosis** dispatch. If the Skill is already fully
+1. Read `/Users/tlipoca9/.agents/skills/evidence-driven-review/SKILL.md` completely and activate
+   `$evidence-driven-review`. If the Skill is already fully
    present in the current context, do not reread it merely for ceremony.
 2. Review the actual final diff, including staged, unstaged, and relevant untracked files. Use the
    current versions of changed files, repository instructions, tests, logs, and the user's latest
@@ -76,9 +75,9 @@ review boundary; silence is not acceptance.
 Do not say the code change is complete while the gate is missing, stale, or failing. In the final
 response, report concisely:
 
-- `tlipoca9-perspective review: PASS` and what final diff or paths were reviewed;
+- `evidence-driven-review: PASS` and what final diff or paths were reviewed;
 - the verification actually run and its observation layer;
 - any user-approved residual risk or intentionally excluded pre-existing change.
 
-If blocked, report `tlipoca9-perspective review: FAIL`, the unresolved finding, and the exact user
+If blocked, report `evidence-driven-review: FAIL`, the unresolved finding, and the exact user
 decision or external evidence needed to continue. Do not dilute a failure into a generic caveat.

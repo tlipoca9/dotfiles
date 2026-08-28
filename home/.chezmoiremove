@@ -7,6 +7,7 @@
 .agents/skills/tencentcloud-yunapi-all-in-one
 .agents/skills/tencentcloud-yunapi-cam-tag-integration
 .agents/skills/tencentcloud-yunapi-gateway-request-id-escalation
+.agents/skills/tlipoca9-perspective
 .agents/skills/wizard
 .agents/skills/write-coherent-content
 .agents/skills/writing-for-agents

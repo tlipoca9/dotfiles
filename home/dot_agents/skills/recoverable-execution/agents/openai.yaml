@@ -1,0 +1,4 @@
+interface:
+  display_name: "Recoverable Execution"
+  short_description: "Keep long-running engineering work bounded and resumable"
+  default_prompt: "Use $recoverable-execution to run this long-lived engineering task within explicit boundaries and keep it resumable."

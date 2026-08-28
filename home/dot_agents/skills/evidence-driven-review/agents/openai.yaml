@@ -1,0 +1,4 @@
+interface:
+  display_name: "Evidence-Driven Review"
+  short_description: "Review changes with precise, evidence-backed findings"
+  default_prompt: "Use $evidence-driven-review to review this change and report only evidence-backed findings, risks, and questions."

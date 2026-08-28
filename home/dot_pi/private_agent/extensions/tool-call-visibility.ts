@@ -4,7 +4,7 @@ import {
 	ToolExecutionComponent,
 } from "@earendil-works/pi-coding-agent";
 
-const patchStateKey = Symbol.for("tlipoca9.pi.latest-progress.v1");
+const patchStateKey = Symbol.for("tlipoca9.pi.latest-progress.v2");
 
 type AssistantUpdate = typeof AssistantMessageComponent.prototype.updateContent;
 type AssistantMessage = Parameters<AssistantUpdate>[0];
@@ -176,7 +176,13 @@ function installRenderPatch(): PatchState {
 		}
 	};
 	toolPrototype.render = function renderToolExecution(width: number): string[] {
-		if (state.enabled && (!state.active || state.latestTool !== this)) return [];
+		if (
+			state.enabled &&
+			state.expanded.get(this) !== true &&
+			(!state.active || state.latestTool !== this)
+		) {
+			return [];
+		}
 		return state.originalToolRender.call(this, width);
 	};
 
@@ -202,7 +208,7 @@ export default function toolCallVisibility(pi: ExtensionAPI): void {
 	});
 
 	pi.registerCommand("tool-calls", {
-		description: "Expand or collapse the latest tool call: /tool-calls [show|hide]",
+		description: "Show all tool calls or restore latest-only view: /tool-calls [show|hide]",
 		handler: async (args, context) => {
 			const action = args.trim().toLowerCase();
 			if (action !== "" && action !== "show" && action !== "hide") {
@@ -212,7 +218,10 @@ export default function toolCallVisibility(pi: ExtensionAPI): void {
 
 			const expanded = action === "show" || (action === "" && !context.ui.getToolsExpanded());
 			context.ui.setToolsExpanded(expanded);
-			context.ui.notify(`Latest tool call ${expanded ? "expanded" : "collapsed"}`, "info");
+			context.ui.notify(
+				expanded ? "All tool calls expanded" : "Restored latest-only tool view",
+				"info",
+			);
 		},
 	});
 }

@@ -1,4 +1,0 @@
-interface:
-  display_name: "tlipoca9-perspective"
-  short_description: "按我的当前判断方式约束工程决策、执行与交付"
-  default_prompt: "Use $tlipoca9-perspective as an anti-drift check for this engineering task; follow my explicit current decisions and use profile inferences only for reversible, in-scope choices."
