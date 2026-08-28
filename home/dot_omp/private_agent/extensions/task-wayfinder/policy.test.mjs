@@ -264,6 +264,15 @@ test("injects one scoped child contract and removes wayfinder before delegation"
   assert.doesNotMatch(native.tasks[0].task, /Ticket review/);
   assert.match(native.tasks[1].task, /Ticket review/);
   assert.match(native.tasks[0].task, /\[wayfinder:pitfall_report\]/);
+  assert.match(native.tasks[0].task, /another independent ticket/);
+  assert.match(
+    native.tasks[0].task,
+    /Normal ticket iteration is not a pitfall/,
+  );
+  assert.match(
+    native.tasks[0].task,
+    /transient failures caused by code currently being changed/,
+  );
 });
 
 test("read-only child contract forbids mutation", () => {
@@ -271,6 +280,21 @@ test("read-only child contract forbids mutation", () => {
     childPolicyPrompt({ mode: "exempt", reason: "one-shot-read-only" }),
     /Do not mutate/,
   );
+});
+
+test("TAPD child contract reads the Chinese reusable-obstacle section", () => {
+  const prompt = childPolicyPrompt({
+    mode: "tracked",
+    tracker: "tapd_mini",
+    map: { name: "迁移地图", ref: "https://tapd.example/map" },
+    ticket: {
+      key: "review",
+      name: "评审迁移方案",
+      ref: "https://tapd.example/ticket",
+    },
+  });
+  assert.match(prompt, /## 可复用障碍/);
+  assert.doesNotMatch(prompt, /## Pitfall log/);
 });
 
 function typeboxMock() {

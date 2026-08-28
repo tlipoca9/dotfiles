@@ -53,7 +53,8 @@ export type TaskInspection = {
 };
 
 export type GateResult =
-  { ok: true; binding: WayfinderBinding } | { ok: false; reason: string };
+  | { ok: true; binding: WayfinderBinding }
+  | { ok: false; reason: string };
 
 type RecordValue = Record<string, unknown>;
 
@@ -487,9 +488,9 @@ export function childPolicyPrompt(
   }
   const pitfallSource =
     binding.tracker === "tapd_mini"
-      ? 'the map description section headed "## Pitfall log"'
+      ? 'the map description section headed "## 可复用障碍"'
       : 'all map comments headed "WAYFINDER PITFALL"';
-  return `## Wayfinder child contract\n\nWayfinder map: ${binding.map.name} (${binding.map.ref})\nYour ticket: ${binding.ticket.name} [${binding.ticket.key}] (${binding.ticket.ref})\nWork only within this ticket's question and approved boundaries.\n\nBefore running commands or diagnosing, read the map and ${pitfallSource}. Apply relevant entries. At the first unexpected failure, search those entries again by symptom and component before trying another fix. Do not write the shared pitfall log directly. Send every new reusable resolved or unresolved obstacle to the parent through hub with a message beginning "[wayfinder:pitfall_report]" and include Ticket, Scope, Symptom, Cause, Resolution, Verification, and Status; redact secrets. Wait for the parent's acknowledgement before completion. Disclose every pitfall recorded, reused, or unresolved in the final response, or state "Pitfalls: None".\n\nBefore escalating ambiguity, inspect the ticket/map context and repository evidence. If a material ambiguity still affects scope, behavior, architecture, authority, or acceptance, send the parent exactly one focused question through hub in a message beginning "[wayfinder:interview_request]" and wait for the reply. Never bundle questions or guess through an unresolved decision.`;
+  return `## Wayfinder child contract\n\nWayfinder map: ${binding.map.name} (${binding.map.ref})\nYour ticket: ${binding.ticket.name} [${binding.ticket.key}] (${binding.ticket.ref})\nWork only within this ticket's question and approved boundaries.\n\nBefore running commands or diagnosing, read the map and ${pitfallSource}. Apply relevant entries. At the first unexpected failure, search those entries again by symptom and component before trying another fix; searching does not make the failure reportable. A pitfall must be a non-obvious operational obstacle from build, deploy, tooling, permissions, environment, or shared infrastructure that is likely to recur in another independent ticket and is directly reusable there without knowing this ticket's decision history. Normal ticket iteration is not a pitfall: do not report hypotheses, rejected options, requirement clarification, review feedback, prototype adjustments, changing understanding, routine trial and error, command typos, or transient failures caused by code currently being changed. Do not write the shared pitfall log directly. Send only a qualifying new reusable resolved or unresolved obstacle to the parent through hub with a message beginning "[wayfinder:pitfall_report]" and include Ticket, Scope, Symptom, Cause, Resolution, Verification, and Status; redact secrets. Wait for the parent's acknowledgement before completion. Disclose every pitfall recorded, reused, or unresolved in the final response, or state "Pitfalls: None".\n\nBefore escalating ambiguity, inspect the ticket/map context and repository evidence. If a material ambiguity still affects scope, behavior, architecture, authority, or acceptance, send the parent exactly one focused question through hub in a message beginning "[wayfinder:interview_request]" and wait for the reply. Never bundle questions or guess through an unresolved decision.`;
 }
 
 /** Strip the gate-only binding and scope one child contract per native task. */

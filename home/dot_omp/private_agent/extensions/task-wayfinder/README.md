@@ -81,9 +81,9 @@ Remote references are validated statically for URL shape and repository/workspac
 Each tracked child receives only the shared map and its own ticket. It reads the tracker-specific pitfall log before work and reports through OMP `hub`:
 
 - `[wayfinder:interview_request]` for exactly one unresolved material question
-- `[wayfinder:pitfall_report]` for a reusable resolved or unresolved obstacle
+- `[wayfinder:pitfall_report]` only for a non-obvious operational obstacle from build, deploy, tooling, permissions, environment, or shared infrastructure that can recur in another independent ticket and be reused without knowing the current ticket's decision history
 
-The parent remains the single pitfall-log writer and acknowledges reports before accepting completion.
+Normal ticket iteration—hypotheses, rejected options, clarification, feedback, prototype changes, changing understanding, routine trial and error, typos, and transient failures from code under change—is not a pitfall. The parent remains the single pitfall-log writer, rejects out-of-scope candidates, and acknowledges qualifying reports before accepting completion.
 
 ## Failure behavior
 

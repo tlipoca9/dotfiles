@@ -1,14 +1,14 @@
 interface:
-    display_name: "Wayfinder"
-    short_description: "Map a large effort as decision tickets"
+      display_name: "Wayfinder"
+      short_description: "把大型工作绘制成决策工单地图"
 
 dependencies:
-    tools:
-        - type: "mcp"
-          value: "gongfeng"
-          description: "Gongfeng issue operations for git.woa.com wayfinding maps"
-          transport: "streamable_http"
-          url: "https://git.woa.com/api/mcp/mcp"
+      tools:
+            - type: "mcp"
+              value: "gongfeng"
+              description: "Gongfeng issue operations for git.woa.com wayfinding maps"
+              transport: "streamable_http"
+              url: "https://git.woa.com/api/mcp/mcp"
 
 policy:
-    allow_implicit_invocation: false
+      allow_implicit_invocation: false

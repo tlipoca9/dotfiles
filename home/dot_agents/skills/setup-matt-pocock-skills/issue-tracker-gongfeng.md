@@ -38,9 +38,9 @@ Read the Gongfeng issue by its project-scoped IID and include its comments.
 
 Used by `/wayfinder`. The **map** is a single issue with **child** issues as tickets.
 
-- **Map**: a single issue labelled `wayfinder:map`, holding the Notes / Decisions-so-far / Fog body.
-- **Child ticket**: prefer Gongfeng's native parent-child relationship when the MCP exposes it. Otherwise put `Part of #<map>` at the top of the child body and keep an ordered task-list link in the map. Apply one `wayfinder:<type>` label (`research`/`prototype`/`grilling`/`task`).
+- **Map**: a single issue labelled `wayfinder:map`, with a Chinese title and the `目的地` / `说明` / `已确认决策` / `可复用障碍` / `尚未明确` / `范围之外` sections defined by Wayfinder.
+- **Child ticket**: use a Chinese title and `## 待解决问题` body. Prefer Gongfeng's native parent-child relationship when the MCP exposes it. Otherwise put `Part of #<map>` at the top of the child body and keep an ordered task-list link in the map. Apply one `wayfinder:<type>` label (`research`/`prototype`/`grilling`/`task`).
 - **Blocking**: prefer Gongfeng's native blocking relationship when the MCP exposes it. Otherwise put `Blocked by: #<iid>, #<iid>` at the top of the child body. A ticket is unblocked when every referenced blocker is closed.
 - **Frontier query**: list the map's open children in map order, then drop every ticket with an open blocker or an assignee. The first remaining ticket is the frontier.
 - **Claim**: assign the ticket to the authenticated Gongfeng identity as the session's first write, then verify the assignee. Assignment is the concurrency claim; stop if the MCP cannot perform or verify it.
-- **Resolve**: read the latest ticket and map, post the answer as a resolution comment, close the ticket, then append a one-line gist and issue link to the map's Decisions-so-far. Verify both issues after the writes so concurrent map edits are preserved.
+- **Resolve**: read the latest ticket and map, post the answer in Chinese as a resolution comment, close the ticket, then append a one-line Chinese gist and issue link under the map's `## 已确认决策`. Verify both issues after the writes so concurrent map edits are preserved.

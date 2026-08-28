@@ -599,6 +599,8 @@ test("extension hard-blocks invalid bindings without reading remote refs and inj
     /normalized Scope \+ Symptom \+ Cause/,
   );
   assert.match(parentPrompt.systemPrompt, /pitfall_report/);
+  assert.match(parentPrompt.systemPrompt, /Normal ticket iteration/);
+  assert.match(parentPrompt.systemPrompt, /first reject candidates/);
   assert.match(parentPrompt.systemPrompt, /Pitfalls: None/);
 });
 
@@ -680,8 +682,27 @@ test("child binding produces shared-pitfall and one-question contracts", () => {
   assert.match(prompt, /Do not write the shared pitfall log directly/);
   assert.match(prompt, /pitfall_report/);
   assert.match(prompt, /normalized Scope \+ Symptom \+ Cause/);
+  assert.match(prompt, /another independent ticket/);
+  assert.match(prompt, /Normal ticket iteration is not a pitfall/);
+  assert.match(
+    prompt,
+    /transient failures caused by code currently being changed/,
+  );
   assert.match(prompt, /recorded, reused, or unresolved/);
   assert.match(prompt, /interview_request/);
   assert.match(prompt, /exactly one focused question/);
   assert.match(prompt, /Never bundle questions/);
+
+  const tapdPrompt = childPolicyPrompt({
+    mode: "tracked",
+    tracker: "tapd_mini",
+    map: { name: "迁移地图", ref: "https://tapd.example/map" },
+    ticket: {
+      key: "review",
+      name: "评审迁移方案",
+      ref: "https://tapd.example/ticket",
+    },
+  });
+  assert.match(tapdPrompt, /## 可复用障碍/);
+  assert.doesNotMatch(tapdPrompt, /## Pitfall log/);
 });
