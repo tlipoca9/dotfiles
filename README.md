@@ -78,8 +78,9 @@ extensions live in `home/.chezmoidata/darwin/vscode.toml`; Pi pins live only in
 only in `home/dot_agents/skills`. Installers and generators must update the
 matching chezmoi source instead of creating duplicate runtime copies.
 Codex-specific skills live only in `home/dot_codex/skills`.
-Skills derived from private conversations are age-encrypted in the public
-source and decrypted only when chezmoi applies them. The repository retains
+Skills are stored as plain source unless they still require confidentiality;
+those skills are age-encrypted and decrypted only when chezmoi applies them.
+The repository retains
 only current declarations and durable lifecycle automation; completed
 migrations and retired capabilities remain available through Git history.
 Project runtimes, macOS preferences, Git configuration, application accounts,

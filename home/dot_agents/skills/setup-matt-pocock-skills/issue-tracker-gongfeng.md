@@ -27,7 +27,7 @@ Read the Gongfeng issue and its comments using its project-scoped IID.
 
 Used by `/wayfinder`. The **map** is a single issue with **child** issues as tickets.
 
-- **Map**: a single issue labelled `wayfinder:map`, holding the Notes / Decisions-so-far / Fog body.
+- **Map**: a single issue labelled `wayfinder:map`, holding the Notes / Shared context / Decisions-so-far / Fog body.
 - **Child ticket**: prefer a native child relationship; otherwise put `Part of #<map>` in the ticket body and link it from the map. Apply one `wayfinder:<type>` label.
 - **Blocking**: prefer the tracker's native blocking relationship; otherwise use a `Blocked by: #<iid>, #<iid>` line in the ticket body.
 - **Frontier**: list the map's open children, excluding tickets with open blockers or an assignee; first in map order wins.

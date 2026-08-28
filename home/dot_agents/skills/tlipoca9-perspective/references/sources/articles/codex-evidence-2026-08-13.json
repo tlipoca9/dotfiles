@@ -1,0 +1,1314 @@
+{
+  "generated_at": "2026-08-13T12:03:08.628169+00:00",
+  "scope": {
+    "rollout_files": 4169,
+    "classification": {
+      "legacy_user_facing": 129,
+      "subagent": 2473,
+      "explicit_user": 796,
+      "sdk_or_external_agent": 179,
+      "legacy_background_exec": 592
+    },
+    "included_sessions": 636,
+    "included_user_messages": 12191,
+    "included_user_characters": 5139205,
+    "date_range": [
+      "2026-03-16",
+      "2026-08-13"
+    ],
+    "parse_errors": 0,
+    "method": "Included user-authored message items from explicit user threads and legacy user-facing Codex Desktop/CLI/TUI sessions. Excluded metadata-tagged subagents, SDK/external-agent sessions, system/developer injections, assistant text, tool output, and duplicate event-message mirrors.",
+    "temporal_model": "Present-tense conclusions use exponential recency weighting with a 30-day half-life and a 0.03 floor. Window comparisons separate the last 30 days, days 31–60, and older history. Older evidence supports stable traits and change detection, but does not outweigh recent behavior."
+  },
+  "usage_shape": {
+    "sessions_by_month": {
+      "2026-03": 25,
+      "2026-04": 55,
+      "2026-05": 99,
+      "2026-06": 254,
+      "2026-07": 164,
+      "2026-08": 39
+    },
+    "busiest_days": [
+      [
+        "2026-06-17",
+        53
+      ],
+      [
+        "2026-06-16",
+        42
+      ],
+      [
+        "2026-06-18",
+        35
+      ],
+      [
+        "2026-07-08",
+        17
+      ],
+      [
+        "2026-07-22",
+        14
+      ],
+      [
+        "2026-04-28",
+        13
+      ],
+      [
+        "2026-06-30",
+        13
+      ],
+      [
+        "2026-07-03",
+        13
+      ],
+      [
+        "2026-03-16",
+        12
+      ],
+      [
+        "2026-04-27",
+        12
+      ],
+      [
+        "2026-07-01",
+        12
+      ],
+      [
+        "2026-07-09",
+        12
+      ],
+      [
+        "2026-03-17",
+        11
+      ],
+      [
+        "2026-07-24",
+        11
+      ],
+      [
+        "2026-04-29",
+        10
+      ]
+    ],
+    "top_repositories": [
+      [
+        "agentpass/agent-engine",
+        140
+      ],
+      [
+        "agentrun/sandstorm",
+        70
+      ],
+      [
+        "TencentCloudAgentRuntime/zeroproxy",
+        68
+      ],
+      [
+        "agentpaas/agent-engine",
+        62
+      ],
+      [
+        "agentpaas/agent-engine-workspace-shipyard",
+        48
+      ],
+      [
+        "/Users/tlipoca9/code/cnb.woa.com/finofliu/my-personal-work",
+        30
+      ],
+      [
+        "agentrun/e2e",
+        23
+      ],
+      [
+        "finofliu/zeroproxy",
+        19
+      ],
+      [
+        "agentpaas/ags-cli",
+        19
+      ],
+      [
+        "/Users/tlipoca9/code/git.woa.com/agentpass",
+        17
+      ],
+      [
+        "agentrun/reviews",
+        13
+      ],
+      [
+        "agentrun/ags-team-agent",
+        12
+      ],
+      [
+        "agentrun/sandstorm-20260517-sidecar-runtime",
+        8
+      ],
+      [
+        ".codex",
+        7
+      ],
+      [
+        "agentrun/sandstorm-cr",
+        5
+      ],
+      [
+        "agentrun/sandstorm-20260609-accesspolicy",
+        5
+      ],
+      [
+        "/Users/tlipoca9/Downloads/a",
+        4
+      ],
+      [
+        "agentrun/sandstorm-20260519-review-ingress-policy",
+        4
+      ],
+      [
+        "finofliu/cq-test-cluster",
+        4
+      ],
+      [
+        "/Users/tlipoca9/code/cnb.woa.com/cnpc/agentruntime/agentway",
+        4
+      ]
+    ],
+    "messages_per_session": 19.17,
+    "median_user_message_chars": 41,
+    "average_user_message_chars": 421.6
+  },
+  "categories": {
+    "实现与重构": {
+      "sessions": 335,
+      "share": 0.5267,
+      "recency_weighted_share": 0.5545,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 69,
+          "total": 108,
+          "share": 0.6389
+        },
+        "近期（31–60 天）": {
+          "matched": 140,
+          "total": 288,
+          "share": 0.4861
+        },
+        "更早（60 天前）": {
+          "matched": 126,
+          "total": 240,
+          "share": 0.525
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "根据我们讨论收敛的 Deployment 契约，写一份技术架构文档，其组织结构参考 https://git.woa.com/agentpaas/agent-engine/blob/feature/tech_docs/docs/business/agent-engine-brain-hands-design.md 这份文档，写入到 docs/business/tech-docs.md"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "看看我们引入 Deployment 的话，需要新增哪些数据结构、接口、错误码。按照依赖顺序给我，无依赖的在最前面。比如 A 依赖于 B 和 C，B 依赖于 C，那么顺序就是 C B A。错误码只展示新增的"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811.md 并继续无人值守开发。先冻结当前脏工作树，不重置；从补 Shipyard commit-unknown 组件测试、全量 contract/lint/双审开始，之后提交、构建部署重庆并跑预发布控制面和公网数据面 E2E。持续记录到 .local/develop/progress.md。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "优化下 [$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 的开发流程，加入核心：效率优先，如果是小修小补就拉一个 subagent 独立跟进修复，不要阻塞主干需求的开发。这个 skill 的修改不要用它自己的流程"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260812-pause.md，继续无人值守开发。 严格按交接文档的恢复顺序执行。先核验 Git 断点并完成 pre-push/push，再使用 $develop-from-contract 开发分场景 benchmark。契约已经批准，不要再向我确认；小修交给 subagent 并行处理。完成 External Agent 回归基线与 Deployment 0–50 实例、每 RS 100 并发、最高 5k QPS 的压测，并观察 Customs 异步租约释放是否成为瓶颈。正常情况下直接提交并代推，不要修改 secret[REDACTED] 仓库。"
+        }
+      ]
+    },
+    "架构与契约": {
+      "sessions": 326,
+      "share": 0.5126,
+      "recency_weighted_share": 0.5427,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 61,
+          "total": 108,
+          "share": 0.5648
+        },
+        "近期（31–60 天）": {
+          "matched": 156,
+          "total": 288,
+          "share": 0.5417
+        },
+        "更早（60 天前）": {
+          "matched": 109,
+          "total": 240,
+          "share": 0.4542
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "根据我们讨论收敛的 Deployment 契约，写一份技术架构文档，其组织结构参考 https://git.woa.com/agentpaas/agent-engine/blob/feature/tech_docs/docs/business/agent-engine-brain-hands-design.md 这份文档，写入到 docs/business/tech-docs.md"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "看看我们引入 Deployment 的话，需要新增哪些数据结构、接口、错误码。按照依赖顺序给我，无依赖的在最前面。比如 A 依赖于 B 和 C，B 依赖于 C，那么顺序就是 C B A。错误码只展示新增的"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811.md 并继续无人值守开发。先冻结当前脏工作树，不重置；从补 Shipyard commit-unknown 组件测试、全量 contract/lint/双审开始，之后提交、构建部署重庆并跑预发布控制面和公网数据面 E2E。持续记录到 .local/develop/progress.md。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "给我的 codex 装一下 getoutline 的 mcp，同时连接到 [https://ags-docs.woa.com/doc/deployments-kNN27o3mab](https://ags-docs.woa.com/doc/deployments-kNN27o3mab)"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "优化下 [$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 的开发流程，加入核心：效率优先，如果是小修小补就拉一个 subagent 独立跟进修复，不要阻塞主干需求的开发。这个 skill 的修改不要用它自己的流程"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260812-pause.md，继续无人值守开发。 严格按交接文档的恢复顺序执行。先核验 Git 断点并完成 pre-push/push，再使用 $develop-from-contract 开发分场景 benchmark。契约已经批准，不要再向我确认；小修交给 subagent 并行处理。完成 External Agent 回归基线与 Deployment 0–50 实例、每 RS 100 并发、最高 5k QPS 的压测，并观察 Customs 异步租约释放是否成为瓶颈。正常情况下直接提交并代推，不要修改 secret[REDACTED] 仓库。"
+        }
+      ]
+    },
+    "审查与质量": {
+      "sessions": 322,
+      "share": 0.5063,
+      "recency_weighted_share": 0.5134,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 53,
+          "total": 108,
+          "share": 0.4907
+        },
+        "近期（31–60 天）": {
+          "matched": 157,
+          "total": 288,
+          "share": 0.5451
+        },
+        "更早（60 天前）": {
+          "matched": 112,
+          "total": 240,
+          "share": 0.4667
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "golangci 规则现在太冗余了，能不能改成类似这种简单的。另外，不动 service/session 的规则和 format version: \"2\" run: timeout: 5m relative-path-mode: gomod tests: true linters: default: standard settings: errcheck: exclude-functions: - fmt.Fprint - fmt.Fprintf - fmt.Fprintln exclusions: rules: - linters: - errcheck source: \"^\\\\s*defer\\\\s+\""
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的相关链路功能仍能使用）"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "Documents/Codex",
+          "prompt": "```markdown - pi-zentui — Opencode 风格 TUI - pi-open-tui — 精装修 TUI：动画 logo 头、Starship 风格 footer - pi-rewind — 检查点/回退 - pi-interactive-shell — 交互式 CLI agent 委托 - pi-memctx — 记忆上下文包（Memory Gateway） - pi-lean-ctx — lean-ctx 集成（ctx_* 工具族） - pi-web-access — 网络访问（web_search / fetch_content 等） - pi-subagents — 子代理系统 - @vigolium/piolium — 安全审计技能包 - pi-mcp-adapter — …"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811.md 并继续无人值守开发。先冻结当前脏工作树，不重置；从补 Shipyard commit-unknown 组件测试、全量 contract/lint/双审开始，之后提交、构建部署重庆并跑预发布控制面和公网数据面 E2E。持续记录到 .local/develop/progress.md。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "整理下当前项目的 skills 吧 1. intergration test 的 skill 应该都没用了 2. contract test 的 skill 需要参考 e2e 的补全下每个服务的"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260812-pause.md，继续无人值守开发。 严格按交接文档的恢复顺序执行。先核验 Git 断点并完成 pre-push/push，再使用 $develop-from-contract 开发分场景 benchmark。契约已经批准，不要再向我确认；小修交给 subagent 并行处理。完成 External Agent 回归基线与 Deployment 0–50 实例、每 RS 100 并发、最高 5k QPS 的压测，并观察 Customs 异步租约释放是否成为瓶颈。正常情况下直接提交并代推，不要修改 secret[REDACTED] 仓库。"
+        }
+      ]
+    },
+    "诊断与运维": {
+      "sessions": 268,
+      "share": 0.4214,
+      "recency_weighted_share": 0.4516,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 57,
+          "total": 108,
+          "share": 0.5278
+        },
+        "近期（31–60 天）": {
+          "matched": 107,
+          "total": 288,
+          "share": 0.3715
+        },
+        "更早（60 天前）": {
+          "matched": 104,
+          "total": 240,
+          "share": 0.4333
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的相关链路功能仍能使用）"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "看看我们引入 Deployment 的话，需要新增哪些数据结构、接口、错误码。按照依赖顺序给我，无依赖的在最前面。比如 A 依赖于 B 和 C，B 依赖于 C，那么顺序就是 C B A。错误码只展示新增的"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "Documents/Codex",
+          "prompt": "```markdown - pi-zentui — Opencode 风格 TUI - pi-open-tui — 精装修 TUI：动画 logo 头、Starship 风格 footer - pi-rewind — 检查点/回退 - pi-interactive-shell — 交互式 CLI agent 委托 - pi-memctx — 记忆上下文包（Memory Gateway） - pi-lean-ctx — lean-ctx 集成（ctx_* 工具族） - pi-web-access — 网络访问（web_search / fetch_content 等） - pi-subagents — 子代理系统 - @vigolium/piolium — 安全审计技能包 - pi-mcp-adapter — …"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811.md 并继续无人值守开发。先冻结当前脏工作树，不重置；从补 Shipyard commit-unknown 组件测试、全量 contract/lint/双审开始，之后提交、构建部署重庆并跑预发布控制面和公网数据面 E2E。持续记录到 .local/develop/progress.md。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentrun/sandstorm",
+          "prompt": "我们三方镜像会拉元数据，把env覆盖下么?"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260812-pause.md，继续无人值守开发。 严格按交接文档的恢复顺序执行。先核验 Git 断点并完成 pre-push/push，再使用 $develop-from-contract 开发分场景 benchmark。契约已经批准，不要再向我确认；小修交给 subagent 并行处理。完成 External Agent 回归基线与 Deployment 0–50 实例、每 RS 100 并发、最高 5k QPS 的压测，并观察 Customs 异步租约释放是否成为瓶颈。正常情况下直接提交并代推，不要修改 secret[REDACTED] 仓库。"
+        }
+      ]
+    },
+    "Agent 与工具链": {
+      "sessions": 427,
+      "share": 0.6714,
+      "recency_weighted_share": 0.7214,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 85,
+          "total": 108,
+          "share": 0.787
+        },
+        "近期（31–60 天）": {
+          "matched": 197,
+          "total": 288,
+          "share": 0.684
+        },
+        "更早（60 天前）": {
+          "matched": 145,
+          "total": 240,
+          "share": 0.6042
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "codex 的 app 任务面板社区有吗"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "优化下 [$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 的开发流程，加入核心：效率优先，如果是小修小补就拉一个 subagent 独立跟进修复，不要阻塞主干需求的开发。这个 skill 的修改不要用它自己的流程"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260812-pause.md，继续无人值守开发。 严格按交接文档的恢复顺序执行。先核验 Git 断点并完成 pre-push/push，再使用 $develop-from-contract 开发分场景 benchmark。契约已经批准，不要再向我确认；小修交给 subagent 并行处理。完成 External Agent 回归基线与 Deployment 0–50 实例、每 RS 100 并发、最高 5k QPS 的压测，并观察 Customs 异步租约释放是否成为瓶颈。正常情况下直接提交并代推，不要修改 secret[REDACTED] 仓库。"
+        },
+        {
+          "date": "2026-08-13",
+          "repo": ".codex",
+          "prompt": "帮我安装这个 skill：https://github.com/alchaincyf/nuwa-skill"
+        },
+        {
+          "date": "2026-08-13",
+          "repo": ".codex",
+          "prompt": "蒸馏我自己，信息来源于所有 codex 对话"
+        }
+      ]
+    },
+    "调研与解释": {
+      "sessions": 232,
+      "share": 0.3648,
+      "recency_weighted_share": 0.386,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 51,
+          "total": 108,
+          "share": 0.4722
+        },
+        "近期（31–60 天）": {
+          "matched": 78,
+          "total": 288,
+          "share": 0.2708
+        },
+        "更早（60 天前）": {
+          "matched": 103,
+          "total": 240,
+          "share": 0.4292
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-07",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的相关链路功能仍能使用）"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的相关链路功能仍能使用）"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "根据我们讨论收敛的 Deployment 契约，写一份技术架构文档，其组织结构参考 https://git.woa.com/agentpaas/agent-engine/blob/feature/tech_docs/docs/business/agent-engine-brain-hands-design.md 这份文档，写入到 docs/business/tech-docs.md"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "Documents/Codex",
+          "prompt": "```markdown - pi-zentui — Opencode 风格 TUI - pi-open-tui — 精装修 TUI：动画 logo 头、Starship 风格 footer - pi-rewind — 检查点/回退 - pi-interactive-shell — 交互式 CLI agent 委托 - pi-memctx — 记忆上下文包（Memory Gateway） - pi-lean-ctx — lean-ctx 集成（ctx_* 工具族） - pi-web-access — 网络访问（web_search / fetch_content 等） - pi-subagents — 子代理系统 - @vigolium/piolium — 安全审计技能包 - pi-mcp-adapter — …"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811.md 并继续无人值守开发。先冻结当前脏工作树，不重置；从补 Shipyard commit-unknown 组件测试、全量 contract/lint/双审开始，之后提交、构建部署重庆并跑预发布控制面和公网数据面 E2E。持续记录到 .local/develop/progress.md。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "给我的 codex 装一下 getoutline 的 mcp，同时连接到 [https://ags-docs.woa.com/doc/deployments-kNN27o3mab](https://ags-docs.woa.com/doc/deployments-kNN27o3mab)"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260812-pause.md，继续无人值守开发。 严格按交接文档的恢复顺序执行。先核验 Git 断点并完成 pre-push/push，再使用 $develop-from-contract 开发分场景 benchmark。契约已经批准，不要再向我确认；小修交给 subagent 并行处理。完成 External Agent 回归基线与 Deployment 0–50 实例、每 RS 100 并发、最高 5k QPS 的压测，并观察 Customs 异步租约释放是否成为瓶颈。正常情况下直接提交并代推，不要修改 secret[REDACTED] 仓库。"
+        }
+      ]
+    },
+    "Git 与交付": {
+      "sessions": 398,
+      "share": 0.6258,
+      "recency_weighted_share": 0.6364,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 65,
+          "total": 108,
+          "share": 0.6019
+        },
+        "近期（31–60 天）": {
+          "matched": 198,
+          "total": 288,
+          "share": 0.6875
+        },
+        "更早（60 天前）": {
+          "matched": 135,
+          "total": 240,
+          "share": 0.5625
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "根据我们讨论收敛的 Deployment 契约，写一份技术架构文档，其组织结构参考 https://git.woa.com/agentpaas/agent-engine/blob/feature/tech_docs/docs/business/agent-engine-brain-hands-design.md 这份文档，写入到 docs/business/tech-docs.md"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "Documents/Codex",
+          "prompt": "```markdown - pi-zentui — Opencode 风格 TUI - pi-open-tui — 精装修 TUI：动画 logo 头、Starship 风格 footer - pi-rewind — 检查点/回退 - pi-interactive-shell — 交互式 CLI agent 委托 - pi-memctx — 记忆上下文包（Memory Gateway） - pi-lean-ctx — lean-ctx 集成（ctx_* 工具族） - pi-web-access — 网络访问（web_search / fetch_content 等） - pi-subagents — 子代理系统 - @vigolium/piolium — 安全审计技能包 - pi-mcp-adapter — …"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811.md 并继续无人值守开发。先冻结当前脏工作树，不重置；从补 Shipyard commit-unknown 组件测试、全量 contract/lint/双审开始，之后提交、构建部署重庆并跑预发布控制面和公网数据面 E2E。持续记录到 .local/develop/progress.md。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "整理下当前项目的 skills 吧 1. intergration test 的 skill 应该都没用了 2. contract test 的 skill 需要参考 e2e 的补全下每个服务的"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260812-pause.md，继续无人值守开发。 严格按交接文档的恢复顺序执行。先核验 Git 断点并完成 pre-push/push，再使用 $develop-from-contract 开发分场景 benchmark。契约已经批准，不要再向我确认；小修交给 subagent 并行处理。完成 External Agent 回归基线与 Deployment 0–50 实例、每 RS 100 并发、最高 5k QPS 的压测，并观察 Customs 异步租约释放是否成为瓶颈。正常情况下直接提交并代推，不要修改 secret[REDACTED] 仓库。"
+        },
+        {
+          "date": "2026-08-13",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "当前分支提前把 cookbook/ 提交上去了，我现在想要先合并一版本不带 cookbook/ 的，但是不要动本地文件"
+        }
+      ]
+    },
+    "视觉与表达": {
+      "sessions": 38,
+      "share": 0.0597,
+      "recency_weighted_share": 0.0862,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 16,
+          "total": 108,
+          "share": 0.1481
+        },
+        "近期（31–60 天）": {
+          "matched": 12,
+          "total": 288,
+          "share": 0.0417
+        },
+        "更早（60 天前）": {
+          "matched": 10,
+          "total": 240,
+          "share": 0.0417
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-07-31",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "拉取最新的 feat/agent-api 并合并到当前分支"
+        },
+        {
+          "date": "2026-08-02",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "拉取最新的 feat/agent-api 并合并到当前分支"
+        },
+        {
+          "date": "2026-08-03",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "拉取最新的 feat/agent-api 并合并到当前分支"
+        },
+        {
+          "date": "2026-08-04",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "调研一下 cloudrun，它有哪些概念，每个概念定义什么，有什么作用"
+        },
+        {
+          "date": "2026-08-06",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$hatch-pet](/Users/tlipoca9/.codex/skills/hatch-pet/SKILL.md) upgrade the existing pet at [Elaina](/Users/tlipoca9/.codex/pets/elaina-4) to the latest pet version with looking directions"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "Documents/Codex",
+          "prompt": "```markdown - pi-zentui — Opencode 风格 TUI - pi-open-tui — 精装修 TUI：动画 logo 头、Starship 风格 footer - pi-rewind — 检查点/回退 - pi-interactive-shell — 交互式 CLI agent 委托 - pi-memctx — 记忆上下文包（Memory Gateway） - pi-lean-ctx — lean-ctx 集成（ctx_* 工具族） - pi-web-access — 网络访问（web_search / fetch_content 等） - pi-subagents — 子代理系统 - @vigolium/piolium — 安全审计技能包 - pi-mcp-adapter — …"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811.md 并继续无人值守开发。先冻结当前脏工作树，不重置；从补 Shipyard commit-unknown 组件测试、全量 contract/lint/双审开始，之后提交、构建部署重庆并跑预发布控制面和公网数据面 E2E。持续记录到 .local/develop/progress.md。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        }
+      ]
+    }
+  },
+  "behavior_markers": {
+    "证据与可复现": {
+      "sessions": 198,
+      "share": 0.3113,
+      "recency_weighted_share": 0.3245,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 44,
+          "total": 108,
+          "share": 0.4074
+        },
+        "近期（31–60 天）": {
+          "matched": 73,
+          "total": 288,
+          "share": 0.2535
+        },
+        "更早（60 天前）": {
+          "matched": 81,
+          "total": 240,
+          "share": 0.3375
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-04",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "调研一下 cloudrun，它有哪些概念，每个概念定义什么，有什么作用"
+        },
+        {
+          "date": "2026-08-07",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的相关链路功能仍能使用）"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的相关链路功能仍能使用）"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811.md 并继续无人值守开发。先冻结当前脏工作树，不重置；从补 Shipyard commit-unknown 组件测试、全量 contract/lint/双审开始，之后提交、构建部署重庆并跑预发布控制面和公网数据面 E2E。持续记录到 .local/develop/progress.md。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        }
+      ]
+    },
+    "严格与完整": {
+      "sessions": 274,
+      "share": 0.4308,
+      "recency_weighted_share": 0.4906,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 62,
+          "total": 108,
+          "share": 0.5741
+        },
+        "近期（31–60 天）": {
+          "matched": 116,
+          "total": 288,
+          "share": 0.4028
+        },
+        "更早（60 天前）": {
+          "matched": 96,
+          "total": 240,
+          "share": 0.4
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "优化下 [$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 的开发流程，加入核心：效率优先，如果是小修小补就拉一个 subagent 独立跟进修复，不要阻塞主干需求的开发。这个 skill 的修改不要用它自己的流程"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260812-pause.md，继续无人值守开发。 严格按交接文档的恢复顺序执行。先核验 Git 断点并完成 pre-push/push，再使用 $develop-from-contract 开发分场景 benchmark。契约已经批准，不要再向我确认；小修交给 subagent 并行处理。完成 External Agent 回归基线与 Deployment 0–50 实例、每 RS 100 并发、最高 5k QPS 的压测，并观察 Customs 异步租约释放是否成为瓶颈。正常情况下直接提交并代推，不要修改 secret[REDACTED] 仓库。"
+        },
+        {
+          "date": "2026-08-13",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "当前分支提前把 cookbook/ 提交上去了，我现在想要先合并一版本不带 cookbook/ 的，但是不要动本地文件"
+        },
+        {
+          "date": "2026-08-13",
+          "repo": ".codex",
+          "prompt": "蒸馏我自己，信息来源于所有 codex 对话"
+        }
+      ]
+    },
+    "持续推进": {
+      "sessions": 242,
+      "share": 0.3805,
+      "recency_weighted_share": 0.3982,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 49,
+          "total": 108,
+          "share": 0.4537
+        },
+        "近期（31–60 天）": {
+          "matched": 96,
+          "total": 288,
+          "share": 0.3333
+        },
+        "更早（60 天前）": {
+          "matched": 97,
+          "total": 240,
+          "share": 0.4042
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811.md 并继续无人值守开发。先冻结当前脏工作树，不重置；从补 Shipyard commit-unknown 组件测试、全量 contract/lint/双审开始，之后提交、构建部署重庆并跑预发布控制面和公网数据面 E2E。持续记录到 .local/develop/progress.md。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260812-pause.md，继续无人值守开发。 严格按交接文档的恢复顺序执行。先核验 Git 断点并完成 pre-push/push，再使用 $develop-from-contract 开发分场景 benchmark。契约已经批准，不要再向我确认；小修交给 subagent 并行处理。完成 External Agent 回归基线与 Deployment 0–50 实例、每 RS 100 并发、最高 5k QPS 的压测，并观察 Customs 异步租约释放是否成为瓶颈。正常情况下直接提交并代推，不要修改 secret[REDACTED] 仓库。"
+        },
+        {
+          "date": "2026-08-13",
+          "repo": ".codex",
+          "prompt": "蒸馏我自己，信息来源于所有 codex 对话"
+        }
+      ]
+    },
+    "并行与独立审查": {
+      "sessions": 128,
+      "share": 0.2013,
+      "recency_weighted_share": 0.263,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 47,
+          "total": 108,
+          "share": 0.4352
+        },
+        "近期（31–60 天）": {
+          "matched": 36,
+          "total": 288,
+          "share": 0.125
+        },
+        "更早（60 天前）": {
+          "matched": 45,
+          "total": 240,
+          "share": 0.1875
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "Use the registered custom agent role luna_worker for exactly one subagent task. Ask it to read common/go.mod and report only the declared module path. Do not solve the task yourself and do not modify files. Wait for completion, then return the child thread ID, agent role, and child answer. If spawning luna_worker fails, return VALIDATION_FAILED with the exa…"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "Use the registered custom agent role luna_worker for exactly one subagent task. Ask it to read common/go.mod and report only the declared module path. Do not solve the task yourself and do not modify files. Wait for completion, then return the child thread ID, agent role, and child answer. If spawning luna_worker fails, return VALIDATION_FAILED with the exa…"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "优化下 [$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 的开发流程，加入核心：效率优先，如果是小修小补就拉一个 subagent 独立跟进修复，不要阻塞主干需求的开发。这个 skill 的修改不要用它自己的流程"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260812-pause.md，继续无人值守开发。 严格按交接文档的恢复顺序执行。先核验 Git 断点并完成 pre-push/push，再使用 $develop-from-contract 开发分场景 benchmark。契约已经批准，不要再向我确认；小修交给 subagent 并行处理。完成 External Agent 回归基线与 Deployment 0–50 实例、每 RS 100 并发、最高 5k QPS 的压测，并观察 Customs 异步租约释放是否成为瓶颈。正常情况下直接提交并代推，不要修改 secret[REDACTED] 仓库。"
+        }
+      ]
+    },
+    "标准原语与去兜底": {
+      "sessions": 136,
+      "share": 0.2138,
+      "recency_weighted_share": 0.2109,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 24,
+          "total": 108,
+          "share": 0.2222
+        },
+        "近期（31–60 天）": {
+          "matched": 57,
+          "total": 288,
+          "share": 0.1979
+        },
+        "更早（60 天前）": {
+          "matched": 55,
+          "total": 240,
+          "share": 0.2292
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-07",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的创建请求转发到 sandbox instance endpoint 资源，但是对外契约不变，对于 active lease count 只用 0 和 1 表示是否有请求占用）"
+        },
+        {
+          "date": "2026-08-07",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的相关链路功能仍能使用）"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的相关链路功能仍能使用）"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "看看我们引入 Deployment 的话，需要新增哪些数据结构、接口、错误码。按照依赖顺序给我，无依赖的在最前面。比如 A 依赖于 B 和 C，B 依赖于 C，那么顺序就是 C B A。错误码只展示新增的"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811.md 并继续无人值守开发。先冻结当前脏工作树，不重置；从补 Shipyard commit-unknown 组件测试、全量 contract/lint/双审开始，之后提交、构建部署重庆并跑预发布控制面和公网数据面 E2E。持续记录到 .local/develop/progress.md。"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        }
+      ]
+    },
+    "文档自洽": {
+      "sessions": 244,
+      "share": 0.3836,
+      "recency_weighted_share": 0.4104,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 49,
+          "total": 108,
+          "share": 0.4537
+        },
+        "近期（31–60 天）": {
+          "matched": 95,
+          "total": 288,
+          "share": 0.3299
+        },
+        "更早（60 天前）": {
+          "matched": 100,
+          "total": 240,
+          "share": 0.4167
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "看看我们引入 Deployment 的话，需要新增哪些数据结构、接口、错误码。按照依赖顺序给我，无依赖的在最前面。比如 A 依赖于 B 和 C，B 依赖于 C，那么顺序就是 C B A。错误码只展示新增的"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "Documents/Codex",
+          "prompt": "```markdown - pi-zentui — Opencode 风格 TUI - pi-open-tui — 精装修 TUI：动画 logo 头、Starship 风格 footer - pi-rewind — 检查点/回退 - pi-interactive-shell — 交互式 CLI agent 委托 - pi-memctx — 记忆上下文包（Memory Gateway） - pi-lean-ctx — lean-ctx 集成（ctx_* 工具族） - pi-web-access — 网络访问（web_search / fetch_content 等） - pi-subagents — 子代理系统 - @vigolium/piolium — 安全审计技能包 - pi-mcp-adapter — …"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811.md 并继续无人值守开发。先冻结当前脏工作树，不重置；从补 Shipyard commit-unknown 组件测试、全量 contract/lint/双审开始，之后提交、构建部署重庆并跑预发布控制面和公网数据面 E2E。持续记录到 .local/develop/progress.md。"
+        },
+        {
+          "date": "2026-08-11",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "给我的 codex 装一下 getoutline 的 mcp，同时连接到 [https://ags-docs.woa.com/doc/deployments-kNN27o3mab](https://ags-docs.woa.com/doc/deployments-kNN27o3mab)"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "以 ../ags-cli-github 的内容替换当前项目，然后再复原当前项目新增的 session 子命令。其它都是不需要的"
+        },
+        {
+          "date": "2026-08-12",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260812-pause.md，继续无人值守开发。 严格按交接文档的恢复顺序执行。先核验 Git 断点并完成 pre-push/push，再使用 $develop-from-contract 开发分场景 benchmark。契约已经批准，不要再向我确认；小修交给 subagent 并行处理。完成 External Agent 回归基线与 Deployment 0–50 实例、每 RS 100 并发、最高 5k QPS 的压测，并观察 Customs 异步租约释放是否成为瓶颈。正常情况下直接提交并代推，不要修改 secret[REDACTED] 仓库。"
+        }
+      ]
+    },
+    "最小化与简化": {
+      "sessions": 100,
+      "share": 0.1572,
+      "recency_weighted_share": 0.1733,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 25,
+          "total": 108,
+          "share": 0.2315
+        },
+        "近期（31–60 天）": {
+          "matched": 34,
+          "total": 288,
+          "share": 0.1181
+        },
+        "更早（60 天前）": {
+          "matched": 41,
+          "total": 240,
+          "share": 0.1708
+        }
+      },
+      "examples": [
+        {
+          "date": "2026-08-03",
+          "repo": "agentpaas/ags-cli",
+          "prompt": "拉取最新的 feat/agent-api 并合并到当前分支"
+        },
+        {
+          "date": "2026-08-04",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "提交当前 stage 的，并保证 precommit 和 prepush 通过，mr id 是 64"
+        },
+        {
+          "date": "2026-08-04",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "调研一下 cloudrun，它有哪些概念，每个概念定义什么，有什么作用"
+        },
+        {
+          "date": "2026-08-07",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的相关链路功能仍能使用）"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的相关链路功能仍能使用）"
+        },
+        {
+          "date": "2026-08-10",
+          "repo": "agentpaas/agent-engine",
+          "prompt": "根据我们讨论收敛的 Deployment 契约，写一份技术架构文档，其组织结构参考 https://git.woa.com/agentpaas/agent-engine/blob/feature/tech_docs/docs/business/agent-engine-brain-hands-design.md 这份文档，写入到 docs/business/tech-docs.md"
+        }
+      ]
+    }
+  },
+  "superseded_patterns": {
+    "GSD 工作流": {
+      "sessions": 136,
+      "recency_weighted_share": 0.1419,
+      "by_time_window": {
+        "现在（近 30 天）": {
+          "matched": 1,
+          "total": 108,
+          "share": 0.0093
+        },
+        "近期（31–60 天）": {
+          "matched": 88,
+          "total": 288,
+          "share": 0.3056
+        },
+        "更早（60 天前）": {
+          "matched": 47,
+          "total": 240,
+          "share": 0.1958
+        }
+      },
+      "status": "explicitly superseded by user on 2026-08-13; exclude from present identity"
+    }
+  },
+  "repeated_first_prompts": [
+    {
+      "count": 11,
+      "prompt": "拉取最新的 feat/agent-api 并合并到当前分支"
+    },
+    {
+      "count": 7,
+      "prompt": "看一下当前分支，sandhub 在 image registry type 为 'custom' 时候的逻辑，详细且 step by step 地说明下"
+    },
+    {
+      "count": 6,
+      "prompt": "[$gsd-do](/Users/tlipoca9/code/github.com/TencentCloudAgentRuntime/zeroproxy/.codex/skills/gsd-do/SKILL.md) do one phase, every discuss-plan-execute-verify should be a subagent."
+    },
+    {
+      "count": 6,
+      "prompt": "对比 develop 分支，分析本分支修改了什么？主要涉及哪些方面？设计思路是怎么样的？"
+    },
+    {
+      "count": 5,
+      "prompt": "<turn_aborted> The user interrupted the previous turn on purpose. Any running unified exec processes may still be running in the background. If any tools/commands were aborted, they may have partially executed. </turn_aborted>"
+    },
+    {
+      "count": 3,
+      "prompt": "根据企业微信消息、企业微信文档等真实信息，站在我的角度，写一份转正自评总结"
+    },
+    {
+      "count": 3,
+      "prompt": "[$brainstorming](/Users/tlipoca9/.agents/skills/brainstorming/SKILL.md) 一个完整的产品视角的 Agent Engine 的推导应该是怎么样的？我认为第一步是明确 Agent 的定义，然后确定我们要从哪一块 Agent 方面着手，但是第二步呢？"
+    },
+    {
+      "count": 2,
+      "prompt": "exit"
+    },
+    {
+      "count": 2,
+      "prompt": "[$gsd-execute-phase](/Users/tlipoca9/code/git.woa.com/finofliu/zeroproxy/.codex/skills/gsd-execute-phase/SKILL.md) 12"
+    },
+    {
+      "count": 2,
+      "prompt": "[$gsd-autonomous](/Users/tlipoca9/code/git.woa.com/finofliu/zeroproxy/.codex/skills/gsd-autonomous/SKILL.md)"
+    },
+    {
+      "count": 2,
+      "prompt": "$gsd-do only one phase : discuss -> plan -> loop(execute -> verify). every [discuss/plan/execute/verify] must be a subagent. 我不接受任何 This is a pre-existing doc-code sync issue 这种说法，你发现 bug 你就要修复！"
+    },
+    {
+      "count": 2,
+      "prompt": "又到了新的一周，帮忙根据企业微信消息、企业微信文档等真实信息，更新一下 finofliu.md"
+    },
+    {
+      "count": 2,
+      "prompt": "跑下 shipyard 的集成测试"
+    },
+    {
+      "count": 2,
+      "prompt": "[$thinking-router](/Users/tlipoca9/.codex/skills/thinking-router/SKILL.md) 当前分支对比 develop 做了哪些改动？是否存在性能问题？是否存在明显bug？是否存在存量兼容问题？"
+    },
+    {
+      "count": 2,
+      "prompt": "[$brainstorming](/Users/tlipoca9/.codex/skills/brainstorming/SKILL.md) 调研一下 aws 的 agent core，写一下它的用户旅程（记得画图，非 mermaid，html / svg / png），用户是怎么用起来的，怎么跑起来一个 agent 的，都有哪些用户交互面"
+    },
+    {
+      "count": 2,
+      "prompt": "[$develop-from-contract](/Users/tlipoca9/.agents/skills/develop-from-contract/SKILL.md) 当前我们的契约协议为 e2e，目标是实现 docs/yunapi/v2，同时保留 external agent 的功能作为兼容性（期望是 external agent 的相关链路功能仍能使用）"
+    },
+    {
+      "count": 2,
+      "prompt": "Use the registered custom agent role luna_worker for exactly one subagent task. Ask it to read common/go.mod and report only the declared module path. Do not solve the task yourself and do not modify files. Wait for completion, then return the child thread ID, agent role, and child answer. If spawning luna_worker fails, return VALIDATION_FAILED with the exact runtime error."
+    },
+    {
+      "count": 2,
+      "prompt": "读取 /tmp/agent-engine-deployment-handoff-20260811-pause.md 并继续无人值守开发。"
+    }
+  ],
+  "long_sessions": [
+    {
+      "date": "2026-05-20",
+      "repo": "/Users/tlipoca9/Documents/analy_log",
+      "messages": 15,
+      "chars": 350174,
+      "first_prompt": "分析下日志文件，有哪些请求，时间链是怎么样的"
+    },
+    {
+      "date": "2026-05-18",
+      "repo": "TencentCloudAgentRuntime/zeroproxy",
+      "messages": 210,
+      "chars": 345544,
+      "first_prompt": "# zeroproxy 内部 TLS listener 连接阻塞问题排查总结 ## 1. 问题结论 本次问题基本可以判断为 `zeroproxy` 侧的连接处理异常，表现为： - `zeroproxy` 进程仍然存活； - 内部 TLS listener `127.0.0.1:41799` 仍在监听； - 但该 listener 不再正常 accept/read/close 连接； - 大量连接堆积在 `CLOSE-WAIT`； - listen backlog 被打满； - 新连接无法建立，最终 frontend 报连接内部 TLS listener 超时。 核心结论： > 这不是端口未监听，也不是普通网络不可达，而是 `zeroproxy` 的连接生命周期处理进入异常状态，疑似 fd/socket 泄漏、事件循环卡住、worker deadlock，或 close/error path 没有正确释放连接。 --- ## 2. 原始错误现象 业务侧/前端报错： ```text TCP frontend connection error: connect to internal TL…"
+    },
+    {
+      "date": "2026-06-19",
+      "repo": "agentpass/agent-engine",
+      "messages": 162,
+      "chars": 334599,
+      "first_prompt": "[$superpowers:brainstorming](/Users/tlipoca9/.codex/plugins/cache/openai-curated/superpowers/202e9242/skills/brainstorming/SKILL.md) berth 启动 execution runtime 之后，需要在后台维护 health check，并且只有 healthy 的 execution runtime 才允许被调度"
+    },
+    {
+      "date": "2026-07-01",
+      "repo": "agentpaas/agent-engine-workspace-shipyard",
+      "messages": 168,
+      "chars": 218112,
+      "first_prompt": "[$superpowers:writing-plans](/Users/tlipoca9/.codex/plugins/cache/openai-curated/superpowers/3fdeeb49/skills/writing-plans/SKILL.md) /Users/tlipoca9/code/git.woa.com/agentpaas/agent-engine-workspace-shipyard/docs/superpowers/specs/2026-07-02-shipyard-async-create-design.md"
+    },
+    {
+      "date": "2026-05-16",
+      "repo": "TencentCloudAgentRuntime/zeroproxy",
+      "messages": 110,
+      "chars": 197993,
+      "first_prompt": "我们的平台实际上是一个沙箱服务平台，我们的一些平台能力（如日志采集、监控采集、网络管控能力，以及 JuiceFS 卷的挂载能力等）都是通过 Sidecar 来实现的。 但是，目前 Sidecar 在我们平台级能力方面面临着诸多问题： 1. 不能原地升级。 2. 版本支持受限：目前每个 Sidecar 只能支持一个固定的版本，用户的新沙箱只能使用该特定版本。 这对于我们支持“常驻沙箱”的场景来说，具有非常大的局限性。 所以现在想要调研一下，业界针对这种平台级能力需要跟随用户版本一起下发的情况，一般是如何解决的？是采用原地升级的方案吗？"
+    },
+    {
+      "date": "2026-05-18",
+      "repo": "agentrun/sandstorm-20260517-sidecar-runtime",
+      "messages": 404,
+      "chars": 178365,
+      "first_prompt": "[$gsd-complete-milestone](/Users/tlipoca9/code/git.woa.com/agentrun/sandstorm-20260517-sidecar-runtime/.agent/skills/gsd-complete-milestone/SKILL.md) 收敛 v0.0.3，不要新开 reviewer 了，收敛，懂我意思？"
+    },
+    {
+      "date": "2026-05-17",
+      "repo": "agentrun/sandstorm-20260517-sidecar-runtime",
+      "messages": 140,
+      "chars": 168400,
+      "first_prompt": "q"
+    },
+    {
+      "date": "2026-07-02",
+      "repo": "agentpaas/agent-engine-workspace-shipyard",
+      "messages": 101,
+      "chars": 161429,
+      "first_prompt": "[$superpowers:brainstorming](/Users/tlipoca9/.codex/plugins/cache/openai-curated/superpowers/3fdeeb49/skills/brainstorming/SKILL.md) berth 需要整改下。 1. 表名修改，agent_runtime -> loop_runtime。environment_runtime -> workspace 2. agent runtime 创建的 source 来源应该是直接查询 agent 和 agent version 表，拿到 default version 对应的 tool id 3. workspace 同理，查 workspace template 表"
+    },
+    {
+      "date": "2026-04-26",
+      "repo": "TencentCloudAgentRuntime/zeroproxy",
+      "messages": 40,
+      "chars": 113982,
+      "first_prompt": "[$evidence-driven-solution-design](/Users/tlipoca9/.codex/skills/evidence-driven-solution-design/SKILL.md) 需要设计一下当前项目中 wasm hook 的实现"
+    },
+    {
+      "date": "2026-05-26",
+      "repo": "agentrun/sandstorm-20260526-slo-511",
+      "messages": 195,
+      "chars": 86462,
+      "first_prompt": "当前我们的创建沙箱工具等这些接口里面，有一些异步流程的 metrics 指标都没有建立告警的 SLO、规范和流程。 请你首先确认一下： 1. 这些流程是否都有对应的耗时指标？ 2. 现有的监控是否合理？ 我们需要做哪些开发工作？具体涉及哪些异步流程？"
+    },
+    {
+      "date": "2026-04-25",
+      "repo": "TencentCloudAgentRuntime/zeroproxy",
+      "messages": 93,
+      "chars": 85142,
+      "first_prompt": "网关使用自定义ca，如何让用户程序信任？当前业界是否有可以参考的"
+    },
+    {
+      "date": "2026-06-20",
+      "repo": "agentpass/agent-engine",
+      "messages": 41,
+      "chars": 81905,
+      "first_prompt": "创建一个写 dockerfile/构建镜像时 的 skill，主要是定义要使用腾讯云镜像源，包括 alpine 下载包时、golang、rust 等等，要有一个镜像源列表，优先使用 podman"
+    },
+    {
+      "date": "2026-04-23",
+      "repo": "TencentCloudAgentRuntime/zeroproxy",
+      "messages": 32,
+      "chars": 69336,
+      "first_prompt": "[zeroproxy] request_id=52f3db21-dea2-4027-a769-34342deffc04 host=127.0.0.1 upstream connection closed unexpectedly; check upstream connectivity and proxy configuration [zeroproxy] request_id=f68d5352-4160-4609-8d7e-fc0a94b3b9b0 host=127.0.0.1 upstream connection closed unexpectedly; check upstream connectivity and proxy configuration [zeroproxy] request_id=6aac5929-0335-44f6-8fd6-56780e228e4b host=127.0.0.1 upstream connection closed unexpectedly; check upstream connectivity and proxy configura…"
+    },
+    {
+      "date": "2026-07-09",
+      "repo": "agentpaas/agent-engine-workspace-shipyard",
+      "messages": 69,
+      "chars": 67832,
+      "first_prompt": "[$thinking-router](/Users/tlipoca9/.codex/skills/thinking-router/SKILL.md) 要写个当前这个 agent-engine 项目的技术方案（中文） 这个技术方案需要讲清楚我们有哪些资源，为什么会有这些资源，这些资源是怎么交互的，有哪些服务，这些服务分别干啥等等，你思考下"
+    },
+    {
+      "date": "2026-06-08",
+      "repo": "agentrun/sandstorm-20260608-confighash",
+      "messages": 98,
+      "chars": 59906,
+      "first_prompt": "当前 confighash 的处理混乱不堪，在 sidecar 众多、sidecar 升级、存量沙箱等场景都具有诸多限制，当前分支的目标是重构该逻辑"
+    },
+    {
+      "date": "2026-06-19",
+      "repo": "agentpass/agent-engine",
+      "messages": 70,
+      "chars": 57585,
+      "first_prompt": "[$superpowers:brainstorming](/Users/tlipoca9/.codex/plugins/cache/openai-curated/superpowers/202e9242/skills/brainstorming/SKILL.md) 现在 berth 的 execution runtime 没有租约的情况下 1. 需要有一个定时回收器，定期清理这些没有租约的 runtime。 2. debug 端点需要能够主动触发一次回收 3. 需要有指标 4. 你再想想"
+    },
+    {
+      "date": "2026-05-24",
+      "repo": "agentrun/sandstorm-config-hash-refactor",
+      "messages": 25,
+      "chars": 56534,
+      "first_prompt": "[$superpowers:brainstorming](/Users/tlipoca9/.codex/plugins/cache/openai-curated/superpowers/6188456f/skills/brainstorming/SKILL.md) 好好设计下 config hash 的重构思路，充分考虑和 快照、sidecar、预创、cube 底层接口的逻辑。并设计防遗漏机制 我希望你先分析现状，存在哪些问题，然后搜索克隆业界类似的设计，总结，给出结合我们现状的设计（注意：这里的每个步骤都需要有 3 个不同身份，不同思维的 subagent 来实现同一个任务，然后讨论，最终得到一个 3 者都签字的结果传递给下一个步骤的新的 3 subagent，最终得到一个方案）（步骤：分析现状得出问题，搜索克隆业界类似的设计并总结，给出结合我们现状的设计（考虑存量，避免雪崩））"
+    },
+    {
+      "date": "2026-05-30",
+      "repo": "agentrun/sandstorm-20260517-sidecar-runtime",
+      "messages": 41,
+      "chars": 53516,
+      "first_prompt": "[$gsd-new-milestone](/Users/tlipoca9/code/git.woa.com/agentrun/sandstorm-20260517-sidecar-runtime/.agent/skills/gsd-new-milestone/SKILL.md) 先构建一个新里程碑，目标是修复发现的 s6 问题[s6-issue.md](s6-issue.md)"
+    },
+    {
+      "date": "2026-07-08",
+      "repo": "TencentCloudAgentRuntime/zeroproxy",
+      "messages": 56,
+      "chars": 48480,
+      "first_prompt": "怎么验证 grpc 服务？用 grpcurl ？apt 怎么安装，我只知道这个服务监听 9090 端口"
+    },
+    {
+      "date": "2026-06-20",
+      "repo": "agentpass/agent-engine",
+      "messages": 56,
+      "chars": 45110,
+      "first_prompt": "[$superpowers:brainstorming](/Users/tlipoca9/.codex/plugins/cache/openai-curated/superpowers/202e9242/skills/brainstorming/SKILL.md) 对 berth 的 metrics + grafana dashboard 做归一化，即指标必须被面板展示"
+    }
+  ]
+}

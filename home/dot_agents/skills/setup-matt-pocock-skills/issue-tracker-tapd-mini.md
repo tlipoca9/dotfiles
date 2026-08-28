@@ -26,7 +26,7 @@ Read the mini-item identified by the supplied item ID or URL.
 
 Used by `/wayfinder`. The **map** is a root mini-item with **child** mini-items as tickets.
 
-- **Map**: a root mini-item holding the Notes / Decisions-so-far / Fog body.
+- **Map**: a root mini-item holding the Notes / Shared context / Decisions-so-far / Fog body.
 - **Child ticket**: set the map as its parent and record one `wayfinder:<type>` value using the tracker's available metadata or the ticket body.
 - **Blocking**: prefer a native blocking relationship; otherwise use a `Blocked by: <item IDs>` line in the ticket body.
 - **Frontier**: list the map's open children, excluding tickets with open blockers or an owner; first in map order wins.

@@ -19,7 +19,12 @@ Every map and ticket is an issue, so it has a **name**: its title. In everything
 
 The map is a single issue on this repo's issue tracker, labelled `wayfinder:map`, the canonical artifact. Its tickets are child issues of the map.
 
-The map is an **index**, not a store. It lists the decisions made and points at the tickets that hold their detail; a decision lives in exactly one place, its ticket, so the map never restates it, only gists it and links.
+The map is a low-resolution coordination artifact, not a duplicate store. It
+lists the decisions made and points at the tickets that hold their detail; a
+decision lives in exactly one place, its ticket, so the map never restates it,
+only gists it and links. **Shared context** holds only concise current premises
+needed by multiple open tickets, with details kept in one canonical linked
+source.
 
 **Where the map, its child tickets, blocking, and frontier queries physically live is tracker-specific.** The issue tracker should have been provided to you. If not, tell the user to run `/setup-matt-pocock-skills`. Consult the tracker doc's "Wayfinding operations" section for how _this_ repo expresses them. If no tracker has been provided, default to the local-markdown tracker.
 
@@ -36,11 +41,12 @@ The whole map at low resolution, loaded once per session. Open tickets are **not
 
 <domain; skills every session should consult; standing preferences for this effort>
 
-### Shared facts and constraints
+## Shared context
 
 <!--
-Stable map-scoped facts and constraints that materially affect multiple
-unresolved tickets. One line plus a canonical link. Do not duplicate details.
+Verified current information that materially affects multiple open tickets.
+Keep entries concise and link to one canonical source.
+Replace or remove stale entries; do not preserve history here.
 -->
 
 ## Decisions so far
@@ -78,35 +84,25 @@ The answer isn't part of the body; it's recorded on resolution (see [Work throug
 
 ## Cross-ticket propagation
 
-A ticket resolution may change the premises of other tickets.
+When resolving a ticket, consider whether the result materially affects another
+open ticket.
 
-Before ending the session, determine whether the resolution introduces a fact,
-decision, constraint, or invalidated assumption that affects another ticket.
+Propagate only verified findings whose absence could cause another ticket to be
+resolved incorrectly or repeat substantial work.
 
-A finding is cross-ticket when another ticket could be resolved incorrectly,
-inconsistently, or redundantly without it. It is cross-ticket because it changes
-another ticket's premises, not because it appears more than once.
+Update the narrowest appropriate location:
 
-Propagate only as far as needed to prevent an incorrect resolution; do not build
-an experience knowledge base every agent must read:
+- update a specific affected ticket when the finding is relevant only to it
+- add a concise entry to the map's `Shared context` when multiple open tickets
+  need it
 
-- If the shared question remains unresolved, create a dedicated ticket and make
-  affected tickets depend on it.
-- If only specific open tickets are affected, update their bodies so their
-  premises remain current and link to the canonical resolution.
-- If every or most remaining sessions need the information, add a concise
-  pointer under the map's shared facts and constraints.
-- If an already-closed ticket is partly superseded, add a pointer comment rather
-  than rewriting its historical resolution.
+Keep one canonical source and link to it instead of duplicating details.
 
-Keep the full explanation in one canonical ticket. Link rather than duplicate.
+`Shared context` represents current truth, not history. Replace or remove stale
+entries rather than appending corrections.
 
-Do not promote hypotheses, transient environment failures, local implementation
-details, or observations that do not change another ticket's valid resolution.
-
-If an affected ticket is already claimed, surface the conflict explicitly;
-editing its body silently does not update the context of the session already
-working on it.
+Keep hypotheses and unverified findings in the ticket where they were
+discovered.
 
 ## Ticket Types
 
@@ -148,7 +144,9 @@ User invokes with a loose idea.
 
 1. **Name the destination.** Call the Skill tool twice, for "grilling" and "domain-modeling", to pin down what this map is finding its way to: the spec, decision, or change. The destination fixes the scope, so it's settled first.
 2. **Map the frontier.** Grill again, **breadth-first** this time: fan out across the whole space rather than deep on any one thread, surfacing the open decisions and the first steps takeable now. **If this surfaces no fog** (the way to the destination is already clear, the whole journey small enough for one session), you don't need a map. Stop and ask the user how they'd like to proceed.
-3. **Create the map** (label `wayfinder:map`): Destination and Notes filled in, Decisions-so-far empty, the fog sketched into **Not yet specified**.
+3. **Create the map** (label `wayfinder:map`): Destination and Notes filled in,
+   Shared context and Decisions-so-far empty, the fog sketched into **Not yet
+   specified**.
 4. **Create the tickets you can specify now** as child issues of the map, then wire blocking edges in a **second pass** (issues need ids before they can reference each other). Wiring sorts them into the frontier and the blocked; everything you can't yet specify stays in the fog: the **Not yet specified** section.
 5. **Fire the research subagents.** For each `research` ticket you just created, spin up a subagent that calls the Skill tool with "research" to resolve it in parallel, capturing its findings on a throwaway `research/<name>` branch with a context pointer from the ticket.
 6. Stop: charting is one session's work; it hand-resolves nothing.
