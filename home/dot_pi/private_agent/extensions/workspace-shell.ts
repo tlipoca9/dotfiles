@@ -8,6 +8,7 @@ import {
 	type ExtensionAPI,
 	type ExtensionContext,
 	type RootViewActions,
+	type RootViewComposer,
 	type SessionEntry,
 	type SessionInfo,
 	SessionManager,
@@ -16,8 +17,11 @@ import {
 import {
 	BubbleBinding,
 	BubbleList,
+	BubbleSpinner,
 	BubbleTextInput,
+	BubbleTimeline,
 	BubbleViewport,
+	compositeBubbleLayer,
 	type Component,
 	matchesKey,
 	renderBubbleHelp,
@@ -115,6 +119,7 @@ interface QueuedMessage {
 	id: string;
 	targetKey: string;
 	text: string;
+	sourceText: string;
 	mode: QueueMode;
 	createdAt: number;
 	state: "queued" | "editing" | "sending" | "failed";
@@ -149,9 +154,32 @@ interface PerformanceSample {
 	lastTokenAt?: number;
 	ttftMs?: number;
 	tokensPerSecond?: number;
+	input: number;
+	output: number;
+	cacheRead: number;
+	cacheWrite: number;
+	cost: number;
 }
 
-type RpcMethod = "steer" | "stop";
+interface SubagentUiEvent {
+	version?: number;
+	kind?: string;
+	runId?: string;
+	childId?: string;
+	stepIndex?: number;
+	agent?: string;
+	model?: string;
+	thinking?: string;
+	delta?: string;
+	replace?: boolean;
+	text?: string;
+	toolCallId?: string;
+	toolName?: string;
+	summary?: string;
+	isError?: boolean;
+}
+
+type RpcMethod = "status" | "steer" | "stop";
 
 type RpcReply =
 	| { success: true; data: unknown }
@@ -159,7 +187,7 @@ type RpcReply =
 
 type Screen = "overview" | "conversation" | "agent";
 type ConversationFocus = "composer" | "agents" | "queue" | "stop" | "redirect";
-type OverviewFocus = "workspaces" | "sessions" | "search";
+type OverviewFocus = "workspaces" | "sessions" | "search" | "detail";
 
 function configPath(): string {
 	return join(
@@ -477,7 +505,8 @@ class WorkspaceStore {
 	private readonly runs = new Map<string, TrackedRun>();
 	readonly queue: QueuedMessage[] = [];
 	readonly activity: ActivityLine[] = [];
-	readonly performance: PerformanceSample = {};
+	readonly performance: PerformanceSample = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 };
+	readonly completedActivities: Array<{ text: string; activity: ActivityLine[] }> = [];
 	sessions: SessionInfo[] = [];
 	modelId = "";
 	thinking = "";
@@ -503,6 +532,29 @@ class WorkspaceStore {
 		});
 	}
 
+	recover(raw: unknown): void {
+		if (!isRecord(raw) || !isRecord(raw.asyncSnapshot) || !Array.isArray(raw.asyncSnapshot.runs)) return;
+		for (const candidate of raw.asyncSnapshot.runs) {
+			if (!isRecord(candidate) || typeof candidate.id !== "string" || (candidate.state !== "running" && candidate.state !== "queued")) continue;
+			const children = Array.isArray(candidate.children) ? candidate.children.filter(isRecord) : [];
+			const steps: AsyncStatusStep[] = children.map((child, index) => ({
+				workflowKey: typeof child.id === "string" ? child.id : `step:${index}`,
+				agent: typeof child.label === "string" ? child.label : "subagent",
+				status: child.state === "queued" ? "pending" : "running",
+				startedAt: typeof child.startedAt === "number" ? child.startedAt : undefined,
+				currentTool: isRecord(child.activity) && typeof child.activity.currentTool === "string" ? child.activity.currentTool : undefined,
+			}));
+			this.runs.set(candidate.id, {
+				id: candidate.id,
+				asyncDir: "",
+				goal: typeof candidate.label === "string" ? candidate.label : "",
+				agents: steps.map((step) => step.agent ?? "subagent"),
+				startedAt: typeof candidate.startedAt === "number" ? candidate.startedAt : Date.now(),
+				status: { state: candidate.state, steps },
+			});
+		}
+	}
+
 	refreshRuns(): void {
 		for (const run of this.runs.values()) run.status = readStatus(run);
 	}
@@ -516,6 +568,7 @@ class WorkspaceStore {
 	queueMessage(
 		targetKey: string,
 		text: string,
+		sourceText = text,
 		existingId?: string,
 	): QueuedMessage {
 		const existing = existingId
@@ -524,6 +577,7 @@ class WorkspaceStore {
 		if (existing) {
 			existing.targetKey = targetKey;
 			existing.text = text;
+			existing.sourceText = sourceText;
 			existing.state = "queued";
 			existing.error = undefined;
 			return existing;
@@ -532,6 +586,7 @@ class WorkspaceStore {
 			id: randomUUID(),
 			targetKey,
 			text,
+			sourceText,
 			mode: "auto",
 			createdAt: Date.now(),
 			state: "queued",
@@ -549,6 +604,14 @@ class WorkspaceStore {
 			this.activity.push({ id, label, state });
 		}
 		while (this.activity.length > 12) this.activity.shift();
+	}
+
+	finishAssistant(text: string): void {
+		if (text && this.activity.length) {
+			this.completedActivities.push({ text, activity: this.activity.map((item) => ({ ...item })) });
+			while (this.completedActivities.length > 24) this.completedActivities.shift();
+		}
+		this.activity.length = 0;
 	}
 }
 
@@ -631,12 +694,13 @@ function messageText(
 }
 
 class WorkspaceShell implements Component {
-	private screen: Screen = "conversation";
+	private screen: Screen;
 	private conversationFocus: ConversationFocus = "composer";
 	private overviewFocus: OverviewFocus = "sessions";
-	private readonly composer = new BubbleTextInput({
-		placeholder: "Message Pi…",
-	});
+	private readonly spinner = new BubbleSpinner();
+	private readonly childTimelines = new Map<string, BubbleTimeline>();
+	private readonly childTurns = new Map<string, number>();
+	private readonly hiddenAgentKeys = new Set<string>();
 	private readonly search = new BubbleTextInput({
 		placeholder: "filter by intent, workspace, or path",
 	});
@@ -674,7 +738,11 @@ class WorkspaceShell implements Component {
 		private readonly tui: TUI,
 		private readonly theme: Theme,
 		private readonly actions: RootViewActions,
+		private readonly composer: RootViewComposer,
+		initialScreen: Screen,
 	) {
+		this.screen = initialScreen;
+		this.composer.setSubmitHandler((text) => this.submitComposer(text));
 		this.updateSessions();
 		this.updateAgents();
 		this.transcript.goToEnd();
@@ -704,6 +772,67 @@ class WorkspaceShell implements Component {
 		this.tui.requestRender();
 	}
 
+	showConversation(): void {
+		this.screen = "conversation";
+		this.tui.requestRender();
+	}
+
+	recoverSubagents(raw: unknown): void {
+		this.store.recover(raw);
+		this.updateAgents();
+		this.tui.requestRender();
+	}
+
+	applySubagentEvent(event: SubagentUiEvent): void {
+		if (event.version !== 1 || !event.runId || typeof event.stepIndex !== "number") return;
+		const row = this.store.agents().find((agent) => agent.runId === event.runId && (agent.index === event.stepIndex || agent.childId === event.childId));
+		if (!row) return;
+		if (event.model) row.model = event.model;
+		if (event.thinking) row.thinking = event.thinking;
+		let timeline = this.childTimelines.get(row.key);
+		if (!timeline) {
+			timeline = new BubbleTimeline();
+			this.childTimelines.set(row.key, timeline);
+		}
+		const turn = this.childTurns.get(row.key) ?? 0;
+		const textId = `${row.key}:turn:${turn}`;
+		if (event.kind === "message-delta" && event.delta !== undefined) timeline.streamText(textId, event.delta, event.replace === true);
+		else if (event.kind === "message-end") timeline.endText(textId, event.text);
+		else if (event.kind === "tool-start" && event.toolCallId && event.toolName) timeline.startTool({ id: event.toolCallId, name: event.toolName, summary: event.summary, textId });
+		else if (event.kind === "tool-update" && event.toolCallId) timeline.updateTool(event.toolCallId, event.summary);
+		else if (event.kind === "tool-end" && event.toolCallId) timeline.endTool(event.toolCallId, event.isError === true);
+		else if (event.kind === "turn-end") {
+			this.childTurns.set(row.key, turn + 1);
+			void this.flushTargetQueue(row.key);
+		}
+		this.tui.requestRender();
+	}
+
+	handleChildStatus(raw: Record<string, unknown>): void {
+		if (raw.version !== 1 || raw.status !== "stopped" || typeof raw.runId !== "string") return;
+		const row = this.store.agents().find((agent) => agent.runId === raw.runId && (agent.childId === raw.childId || agent.index === raw.stepIndex));
+		if (!row) return;
+		this.hiddenAgentKeys.add(row.key);
+		this.stoppedEvents.push(`${row.agent} stopped by you · completed work kept`);
+		if (this.screen === "agent" && this.agentList.selected()?.key === row.key) this.screen = "conversation";
+		this.updateAgents();
+		this.tui.requestRender();
+	}
+
+	private async flushTargetQueue(targetKey: string): Promise<void> {
+		const item = this.store.queue.find((candidate) => candidate.targetKey === targetKey && candidate.state === "queued");
+		if (!item) return;
+		item.state = "sending";
+		try {
+			await this.sendToSubagent(item, "auto");
+			this.removeQueue(item.id);
+		} catch (error) {
+			item.state = "failed";
+			item.error = error instanceof Error ? error.message : String(error);
+		}
+		this.tui.requestRender();
+	}
+
 	async flushMainQueue(): Promise<void> {
 		const item = this.store.queue.find(
 			(candidate) => candidate.targetKey === MAIN_TARGET,
@@ -726,7 +855,7 @@ class WorkspaceShell implements Component {
 	}
 
 	private updateAgents(): void {
-		this.agentList.setItems(this.store.agents());
+		this.agentList.setItems(this.store.agents().filter((agent) => !this.hiddenAgentKeys.has(agent.key)));
 		this.agentList.setHeight(this.store.config.maxVisibleSubagents);
 	}
 
@@ -771,7 +900,7 @@ class WorkspaceShell implements Component {
 	}
 
 	private saveDraft(): void {
-		this.drafts.set(this.currentTarget(), this.composer.text());
+		this.drafts.set(this.currentTarget(), this.composer.getText());
 	}
 
 	private restoreDraft(): void {
@@ -896,25 +1025,33 @@ class WorkspaceShell implements Component {
 		this.tui.requestRender();
 	}
 
-	private async submitComposer(): Promise<void> {
-		const text = this.composer.text().trim();
+	private async submitComposer(rawText: string): Promise<void> {
+		const sourceText = rawText.trim();
+		if (!sourceText) return;
+		const expandedText = sourceText.startsWith("/") ? this.actions.expandPrompt(sourceText) : sourceText;
+		if (sourceText.startsWith("/") && expandedText === sourceText) {
+			await this.actions.submit(sourceText);
+			return;
+		}
+		const text = expandedText;
 		if (!text) return;
 		const target = this.currentTarget();
 		if (this.editingQueueId) {
-			this.store.queueMessage(target, text, this.editingQueueId);
+			this.store.queueMessage(target, text, sourceText, this.editingQueueId);
 			this.editingQueueId = undefined;
-			this.composer.clear();
+			this.composer.addToHistory(sourceText);
+			this.composer.setText("");
 			this.conversationFocus = "queue";
 			return;
 		}
-		this.composer.commitToHistory();
-		this.composer.clear();
+		this.composer.addToHistory(sourceText);
+		this.composer.setText("");
 		this.drafts.delete(target);
 		if (target === MAIN_TARGET && this.ctx.isIdle()) {
 			await this.actions.submit(text);
 			return;
 		}
-		this.store.queueMessage(target, text);
+		this.store.queueMessage(target, text, sourceText);
 		this.selectedQueue = this.targetQueue().length - 1;
 		this.conversationFocus = "queue";
 	}
@@ -936,7 +1073,7 @@ class WorkspaceShell implements Component {
 			if (!item) return;
 			item.state = "editing";
 			this.editingQueueId = item.id;
-			this.composer.setText(item.text);
+			this.composer.setText(item.sourceText);
 			this.conversationFocus = "composer";
 		} else if (data === "r") {
 			const item = this.selectedQueued();
@@ -953,6 +1090,14 @@ class WorkspaceShell implements Component {
 	}
 
 	private handleOverviewInput(data: string): void {
+		if (this.overviewFocus === "detail") {
+			if (matchesKey(data, "escape")) this.overviewFocus = "sessions";
+			else if (matchesKey(data, "enter")) {
+				const selected = this.sessionList.selected();
+				if (selected) void this.actions.resumeSession(selected.path);
+			}
+			return;
+		}
 		if (this.overviewFocus === "search") {
 			if (matchesKey(data, "escape")) {
 				this.search.clear();
@@ -996,7 +1141,10 @@ class WorkspaceShell implements Component {
 		}
 		if (matchesKey(data, "enter")) {
 			const selected = this.sessionList.selected();
-			if (selected) void this.actions.resumeSession(selected.path);
+			if (selected) {
+				if (this.tui.terminal.columns < 104) this.overviewFocus = "detail";
+				else void this.actions.resumeSession(selected.path);
+			}
 		}
 	}
 
@@ -1046,7 +1194,7 @@ class WorkspaceShell implements Component {
 				);
 				if (editing) editing.state = "queued";
 				this.editingQueueId = undefined;
-				this.composer.clear();
+				this.composer.setText("");
 				this.conversationFocus = "queue";
 				return;
 			}
@@ -1067,7 +1215,7 @@ class WorkspaceShell implements Component {
 		}
 		if (
 			matchesKey(data, "up") &&
-			!this.composer.text() &&
+			!this.composer.getText() &&
 			this.targetQueue().length
 		) {
 			this.selectedQueue = this.targetQueue().length - 1;
@@ -1083,8 +1231,7 @@ class WorkspaceShell implements Component {
 			this.conversationFocus = "stop";
 			return;
 		}
-		if (this.composer.handleInput(data) === "submit")
-			void this.submitComposer();
+		this.composer.handleInput(data);
 	}
 
 	handleInput(data: string): void {
@@ -1092,7 +1239,7 @@ class WorkspaceShell implements Component {
 			this.actions.abort();
 			return;
 		}
-		if (matchesKey(data, "ctrl+d") && this.composer.text() === "") {
+		if (matchesKey(data, "ctrl+d") && this.composer.getText() === "") {
 			this.actions.shutdown();
 			return;
 		}
@@ -1128,6 +1275,10 @@ class WorkspaceShell implements Component {
 	}
 
 	private overviewHelp(width: number): string {
+		if (this.overviewFocus === "detail") return this.help([
+			new BubbleBinding({ keys: ["enter"], help: { key: "enter", description: "resume" } }),
+			new BubbleBinding({ keys: ["escape"], help: { key: "esc", description: "list" } }),
+		], width);
 		const searching = this.overviewFocus === "search";
 		return this.help(
 			[
@@ -1299,7 +1450,7 @@ class WorkspaceShell implements Component {
 		const leftWidth = Math.min(30, Math.max(22, Math.floor(width * 0.22)));
 		const middleWidth = showPreview
 			? Math.min(52, Math.max(36, Math.floor(width * 0.36)))
-			: width - leftWidth - 1;
+			: width;
 		const previewWidth =
 			width - leftWidth - middleWidth - (showPreview ? 2 : 1);
 		const itemRows = Math.max(1, Math.floor((contentHeight - 2) / 2));
@@ -1379,8 +1530,8 @@ class WorkspaceShell implements Component {
 			);
 		}
 
-		const columns = [workspaceLines, sessionLines];
-		const widths = [leftWidth, middleWidth];
+		let columns = showPreview ? [workspaceLines, sessionLines] : this.overviewFocus === "workspaces" ? [workspaceLines] : [sessionLines];
+		let widths = showPreview ? [leftWidth, middleWidth] : [width];
 		if (showPreview) {
 			const selected = this.sessionList.selected();
 			const summary = selected ? summaryFor(selected) : "";
@@ -1418,6 +1569,21 @@ class WorkspaceShell implements Component {
 			columns.push(preview);
 			widths.push(previewWidth);
 		}
+		if (!showPreview && this.overviewFocus === "detail") {
+			const selected = this.sessionList.selected();
+			columns = [selected ? [
+				this.theme.fg("dim", `SESSION · ${relativeTime(selected.modified)}`),
+				"",
+				...wrapTextWithAnsi(this.theme.bold(titleFor(selected)), width),
+				"",
+				...wrapTextWithAnsi(this.theme.fg("mdLink", homeRelative(selected.cwd)), width),
+				"",
+				this.theme.fg("dim", `${selected.messageCount} messages`),
+				"",
+				`${this.theme.fg("accent", "enter")} ${this.theme.fg("borderAccent", "Resume session")}`,
+			] : [this.theme.fg("dim", "No session selected")]];
+			widths = [width];
+		}
 		const header = this.header(
 			"SESSIONS",
 			"all workspaces",
@@ -1452,6 +1618,20 @@ class WorkspaceShell implements Component {
 				const label = index === 0 ? this.theme.fg("dim", message.role) : "";
 				lines.push(`${pad(label, gutter)}  ${line}`);
 			}
+			if (message.role === "PI") {
+				const associated = [...this.store.completedActivities].reverse().find((item) => item.text === message.text);
+				if (associated) {
+					const visible = associated.activity.filter((item) => item.state === "running" || item.state === "error");
+					for (const item of associated.activity.slice(-3)) if (!visible.includes(item)) visible.push(item);
+					const unique = [...new Map(visible.map((item) => [item.id, item])).values()].slice(-3);
+					const hidden = Math.max(0, associated.activity.length - unique.length);
+					if (hidden) lines.push(`${pad("", gutter)}  ${this.theme.fg("dim", `… ${hidden} earlier tools`)}`);
+					for (const activity of unique) {
+						const glyph = activity.state === "done" ? this.theme.fg("success", "✓") : activity.state === "error" ? this.theme.fg("error", "×") : this.theme.fg("accent", this.spinner.frame());
+						lines.push(`${pad("", gutter)}  ${glyph} ${this.theme.fg("dim", activity.label)}`);
+					}
+				}
+			}
 			lines.push("");
 		}
 		if (this.store.streamingText) {
@@ -1474,7 +1654,7 @@ class WorkspaceShell implements Component {
 						? this.theme.fg("success", "✓")
 						: activity.state === "error"
 							? this.theme.fg("error", "!")
-							: this.theme.fg("accent", "◌");
+							: this.theme.fg("accent", this.spinner.frame());
 				lines.push(
 					`${pad("", gutter)}  ${glyph} ${this.theme.fg("dim", activity.label)}`,
 				);
@@ -1497,10 +1677,10 @@ class WorkspaceShell implements Component {
 		const focus = selected && this.conversationFocus === "agents";
 		const marker =
 			row.state === "stopping"
-				? this.theme.fg("warning", "◌")
+				? this.theme.fg("warning", this.spinner.frame())
 				: row.state === "paused"
 					? this.theme.fg("warning", "●")
-					: this.theme.fg("success", "●");
+					: this.theme.fg("accent", this.spinner.frame());
 		const prefix = focus ? this.theme.fg("borderAccent", "│") : " ";
 		const name = selected
 			? this.theme.fg("accent", this.theme.bold(row.agent))
@@ -1549,7 +1729,7 @@ class WorkspaceShell implements Component {
 	}
 
 	private renderAgents(width: number, maximumLines: number): string[] {
-		const agents = this.store.agents();
+		const agents = this.store.agents().filter((agent) => !this.hiddenAgentKeys.has(agent.key));
 		if (agents.length === 0) return [];
 		this.agentList.setItems(agents);
 		const rowHeight = width < 112 ? 2 : 1;
@@ -1587,6 +1767,25 @@ class WorkspaceShell implements Component {
 		if (!agent) return Array.from({ length: height }, () => "");
 		const labelWidth = width >= 100 ? 10 : 7;
 		const bodyWidth = Math.max(16, width - labelWidth - 2);
+		const live = this.childTimelines.get(agent.key);
+		if (live?.entries().length) {
+			const liveLines: string[] = [];
+			for (const entry of live.entries()) {
+				const label = entry.role === "user" ? "YOU" : agent.agent.toUpperCase();
+				for (const [index, line] of wrapTextWithAnsi(this.theme.fg(entry.role === "user" ? "text" : "muted", plainMarkdown(entry.text)), bodyWidth).entries()) {
+					liveLines.push(`${pad(index === 0 ? this.theme.fg("dim", label) : "", labelWidth)}  ${line}${entry.streaming && index === wrapTextWithAnsi(plainMarkdown(entry.text), bodyWidth).length - 1 ? this.theme.fg("accent", "▍") : ""}`);
+				}
+				const compact = live.visibleTools(entry.id, this.store.config.recentOutputLines);
+				if (compact.hidden) liveLines.push(`${pad("", labelWidth)}  ${this.theme.fg("dim", `… ${compact.hidden} earlier tools`)}`);
+				for (const tool of compact.visible) {
+					const glyph = tool.state === "running" ? this.theme.fg("accent", this.spinner.frame()) : tool.state === "error" ? this.theme.fg("error", "×") : this.theme.fg("success", "✓");
+					liveLines.push(`${pad("", labelWidth)}  ${glyph} ${this.theme.fg("dim", `${tool.name}${tool.summary ? ` · ${firstLine(tool.summary)}` : ""}`)}`);
+				}
+				liveLines.push("");
+			}
+			while (liveLines.length < height) liveLines.unshift("");
+			return liveLines.slice(-height);
+		}
 		const lines: string[] = [];
 		const addBlock = (
 			label: string,
@@ -1627,7 +1826,11 @@ class WorkspaceShell implements Component {
 		const queue = this.targetQueue();
 		if (!queue.length) return [];
 		const visible = queue.slice(Math.max(0, queue.length - 3));
-		const lines = [this.theme.fg("dim", `QUEUED · ${queue.length}`)];
+		const inner = Math.max(1, width - 2);
+		const lines = [
+			`╭${this.theme.fg("borderMuted", "─".repeat(inner))}╮`,
+			`│${pad(alignRight(this.theme.fg("borderAccent", this.theme.bold("QUEUED")), this.theme.fg("dim", `${queue.length} messages`), inner), inner)}│`,
+		];
 		for (const item of visible) {
 			const absolute = queue.indexOf(item);
 			const selected = absolute === this.selectedQueue;
@@ -1649,24 +1852,25 @@ class WorkspaceShell implements Component {
 										"retarget",
 						);
 			lines.push(
-				alignRight(
+				`│${pad(alignRight(
 					`${prefix} ${this.theme.fg("accent", `${absolute + 1}.`)} ${this.theme.fg("text", item.text)}`,
 					`→ ${state}`,
-					width,
-				),
+					inner,
+				), inner)}│`,
 			);
 			if (this.redirectQueueId === item.id) {
 				lines.push(
-					truncateToWidth(
+					`│${pad(truncateToWidth(
 						`${this.theme.fg("warning", "│   Interrupt the current turn and deliver immediately?")}   ${this.theme.fg("accent", "enter")} redirect   ${this.theme.fg("dim", "any other key cancel")}`,
-						width,
-					),
+						inner,
+					), inner)}│`,
 				);
 			} else if (item.error && selected)
 				lines.push(
-					truncateToWidth(this.theme.fg("error", `│   ${item.error}`), width),
+					`│${pad(truncateToWidth(this.theme.fg("error", `  ${item.error}`), inner), inner)}│`,
 				);
 		}
+		lines.push(`╰${this.theme.fg("borderMuted", "─".repeat(inner))}╯`);
 		return lines;
 	}
 
@@ -1690,7 +1894,8 @@ class WorkspaceShell implements Component {
 		const context = usage
 			? `${usage.tokens === null ? "—" : compactTokens(usage.tokens)}/${compactTokens(usage.contextWindow)}`
 			: "—";
-		const left = `${this.theme.fg("dim", "CTX")} ${bar} ${this.theme.fg("muted", `${percent.toFixed(1)}% · ${context}`)}   ${this.theme.fg("dim", ttft)}   ${this.theme.fg("dim", tpot)}`;
+		const io = `↑${compactTokens(this.store.performance.input)} ↓${compactTokens(this.store.performance.output)} cache ${compactTokens(this.store.performance.cacheRead)} $${this.store.performance.cost.toFixed(3)}`;
+		const left = `${this.theme.fg("dim", "CTX")} ${bar} ${this.theme.fg("muted", `${percent.toFixed(1)}% · ${context}`)}   ${this.theme.fg("dim", ttft)}   ${this.theme.fg("dim", tpot)}${width >= 120 ? `   ${this.theme.fg("dim", io)}` : ""}`;
 		const right =
 			this.statusUntil > Date.now()
 				? this.theme.fg("accent", this.statusMessage)
@@ -1706,16 +1911,9 @@ class WorkspaceShell implements Component {
 			this.screen === "agent"
 				? this.agentList.selected()?.agent || "subagent"
 				: "Pi";
-		const prompt = this.editingQueueId
-			? `Edit queued message to ${target}…`
-			: `Message ${target}…`;
-		this.composer.setPlaceholder(prompt);
-		const input = this.composer.render(Math.max(1, width - 4), {
-			text: (value) => this.theme.fg("text", value),
-			placeholder: (value) => this.theme.fg("dim", value),
-			cursor: (value) => this.theme.bg("selectedBg", value),
-		});
-		return [this.theme.fg("borderMuted", "─".repeat(width)), ` ${input}`];
+		const label = this.editingQueueId ? `EDIT QUEUED · ${target}` : `TO · ${target}`;
+		this.composer.focused = this.conversationFocus === "composer";
+		return [this.theme.fg("dim", label), ...this.composer.render(width)];
 	}
 
 	private renderConversation(width: number, rows: number): string[] {
@@ -1737,33 +1935,46 @@ class WorkspaceShell implements Component {
 				: homeRelative(this.ctx.cwd),
 			width,
 		);
-		const queue = this.renderQueue(width);
+		const queueWidth = Math.min(width - 2, 92);
+		const queue = this.renderQueue(queueWidth);
 		const composer = this.composerLines(width);
 		const runtime = this.runtimeLine(width);
 		let agents: string[] = [];
 		if (this.screen === "conversation") {
-			const reserved = header.length + queue.length + composer.length + 2;
+			const reserved = header.length + composer.length + 2;
 			const maxAgentLines = Math.max(3, rows - reserved - 5);
 			agents = this.renderAgents(width, maxAgentLines);
 		}
 		const footer = this.conversationHelp(width);
 		const transcriptHeight = Math.max(
 			1,
-			rows - header.length - agents.length - queue.length - composer.length - 2,
+			rows - header.length - agents.length - composer.length - 2,
 		);
 		const transcript =
 			this.screen === "agent"
 				? this.agentTranscriptLines(width, transcriptHeight)
 				: this.transcriptLines(width, transcriptHeight);
-		return [
+		let rendered = [
 			...header,
 			...transcript,
 			...agents,
-			...queue,
 			...composer,
 			pad(runtime, width),
 			pad(footer, width),
 		].slice(0, rows);
+		while (rendered.length < rows) rendered.push("");
+		if (queue.length) {
+			const overlayWidth = queueWidth;
+			const overlay = queue.map((line) => pad(line, overlayWidth));
+			const composerTop = Math.max(header.length, rows - composer.length - 2);
+			rendered = compositeBubbleLayer(rendered, width, {
+				x: 1,
+				y: Math.max(header.length, composerTop - overlay.length),
+				width: overlayWidth,
+				lines: overlay,
+			});
+		}
+		return rendered.slice(0, rows);
 	}
 
 	render(width: number): string[] {
@@ -1777,10 +1988,13 @@ class WorkspaceShell implements Component {
 		return rendered.slice(0, rows).map((line) => pad(line, usableWidth));
 	}
 
-	invalidate(): void {}
+	invalidate(): void {
+		this.composer.invalidate();
+	}
 
 	dispose(): void {
 		clearInterval(this.timer);
+		this.composer.focused = false;
 	}
 }
 
@@ -1803,16 +2017,26 @@ export default function workspaceShell(pi: ExtensionAPI): void {
 		store.refreshRuns();
 		render();
 	});
+	pi.events.on("subagent:ui-event:v1", (raw) => {
+		if (isRecord(raw)) shell?.applySubagentEvent(raw as SubagentUiEvent);
+	});
+	pi.events.on("subagent:child-status", (raw) => {
+		if (isRecord(raw)) shell?.handleChildStatus(raw);
+	});
 
-	pi.on("session_start", (_event, ctx) => {
+	pi.on("session_start", (event, ctx) => {
 		if (ctx.mode !== "tui") return;
 		store.modelId = ctx.model?.id ?? "";
 		store.thinking = ctx.thinkingLevel ?? pi.getThinkingLevel();
-		ctx.ui.setRootView((tui, theme, _keybindings, actions) => {
-			shell = new WorkspaceShell(pi, ctx, store, tui, theme, actions);
+		const initialScreen: Screen = event.reason === "resume" || event.reason === "fork" || ctx.sessionManager.getBranch().length > 0 ? "conversation" : "overview";
+		ctx.ui.setRootView((tui, theme, _keybindings, actions, composer) => {
+			shell = new WorkspaceShell(pi, ctx, store, tui, theme, actions, composer, initialScreen);
 			void listWorkspaceSessions()
 				.then((sessions) => shell?.setSessions(sessions))
 				.catch((error) => shell?.setSessionLoadError(error));
+			void rpc(pi, "status", {})
+				.then((data) => shell?.recoverSubagents(data))
+				.catch(() => {});
 			return shell;
 		});
 	});
@@ -1825,6 +2049,7 @@ export default function workspaceShell(pi: ExtensionAPI): void {
 		store.performance.tokensPerSecond = undefined;
 		render();
 	});
+	pi.on("agent_start", () => shell?.showConversation());
 	pi.on("message_update", (event) => {
 		if (event.message.role !== "assistant") return;
 		const now = Date.now();
@@ -1842,6 +2067,11 @@ export default function workspaceShell(pi: ExtensionAPI): void {
 	pi.on("message_end", (event) => {
 		if (event.message.role !== "assistant") return;
 		const outputTokens = event.message.usage.output;
+		store.performance.input += event.message.usage.input;
+		store.performance.output += event.message.usage.output;
+		store.performance.cacheRead += event.message.usage.cacheRead;
+		store.performance.cacheWrite += event.message.usage.cacheWrite;
+		store.performance.cost += event.message.usage.cost.total;
 		if (
 			store.performance.firstTokenAt !== undefined &&
 			store.performance.lastTokenAt !== undefined &&
@@ -1854,6 +2084,7 @@ export default function workspaceShell(pi: ExtensionAPI): void {
 			);
 			store.performance.tokensPerSecond = (outputTokens - 1) / seconds;
 		}
+		store.finishAssistant(event.message.content.flatMap((part) => part.type === "text" ? [part.text] : []).join("\n"));
 		store.streamingText = "";
 		render();
 	});
@@ -1869,7 +2100,7 @@ export default function workspaceShell(pi: ExtensionAPI): void {
 		);
 		render();
 	});
-	pi.on("agent_end", () => {
+	pi.on("turn_end", () => {
 		void shell?.flushMainQueue();
 	});
 	pi.on("model_select", (event) => {
