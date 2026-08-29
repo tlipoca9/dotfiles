@@ -1435,14 +1435,21 @@ class WorkspaceShell implements Component {
 			return;
 		}
 		if (
+			this.conversationFocus === "composer" &&
+			this.composer.isShowingAutocomplete()
+		) {
+			this.composer.handleInput(data);
+			return;
+		}
+		if (
 			this.conversationFocus !== "agents" &&
-			(matchesKey(data, "pageUp") || matchesKey(data, "pageDown"))
+			(matchesKey(data, "alt+pageUp") || matchesKey(data, "alt+pageDown"))
 		) {
 			const viewport =
 				this.screen === "agent"
 					? this.childViewports.get(this.agentList.selected()?.key ?? "")
 					: this.transcript;
-			viewport?.page(matchesKey(data, "pageUp") ? -1 : 1);
+			viewport?.page(matchesKey(data, "alt+pageUp") ? -1 : 1);
 			return;
 		}
 		if (this.conversationFocus === "agents") {
@@ -1486,7 +1493,7 @@ class WorkspaceShell implements Component {
 			return;
 		}
 		if (
-			matchesKey(data, "tab") &&
+			matchesKey(data, "ctrl+space") &&
 			this.screen === "conversation" &&
 			(this.store.agents().length ||
 				this.store.completedAgents().length ||
@@ -1495,17 +1502,13 @@ class WorkspaceShell implements Component {
 			this.conversationFocus = "agents";
 			return;
 		}
-		if (
-			matchesKey(data, "up") &&
-			!this.composer.getText() &&
-			this.targetQueue().length
-		) {
+		if (matchesKey(data, "ctrl+q") && this.targetQueue().length) {
 			this.selectedQueue = this.targetQueue().length - 1;
 			this.conversationFocus = "queue";
 			return;
 		}
 		if (
-			matchesKey(data, "ctrl+x") &&
+			matchesKey(data, "ctrl+shift+x") &&
 			this.screen === "agent" &&
 			this.agentList.selected() &&
 			ACTIVE_STATES.has(this.agentList.selected()!.state)
@@ -1719,8 +1722,8 @@ class WorkspaceShell implements Component {
 		return this.help(
 			[
 				new BubbleBinding({
-					keys: ["pageUp", "pageDown"],
-					help: { key: "pgup/pgdn", description: "history" },
+					keys: ["alt+pageUp", "alt+pageDown"],
+					help: { key: "alt+pgup/pgdn", description: "history" },
 				}),
 				new BubbleBinding({
 					keys: ["enter"],
@@ -1730,13 +1733,13 @@ class WorkspaceShell implements Component {
 					},
 				}),
 				new BubbleBinding({
-					keys: ["up"],
-					help: { key: "↑", description: "queued messages" },
+					keys: ["ctrl+q"],
+					help: { key: "ctrl+q", description: "queued messages" },
 					enabled: () => this.targetQueue().length > 0,
 				}),
 				new BubbleBinding({
-					keys: ["tab"],
-					help: { key: "tab", description: "subagents" },
+					keys: ["ctrl+space"],
+					help: { key: "ctrl+space", description: "subagents" },
 					enabled: () =>
 						this.screen === "conversation" &&
 						(this.store.agents().length > 0 ||
@@ -1744,8 +1747,8 @@ class WorkspaceShell implements Component {
 							this.finishedAgents.size > 0),
 				}),
 				new BubbleBinding({
-					keys: ["ctrl+x"],
-					help: { key: "ctrl+x", description: "stop" },
+					keys: ["ctrl+shift+x"],
+					help: { key: "ctrl+shift+x", description: "stop" },
 					enabled: () =>
 						this.screen === "agent" &&
 						ACTIVE_STATES.has(this.agentList.selected()?.state ?? ""),
