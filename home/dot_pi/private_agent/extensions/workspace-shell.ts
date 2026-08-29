@@ -20,6 +20,7 @@ import {
 	BubbleSpinner,
 	BubbleTextInput,
 	BubbleTimeline,
+	BubbleTurnGate,
 	BubbleViewport,
 	compositeBubbleLayer,
 	type Component,
@@ -41,6 +42,7 @@ const ACTIVE_STATES = new Set([
 	"stopping",
 ]);
 const POLL_INTERVAL_MS = 500;
+const SUBAGENT_EVENT_ENTRY = "workspace-shell.subagent-event";
 
 interface WorkspaceConfig {
 	maxVisibleSubagents: number;
@@ -71,7 +73,9 @@ interface AsyncStatusStep {
 	currentTool?: string;
 	recentOutput?: string[] | string;
 	startedAt?: number;
-	tokens?: { total?: number };
+	tokens?: { total?: number; input?: number; output?: number };
+	contextLimit?: number;
+	transcriptPath?: string;
 }
 
 interface AsyncStatus {
@@ -110,6 +114,8 @@ interface AgentRow {
 	recentOutput: string[];
 	startedAt: number;
 	tokens?: number;
+	contextLimit?: number;
+	transcriptPath?: string;
 	childCount: number;
 }
 
@@ -145,6 +151,7 @@ interface WorkspaceScope {
 interface ActivityLine {
 	id: string;
 	label: string;
+	summary?: string;
 	state: "done" | "running" | "error";
 }
 
@@ -170,6 +177,10 @@ interface SubagentUiEvent {
 	agent?: string;
 	model?: string;
 	thinking?: string;
+	ts?: number;
+	turnId?: number;
+	segmentId?: number;
+	requestStartedAt?: number;
 	delta?: string;
 	replace?: boolean;
 	text?: string;
@@ -177,6 +188,25 @@ interface SubagentUiEvent {
 	toolName?: string;
 	summary?: string;
 	isError?: boolean;
+	usage?: {
+		input?: number;
+		output?: number;
+		cacheRead?: number;
+		cacheWrite?: number;
+		cost?: number;
+	};
+}
+
+interface AgentRuntime {
+	model?: string;
+	thinking?: string;
+	performance: PerformanceSample;
+}
+
+interface MissingCwdConfirmation {
+	sessionCwd: string;
+	fallbackCwd: string;
+	resolve: (confirmed: boolean) => void;
 }
 
 type RpcMethod = "status" | "steer" | "stop";
@@ -287,6 +317,29 @@ function outputLines(
 			? value.split(/\r?\n/)
 			: [];
 	return source.map(cleanText).filter(Boolean).slice(-limit);
+}
+
+function toolSummary(value: unknown): string | undefined {
+	if (!isRecord(value)) return undefined;
+	for (const key of [
+		"path",
+		"command",
+		"query",
+		"pattern",
+		"url",
+		"file",
+		"description",
+	]) {
+		const candidate = firstLine(value[key]);
+		if (candidate) return candidate;
+	}
+	return undefined;
+}
+
+function finiteMetric(value: unknown): number {
+	return typeof value === "number" && Number.isFinite(value) && value >= 0
+		? value
+		: 0;
 }
 
 function normalizePath(value: string): string {
@@ -447,7 +500,6 @@ function rowsForRun(run: TrackedRun, config: WorkspaceConfig): AgentRow[] {
 	if (steps?.length) {
 		return steps.flatMap((step, index) => {
 			const state = step.status || status.state || "running";
-			if (!ACTIVE_STATES.has(state)) return [];
 			return [
 				{
 					key: `${run.id}:${index}`,
@@ -478,14 +530,18 @@ function rowsForRun(run: TrackedRun, config: WorkspaceConfig): AgentRow[] {
 						config.recentOutputLines,
 					),
 					startedAt: step.startedAt || status.startedAt || run.startedAt,
-					tokens: step.tokens?.total,
+					tokens: step.tokens
+						? finiteMetric(step.tokens.total) ||
+							finiteMetric(step.tokens.input) + finiteMetric(step.tokens.output)
+						: undefined,
+					contextLimit: step.contextLimit,
+					transcriptPath: step.transcriptPath,
 					childCount: steps.length,
 				},
 			];
 		});
 	}
 	const state = status?.state || "running";
-	if (!ACTIVE_STATES.has(state)) return [];
 	const agents = run.agents.length ? run.agents : [status?.agent || "subagent"];
 	return agents.map((agent, index) => ({
 		key: `${run.id}:${index}`,
@@ -505,8 +561,13 @@ class WorkspaceStore {
 	private readonly runs = new Map<string, TrackedRun>();
 	readonly queue: QueuedMessage[] = [];
 	readonly activity: ActivityLine[] = [];
-	readonly performance: PerformanceSample = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, cost: 0 };
-	readonly completedActivities: Array<{ text: string; activity: ActivityLine[] }> = [];
+	readonly performance: PerformanceSample = {
+		input: 0,
+		output: 0,
+		cacheRead: 0,
+		cacheWrite: 0,
+		cost: 0,
+	};
 	sessions: SessionInfo[] = [];
 	modelId = "";
 	thinking = "";
@@ -533,23 +594,43 @@ class WorkspaceStore {
 	}
 
 	recover(raw: unknown): void {
-		if (!isRecord(raw) || !isRecord(raw.asyncSnapshot) || !Array.isArray(raw.asyncSnapshot.runs)) return;
+		if (
+			!isRecord(raw) ||
+			!isRecord(raw.asyncSnapshot) ||
+			!Array.isArray(raw.asyncSnapshot.runs)
+		)
+			return;
 		for (const candidate of raw.asyncSnapshot.runs) {
-			if (!isRecord(candidate) || typeof candidate.id !== "string" || (candidate.state !== "running" && candidate.state !== "queued")) continue;
-			const children = Array.isArray(candidate.children) ? candidate.children.filter(isRecord) : [];
+			if (
+				!isRecord(candidate) ||
+				typeof candidate.id !== "string" ||
+				(candidate.state !== "running" && candidate.state !== "queued")
+			)
+				continue;
+			const children = Array.isArray(candidate.children)
+				? candidate.children.filter(isRecord)
+				: [];
 			const steps: AsyncStatusStep[] = children.map((child, index) => ({
 				workflowKey: typeof child.id === "string" ? child.id : `step:${index}`,
 				agent: typeof child.label === "string" ? child.label : "subagent",
 				status: child.state === "queued" ? "pending" : "running",
-				startedAt: typeof child.startedAt === "number" ? child.startedAt : undefined,
-				currentTool: isRecord(child.activity) && typeof child.activity.currentTool === "string" ? child.activity.currentTool : undefined,
+				startedAt:
+					typeof child.startedAt === "number" ? child.startedAt : undefined,
+				currentTool:
+					isRecord(child.activity) &&
+					typeof child.activity.currentTool === "string"
+						? child.activity.currentTool
+						: undefined,
 			}));
 			this.runs.set(candidate.id, {
 				id: candidate.id,
 				asyncDir: "",
 				goal: typeof candidate.label === "string" ? candidate.label : "",
 				agents: steps.map((step) => step.agent ?? "subagent"),
-				startedAt: typeof candidate.startedAt === "number" ? candidate.startedAt : Date.now(),
+				startedAt:
+					typeof candidate.startedAt === "number"
+						? candidate.startedAt
+						: Date.now(),
 				status: { state: candidate.state, steps },
 			});
 		}
@@ -557,12 +638,30 @@ class WorkspaceStore {
 
 	refreshRuns(): void {
 		for (const run of this.runs.values()) run.status = readStatus(run);
+		const terminal = [...this.runs.values()]
+			.filter(
+				(run) => run.status?.state && !ACTIVE_STATES.has(run.status.state),
+			)
+			.sort((left, right) => right.startedAt - left.startedAt);
+		for (const stale of terminal.slice(24)) this.runs.delete(stale.id);
 	}
 
 	agents(): AgentRow[] {
 		return [...this.runs.values()]
 			.flatMap((run) => rowsForRun(run, this.config))
+			.filter((row) => ACTIVE_STATES.has(row.state))
 			.sort((left, right) => right.startedAt - left.startedAt);
+	}
+
+	completedAgents(): AgentRow[] {
+		return [...this.runs.values()]
+			.flatMap((run) => rowsForRun(run, this.config))
+			.filter((row) => !ACTIVE_STATES.has(row.state))
+			.sort((left, right) => right.startedAt - left.startedAt);
+	}
+
+	allAgents(): AgentRow[] {
+		return [...this.agents(), ...this.completedAgents()];
 	}
 
 	queueMessage(
@@ -595,23 +694,21 @@ class WorkspaceStore {
 		return item;
 	}
 
-	addActivity(id: string, label: string, state: ActivityLine["state"]): void {
+	addActivity(
+		id: string,
+		label: string,
+		state: ActivityLine["state"],
+		summary?: string,
+	): void {
 		const existing = this.activity.find((item) => item.id === id);
 		if (existing) {
 			existing.label = label;
 			existing.state = state;
+			if (summary !== undefined) existing.summary = summary;
 		} else {
-			this.activity.push({ id, label, state });
+			this.activity.push({ id, label, state, ...(summary ? { summary } : {}) });
 		}
 		while (this.activity.length > 12) this.activity.shift();
-	}
-
-	finishAssistant(text: string): void {
-		if (text && this.activity.length) {
-			this.completedActivities.push({ text, activity: this.activity.map((item) => ({ ...item })) });
-			while (this.completedActivities.length > 24) this.completedActivities.shift();
-		}
-		this.activity.length = 0;
 	}
 }
 
@@ -633,7 +730,7 @@ function rpc(
 				if (!isRecord(raw))
 					return reject(new Error("pi-subagents returned an invalid reply"));
 				const reply = raw as RpcReply;
-				if (reply.success) resolve(reply.data);
+				if (reply.success === true) resolve(reply.data);
 				else
 					reject(
 						new Error(reply.error?.message || "pi-subagents request failed"),
@@ -671,6 +768,14 @@ function messageText(
 						.join("\n");
 		return { role: "EVENT", text };
 	}
+	if (
+		entry.type === "custom" &&
+		entry.customType === SUBAGENT_EVENT_ENTRY &&
+		isRecord(entry.data) &&
+		typeof entry.data.text === "string"
+	) {
+		return { role: "EVENT", text: entry.data.text };
+	}
 	if (entry.type !== "message") return undefined;
 	const message = entry.message;
 	if (message.role === "user") {
@@ -699,8 +804,12 @@ class WorkspaceShell implements Component {
 	private overviewFocus: OverviewFocus = "sessions";
 	private readonly spinner = new BubbleSpinner();
 	private readonly childTimelines = new Map<string, BubbleTimeline>();
-	private readonly childTurns = new Map<string, number>();
+	private readonly loadedTranscriptPaths = new Set<string>();
 	private readonly hiddenAgentKeys = new Set<string>();
+	private readonly finishedAgents = new Map<string, AgentRow>();
+	private readonly agentRuntime = new Map<string, AgentRuntime>();
+	private readonly childViewports = new Map<string, BubbleViewport>();
+	private readonly turnGate = new BubbleTurnGate();
 	private readonly search = new BubbleTextInput({
 		placeholder: "filter by intent, workspace, or path",
 	});
@@ -723,9 +832,10 @@ class WorkspaceShell implements Component {
 	private selectedQueue = 0;
 	private editingQueueId: string | undefined;
 	private confirmStopKey: string | undefined;
+	private readonly stopErrors = new Map<string, string>();
 	private redirectQueueId: string | undefined;
+	private missingCwdConfirmation: MissingCwdConfirmation | undefined;
 	private readonly drafts = new Map<string, string>();
-	private readonly stoppedEvents: string[] = [];
 	private statusMessage = "";
 	private statusUntil = 0;
 	private sessionLoadError = "";
@@ -784,44 +894,151 @@ class WorkspaceShell implements Component {
 	}
 
 	applySubagentEvent(event: SubagentUiEvent): void {
-		if (event.version !== 1 || !event.runId || typeof event.stepIndex !== "number") return;
-		const row = this.store.agents().find((agent) => agent.runId === event.runId && (agent.index === event.stepIndex || agent.childId === event.childId));
+		if (
+			event.version !== 1 ||
+			!event.runId ||
+			typeof event.stepIndex !== "number"
+		)
+			return;
+		const row = this.store
+			.allAgents()
+			.find(
+				(agent) =>
+					agent.runId === event.runId &&
+					agent.index === event.stepIndex &&
+					event.childId === `step:${event.stepIndex}`,
+			);
 		if (!row) return;
-		if (event.model) row.model = event.model;
-		if (event.thinking) row.thinking = event.thinking;
+		let runtime = this.agentRuntime.get(row.key);
+		if (!runtime) {
+			runtime = {
+				model: row.model,
+				thinking: row.thinking,
+				performance: {
+					input: 0,
+					output: 0,
+					cacheRead: 0,
+					cacheWrite: 0,
+					cost: 0,
+				},
+			};
+			this.agentRuntime.set(row.key, runtime);
+		}
+		if (event.model) runtime.model = event.model;
+		if (event.thinking) runtime.thinking = event.thinking;
 		let timeline = this.childTimelines.get(row.key);
 		if (!timeline) {
 			timeline = new BubbleTimeline();
 			this.childTimelines.set(row.key, timeline);
 		}
-		const turn = this.childTurns.get(row.key) ?? 0;
-		const textId = `${row.key}:turn:${turn}`;
-		if (event.kind === "message-delta" && event.delta !== undefined) timeline.streamText(textId, event.delta, event.replace === true);
-		else if (event.kind === "message-end") timeline.endText(textId, event.text);
-		else if (event.kind === "tool-start" && event.toolCallId && event.toolName) timeline.startTool({ id: event.toolCallId, name: event.toolName, summary: event.summary, textId });
-		else if (event.kind === "tool-update" && event.toolCallId) timeline.updateTool(event.toolCallId, event.summary);
-		else if (event.kind === "tool-end" && event.toolCallId) timeline.endTool(event.toolCallId, event.isError === true);
-		else if (event.kind === "turn-end") {
-			this.childTurns.set(row.key, turn + 1);
+		const turn = event.turnId ?? 0;
+		const segment = event.segmentId ?? 0;
+		const textId = `${row.key}:turn:${turn}:segment:${segment}`;
+		if (event.kind === "message-delta" && event.delta !== undefined) {
+			timeline.streamText(textId, event.delta, event.replace === true);
+			const now = event.ts ?? Date.now();
+			const sample = runtime.performance;
+			if (
+				event.requestStartedAt !== undefined &&
+				sample.requestStartedAt !== event.requestStartedAt
+			) {
+				sample.requestStartedAt = event.requestStartedAt;
+				sample.firstTokenAt = undefined;
+				sample.lastTokenAt = undefined;
+			}
+			if (sample.firstTokenAt === undefined) {
+				sample.firstTokenAt = now;
+				if (sample.requestStartedAt !== undefined)
+					sample.ttftMs = Math.max(0, now - sample.requestStartedAt);
+			}
+			sample.lastTokenAt = now;
+		} else if (event.kind === "message-end")
+			timeline.endText(textId, event.text);
+		else if (event.kind === "tool-start" && event.toolCallId && event.toolName)
+			timeline.startTool({
+				id: event.toolCallId,
+				name: event.toolName,
+				summary: event.summary,
+				textId,
+			});
+		else if (event.kind === "tool-update" && event.toolCallId)
+			timeline.updateTool(event.toolCallId, event.summary);
+		else if (event.kind === "tool-end" && event.toolCallId)
+			timeline.endTool(event.toolCallId, event.isError === true);
+		else if (event.kind === "turn-end" && event.turnId !== undefined) {
+			this.turnGate.noteTurnEnd(row.key, event.turnId);
 			void this.flushTargetQueue(row.key);
+		}
+		if (event.kind === "message-end" && event.usage) {
+			const sample = runtime.performance;
+			const output = finiteMetric(event.usage.output);
+			sample.input += finiteMetric(event.usage.input);
+			sample.output += output;
+			sample.cacheRead += finiteMetric(event.usage.cacheRead);
+			sample.cacheWrite += finiteMetric(event.usage.cacheWrite);
+			sample.cost += finiteMetric(event.usage.cost);
+			if (
+				sample.firstTokenAt !== undefined &&
+				sample.lastTokenAt !== undefined &&
+				output > 1
+			) {
+				sample.tokensPerSecond =
+					(output - 1) /
+					Math.max(0.001, (sample.lastTokenAt - sample.firstTokenAt) / 1_000);
+			}
 		}
 		this.tui.requestRender();
 	}
 
 	handleChildStatus(raw: Record<string, unknown>): void {
-		if (raw.version !== 1 || raw.status !== "stopped" || typeof raw.runId !== "string") return;
-		const row = this.store.agents().find((agent) => agent.runId === raw.runId && (agent.childId === raw.childId || agent.index === raw.stepIndex));
+		if (
+			raw.version !== 1 ||
+			raw.status !== "stopped" ||
+			typeof raw.runId !== "string"
+		)
+			return;
+		const row = this.store
+			.agents()
+			.find(
+				(agent) =>
+					agent.runId === raw.runId &&
+					agent.index === raw.stepIndex &&
+					agent.childId === raw.childId,
+			);
 		if (!row) return;
+		const alreadyFinished = this.finishedAgents.has(row.key);
 		this.hiddenAgentKeys.add(row.key);
-		this.stoppedEvents.push(`${row.agent} stopped by you · completed work kept`);
-		if (this.screen === "agent" && this.agentList.selected()?.key === row.key) this.screen = "conversation";
+		this.finishedAgents.set(row.key, { ...row, state: "stopped" });
+		if (!alreadyFinished) {
+			const text = `${row.agent} stopped by you · transcript available below`;
+			this.pi.appendEntry(SUBAGENT_EVENT_ENTRY, {
+				text,
+				runId: row.runId,
+				childId: row.childId,
+				stepIndex: row.index,
+			});
+		}
+		while (this.finishedAgents.size > 24) {
+			const oldest = [...this.finishedAgents.values()].sort(
+				(left, right) => left.startedAt - right.startedAt,
+			)[0];
+			if (!oldest) break;
+			this.finishedAgents.delete(oldest.key);
+			this.childTimelines.delete(oldest.key);
+			this.childViewports.delete(oldest.key);
+			this.agentRuntime.delete(oldest.key);
+		}
 		this.updateAgents();
 		this.tui.requestRender();
 	}
 
 	private async flushTargetQueue(targetKey: string): Promise<void> {
-		const item = this.store.queue.find((candidate) => candidate.targetKey === targetKey && candidate.state === "queued");
+		const item = this.store.queue.find(
+			(candidate) =>
+				candidate.targetKey === targetKey && candidate.state === "queued",
+		);
 		if (!item) return;
+		if (this.turnGate.claim(targetKey) === undefined) return;
 		item.state = "sending";
 		try {
 			await this.sendToSubagent(item, "auto");
@@ -833,11 +1050,13 @@ class WorkspaceShell implements Component {
 		this.tui.requestRender();
 	}
 
-	async flushMainQueue(): Promise<void> {
+	async flushMainQueue(turnId: number): Promise<void> {
+		this.turnGate.noteTurnEnd(MAIN_TARGET, turnId);
 		const item = this.store.queue.find(
 			(candidate) => candidate.targetKey === MAIN_TARGET,
 		);
 		if (item?.state !== "queued") return;
+		if (this.turnGate.claim(MAIN_TARGET) === undefined) return;
 		item.state = "sending";
 		try {
 			await this.actions.submit(item.text);
@@ -855,7 +1074,19 @@ class WorkspaceShell implements Component {
 	}
 
 	private updateAgents(): void {
-		this.agentList.setItems(this.store.agents().filter((agent) => !this.hiddenAgentKeys.has(agent.key)));
+		const active = this.store
+			.agents()
+			.filter((agent) => !this.hiddenAgentKeys.has(agent.key));
+		const completed = [
+			...this.store.completedAgents(),
+			...this.finishedAgents.values(),
+		]
+			.filter(
+				(agent, index, rows) =>
+					rows.findIndex((candidate) => candidate.key === agent.key) === index,
+			)
+			.sort((left, right) => right.startedAt - left.startedAt);
+		this.agentList.setItems([...active, ...completed]);
 		this.agentList.setHeight(this.store.config.maxVisibleSubagents);
 	}
 
@@ -968,22 +1199,6 @@ class WorkspaceShell implements Component {
 		this.tui.requestRender();
 	}
 
-	private async sendSelected(): Promise<void> {
-		const item = this.selectedQueued();
-		if (!item || item.targetKey === MAIN_TARGET) return;
-		item.mode = "auto";
-		item.state = "sending";
-		try {
-			await this.sendToSubagent(item, "auto");
-			this.removeQueue(item.id);
-			this.setStatus("Sent to subagent");
-		} catch (error) {
-			item.state = "failed";
-			item.error = error instanceof Error ? error.message : String(error);
-		}
-		this.tui.requestRender();
-	}
-
 	private async sendToSubagent(
 		item: QueuedMessage,
 		mode: QueueMode,
@@ -998,15 +1213,27 @@ class WorkspaceShell implements Component {
 			mode,
 			...(target.childCount > 1 ? { index: target.index } : {}),
 		});
+		let timeline = this.childTimelines.get(target.key);
+		if (!timeline) {
+			timeline = new BubbleTimeline();
+			this.childTimelines.set(target.key, timeline);
+		}
+		timeline.appendText({
+			id: `queue:${item.id}`,
+			role: "user",
+			text: item.text,
+		});
 	}
 
 	private async stopSelected(): Promise<void> {
 		const target = this.store
 			.agents()
 			.find((row) => row.key === this.confirmStopKey);
-		this.confirmStopKey = undefined;
-		this.conversationFocus = "agents";
-		if (!target) return;
+		if (!target) {
+			this.confirmStopKey = undefined;
+			this.conversationFocus = "agents";
+			return;
+		}
 		try {
 			await rpc(this.pi, "stop", {
 				id: target.runId,
@@ -1014,13 +1241,18 @@ class WorkspaceShell implements Component {
 					? { childId: target.childId }
 					: {}),
 			});
-			this.stoppedEvents.push(
-				`${target.agent} stopped by you · completed work kept`,
-			);
+			this.stopErrors.delete(target.key);
+			this.confirmStopKey = undefined;
+			this.conversationFocus = "agents";
 			this.screen = "conversation";
 			this.setStatus(`Stopping ${target.agent}`);
 		} catch (error) {
-			this.setStatus(error instanceof Error ? error.message : String(error));
+			this.stopErrors.set(
+				target.key,
+				error instanceof Error ? error.message : String(error),
+			);
+			this.confirmStopKey = target.key;
+			this.conversationFocus = "stop";
 		}
 		this.tui.requestRender();
 	}
@@ -1028,7 +1260,9 @@ class WorkspaceShell implements Component {
 	private async submitComposer(rawText: string): Promise<void> {
 		const sourceText = rawText.trim();
 		if (!sourceText) return;
-		const expandedText = sourceText.startsWith("/") ? this.actions.expandPrompt(sourceText) : sourceText;
+		const expandedText = sourceText.startsWith("/")
+			? this.actions.expandPrompt(sourceText)
+			: sourceText;
 		if (sourceText.startsWith("/") && expandedText === sourceText) {
 			await this.actions.submit(sourceText);
 			return;
@@ -1036,6 +1270,13 @@ class WorkspaceShell implements Component {
 		const text = expandedText;
 		if (!text) return;
 		const target = this.currentTarget();
+		if (
+			this.screen === "agent" &&
+			!this.store.agents().some((row) => row.key === target)
+		) {
+			this.setStatus("Completed transcripts are read-only");
+			return;
+		}
 		if (this.editingQueueId) {
 			this.store.queueMessage(target, text, sourceText, this.editingQueueId);
 			this.editingQueueId = undefined;
@@ -1054,6 +1295,8 @@ class WorkspaceShell implements Component {
 		this.store.queueMessage(target, text, sourceText);
 		this.selectedQueue = this.targetQueue().length - 1;
 		this.conversationFocus = "queue";
+		if (target !== MAIN_TARGET && this.turnGate.hasCredit(target))
+			void this.flushTargetQueue(target);
 	}
 
 	private handleQueueInput(data: string): void {
@@ -1081,20 +1324,41 @@ class WorkspaceShell implements Component {
 				this.redirectQueueId = item.id;
 				this.conversationFocus = "redirect";
 			}
-		} else if (data === "s" && this.currentTarget() !== MAIN_TARGET) {
-			void this.sendSelected();
 		} else if (data === "x") {
 			const item = this.selectedQueued();
 			if (item) this.removeQueue(item.id);
 		}
 	}
 
+	private async resumeSelectedSession(): Promise<void> {
+		const selected = this.sessionList.selected();
+		if (!selected) return;
+		await this.actions.resumeSession(selected.path, {
+			onMissingCwd: (issue) =>
+				new Promise<boolean>((resolveConfirmation) => {
+					this.missingCwdConfirmation = {
+						sessionCwd: issue.sessionCwd,
+						fallbackCwd: issue.fallbackCwd,
+						resolve: resolveConfirmation,
+					};
+					this.tui.requestRender();
+				}),
+		});
+	}
+
 	private handleOverviewInput(data: string): void {
+		if (this.missingCwdConfirmation) {
+			const confirmation = this.missingCwdConfirmation;
+			this.missingCwdConfirmation = undefined;
+			confirmation.resolve(matchesKey(data, "enter"));
+			this.tui.requestRender();
+			return;
+		}
 		if (this.overviewFocus === "detail") {
 			if (matchesKey(data, "escape")) this.overviewFocus = "sessions";
 			else if (matchesKey(data, "enter")) {
 				const selected = this.sessionList.selected();
-				if (selected) void this.actions.resumeSession(selected.path);
+				if (selected) void this.resumeSelectedSession();
 			}
 			return;
 		}
@@ -1143,7 +1407,7 @@ class WorkspaceShell implements Component {
 			const selected = this.sessionList.selected();
 			if (selected) {
 				if (this.tui.terminal.columns < 104) this.overviewFocus = "detail";
-				else void this.actions.resumeSession(selected.path);
+				else void this.resumeSelectedSession();
 			}
 		}
 	}
@@ -1160,6 +1424,7 @@ class WorkspaceShell implements Component {
 		if (this.confirmStopKey) {
 			if (matchesKey(data, "enter")) void this.stopSelected();
 			else {
+				this.stopErrors.delete(this.confirmStopKey);
 				this.confirmStopKey = undefined;
 				this.conversationFocus = "agents";
 			}
@@ -1167,6 +1432,17 @@ class WorkspaceShell implements Component {
 		}
 		if (this.conversationFocus === "queue") {
 			this.handleQueueInput(data);
+			return;
+		}
+		if (
+			this.conversationFocus !== "agents" &&
+			(matchesKey(data, "pageUp") || matchesKey(data, "pageDown"))
+		) {
+			const viewport =
+				this.screen === "agent"
+					? this.childViewports.get(this.agentList.selected()?.key ?? "")
+					: this.transcript;
+			viewport?.page(matchesKey(data, "pageUp") ? -1 : 1);
 			return;
 		}
 		if (this.conversationFocus === "agents") {
@@ -1181,7 +1457,11 @@ class WorkspaceShell implements Component {
 				this.screen = "agent";
 				this.conversationFocus = "composer";
 				this.restoreDraft();
-			} else if (data === "x" && this.agentList.selected()) {
+			} else if (
+				data === "x" &&
+				this.agentList.selected() &&
+				ACTIVE_STATES.has(this.agentList.selected()!.state)
+			) {
 				this.confirmStopKey = this.agentList.selected()?.key;
 				this.conversationFocus = "stop";
 			}
@@ -1208,7 +1488,9 @@ class WorkspaceShell implements Component {
 		if (
 			matchesKey(data, "tab") &&
 			this.screen === "conversation" &&
-			this.store.agents().length
+			(this.store.agents().length ||
+				this.store.completedAgents().length ||
+				this.finishedAgents.size)
 		) {
 			this.conversationFocus = "agents";
 			return;
@@ -1225,12 +1507,18 @@ class WorkspaceShell implements Component {
 		if (
 			matchesKey(data, "ctrl+x") &&
 			this.screen === "agent" &&
-			this.agentList.selected()
+			this.agentList.selected() &&
+			ACTIVE_STATES.has(this.agentList.selected()!.state)
 		) {
 			this.confirmStopKey = this.agentList.selected()?.key;
 			this.conversationFocus = "stop";
 			return;
 		}
+		if (
+			this.screen === "agent" &&
+			!ACTIVE_STATES.has(this.agentList.selected()?.state ?? "")
+		)
+			return;
 		this.composer.handleInput(data);
 	}
 
@@ -1275,10 +1563,34 @@ class WorkspaceShell implements Component {
 	}
 
 	private overviewHelp(width: number): string {
-		if (this.overviewFocus === "detail") return this.help([
-			new BubbleBinding({ keys: ["enter"], help: { key: "enter", description: "resume" } }),
-			new BubbleBinding({ keys: ["escape"], help: { key: "esc", description: "list" } }),
-		], width);
+		if (this.missingCwdConfirmation)
+			return this.help(
+				[
+					new BubbleBinding({
+						keys: ["enter"],
+						help: { key: "enter", description: "use current cwd" },
+					}),
+					new BubbleBinding({
+						keys: ["escape"],
+						help: { key: "any other key", description: "cancel" },
+					}),
+				],
+				width,
+			);
+		if (this.overviewFocus === "detail")
+			return this.help(
+				[
+					new BubbleBinding({
+						keys: ["enter"],
+						help: { key: "enter", description: "resume" },
+					}),
+					new BubbleBinding({
+						keys: ["escape"],
+						help: { key: "esc", description: "list" },
+					}),
+				],
+				width,
+			);
 		const searching = this.overviewFocus === "search";
 		return this.help(
 			[
@@ -1364,11 +1676,6 @@ class WorkspaceShell implements Component {
 						help: { key: "enter", description: "edit" },
 					}),
 					new BubbleBinding({
-						keys: ["s"],
-						help: { key: "s", description: "send" },
-						enabled: () => this.currentTarget() !== MAIN_TARGET,
-					}),
-					new BubbleBinding({
 						keys: ["r"],
 						help: { key: "r", description: "redirect" },
 					}),
@@ -1398,6 +1705,8 @@ class WorkspaceShell implements Component {
 					new BubbleBinding({
 						keys: ["x"],
 						help: { key: "x", description: "stop" },
+						enabled: () =>
+							ACTIVE_STATES.has(this.agentList.selected()?.state ?? ""),
 					}),
 					new BubbleBinding({
 						keys: ["escape"],
@@ -1409,6 +1718,10 @@ class WorkspaceShell implements Component {
 		}
 		return this.help(
 			[
+				new BubbleBinding({
+					keys: ["pageUp", "pageDown"],
+					help: { key: "pgup/pgdn", description: "history" },
+				}),
 				new BubbleBinding({
 					keys: ["enter"],
 					help: {
@@ -1425,12 +1738,17 @@ class WorkspaceShell implements Component {
 					keys: ["tab"],
 					help: { key: "tab", description: "subagents" },
 					enabled: () =>
-						this.screen === "conversation" && this.store.agents().length > 0,
+						this.screen === "conversation" &&
+						(this.store.agents().length > 0 ||
+							this.store.completedAgents().length > 0 ||
+							this.finishedAgents.size > 0),
 				}),
 				new BubbleBinding({
 					keys: ["ctrl+x"],
 					help: { key: "ctrl+x", description: "stop" },
-					enabled: () => this.screen === "agent",
+					enabled: () =>
+						this.screen === "agent" &&
+						ACTIVE_STATES.has(this.agentList.selected()?.state ?? ""),
 				}),
 				new BubbleBinding({
 					keys: ["escape"],
@@ -1529,59 +1847,148 @@ class WorkspaceShell implements Component {
 				),
 			);
 		}
+		if (this.sessionList.position().total === 0) {
+			sessionLines.push("");
+			sessionLines.push(
+				this.theme.fg(
+					"muted",
+					this.store.sessions.length
+						? "No matching sessions"
+						: "No sessions yet",
+				),
+			);
+			sessionLines.push(
+				this.theme.fg(
+					"dim",
+					this.store.sessions.length
+						? "Try a shorter search or another workspace."
+						: "Start a conversation; it will appear here.",
+				),
+			);
+		}
 
-		let columns = showPreview ? [workspaceLines, sessionLines] : this.overviewFocus === "workspaces" ? [workspaceLines] : [sessionLines];
+		let columns = showPreview
+			? [workspaceLines, sessionLines]
+			: this.overviewFocus === "workspaces"
+				? [workspaceLines]
+				: [sessionLines];
 		let widths = showPreview ? [leftWidth, middleWidth] : [width];
 		if (showPreview) {
 			const selected = this.sessionList.selected();
 			const summary = selected ? summaryFor(selected) : "";
-			const preview = selected
+			const preview = this.missingCwdConfirmation
 				? [
-						this.theme.fg(
-							"dim",
-							`SESSION · ${relativeTime(selected.modified)}`,
-						),
+						this.theme.fg("warning", this.theme.bold("WORKSPACE NOT FOUND")),
 						"",
 						...wrapTextWithAnsi(
-							this.theme.bold(titleFor(selected)),
+							this.theme.fg(
+								"muted",
+								homeRelative(this.missingCwdConfirmation.sessionCwd),
+							),
 							previewWidth,
 						),
 						"",
+						this.theme.fg("dim", "Continue in"),
 						...wrapTextWithAnsi(
-							this.theme.fg("mdLink", homeRelative(selected.cwd)),
+							this.theme.fg(
+								"mdLink",
+								homeRelative(this.missingCwdConfirmation.fallbackCwd),
+							),
 							previewWidth,
 						),
 						"",
-						...(summary
-							? [
-									...wrapTextWithAnsi(
-										this.theme.fg("muted", summary),
-										previewWidth,
-									),
-									"",
-								]
-							: []),
-						this.theme.fg("dim", `${selected.messageCount} messages`),
-						"",
-						this.theme.fg("borderAccent", "Resume session →"),
+						`${this.theme.fg("accent", "enter")} ${this.theme.fg("borderAccent", "Continue")}   ${this.theme.fg("dim", "any other key cancel")}`,
 					]
-				: [this.theme.fg("dim", "No session selected")];
+				: selected
+					? [
+							this.theme.fg(
+								"dim",
+								`SESSION · ${relativeTime(selected.modified)}`,
+							),
+							"",
+							...wrapTextWithAnsi(
+								this.theme.bold(titleFor(selected)),
+								previewWidth,
+							),
+							"",
+							...wrapTextWithAnsi(
+								this.theme.fg("mdLink", homeRelative(selected.cwd)),
+								previewWidth,
+							),
+							"",
+							...(summary
+								? [
+										...wrapTextWithAnsi(
+											this.theme.fg("muted", summary),
+											previewWidth,
+										),
+										"",
+									]
+								: []),
+							this.theme.fg("dim", `${selected.messageCount} messages`),
+							"",
+							this.theme.fg("borderAccent", "Resume session →"),
+						]
+					: [this.theme.fg("dim", "No session selected")];
 			columns.push(preview);
 			widths.push(previewWidth);
 		}
 		if (!showPreview && this.overviewFocus === "detail") {
 			const selected = this.sessionList.selected();
-			columns = [selected ? [
-				this.theme.fg("dim", `SESSION · ${relativeTime(selected.modified)}`),
-				"",
-				...wrapTextWithAnsi(this.theme.bold(titleFor(selected)), width),
-				"",
-				...wrapTextWithAnsi(this.theme.fg("mdLink", homeRelative(selected.cwd)), width),
-				"",
-				this.theme.fg("dim", `${selected.messageCount} messages`),
-				"",
-				`${this.theme.fg("accent", "enter")} ${this.theme.fg("borderAccent", "Resume session")}`,
-			] : [this.theme.fg("dim", "No session selected")]];
+			const summary = selected ? summaryFor(selected) : "";
+			columns = [
+				this.missingCwdConfirmation
+					? [
+							this.theme.fg("warning", this.theme.bold("WORKSPACE NOT FOUND")),
+							"",
+							...wrapTextWithAnsi(
+								this.theme.fg(
+									"muted",
+									homeRelative(this.missingCwdConfirmation.sessionCwd),
+								),
+								width,
+							),
+							"",
+							this.theme.fg("dim", "Continue in"),
+							...wrapTextWithAnsi(
+								this.theme.fg(
+									"mdLink",
+									homeRelative(this.missingCwdConfirmation.fallbackCwd),
+								),
+								width,
+							),
+							"",
+							`${this.theme.fg("accent", "enter")} ${this.theme.fg("borderAccent", "Continue")}   ${this.theme.fg("dim", "any other key cancel")}`,
+						]
+					: selected
+						? [
+								this.theme.fg(
+									"dim",
+									`SESSION · ${relativeTime(selected.modified)}`,
+								),
+								"",
+								...wrapTextWithAnsi(this.theme.bold(titleFor(selected)), width),
+								"",
+								...wrapTextWithAnsi(
+									this.theme.fg("mdLink", homeRelative(selected.cwd)),
+									width,
+								),
+								"",
+								...(summary
+									? [
+											...wrapTextWithAnsi(
+												this.theme.fg("muted", summary),
+												width,
+											),
+											"",
+										]
+									: []),
+								this.theme.fg("dim", `${selected.messageCount} messages`),
+								"",
+								`${this.theme.fg("accent", "enter")} ${this.theme.fg("borderAccent", "Resume session")}`,
+							]
+						: [this.theme.fg("dim", "No session selected")],
+			];
 			widths = [width];
 		}
 		const header = this.header(
@@ -1601,69 +2008,100 @@ class WorkspaceShell implements Component {
 		const gutter = width >= 100 ? 12 : 7;
 		const bodyWidth = Math.max(16, width - gutter - 2);
 		const lines: string[] = [];
-		const messages = this.ctx.sessionManager
-			.getBranch()
-			.map(messageText)
-			.filter((value): value is { role: string; text: string } =>
-				Boolean(value?.text),
-			);
-		for (const message of messages.slice(-12)) {
+		const timeline = new BubbleTimeline();
+		const branch = this.ctx.sessionManager.getBranch();
+		const toolResults = new Map<string, boolean>();
+		for (const entry of branch) {
+			if (entry.type === "message" && entry.message.role === "toolResult")
+				toolResults.set(entry.message.toolCallId, entry.message.isError);
+		}
+		const liveTools = new Map(
+			this.store.activity.map((activity) => [activity.id, activity]),
+		);
+		for (const entry of branch) {
+			if (entry.type === "message" && entry.message.role === "assistant") {
+				const text = entry.message.content
+					.flatMap((part) => (part.type === "text" ? [part.text] : []))
+					.join("\n");
+				const toolCalls = entry.message.content.filter(
+					(part) => part.type === "toolCall",
+				);
+				if (!text && toolCalls.length === 0) continue;
+				timeline.appendText({ id: entry.id, role: "assistant", text });
+				for (const call of toolCalls) {
+					const live = liveTools.get(call.id);
+					timeline.startTool({
+						id: call.id,
+						name: call.name,
+						summary: live?.summary ?? toolSummary(call.arguments),
+						textId: entry.id,
+					});
+					if (live?.state === "done" || toolResults.has(call.id))
+						timeline.endTool(
+							call.id,
+							live?.state === "error" || toolResults.get(call.id) === true,
+						);
+					else if (live?.state === "error") timeline.endTool(call.id, true);
+				}
+				continue;
+			}
+			const message = messageText(entry);
+			if (message?.text)
+				timeline.appendText({
+					id: entry.id,
+					role: message.role === "YOU" ? "user" : "event",
+					text: message.text,
+				});
+		}
+		if (this.store.streamingText)
+			timeline.appendText({
+				id: "stream:current",
+				role: "assistant",
+				text: this.store.streamingText,
+				streaming: true,
+			});
+		for (const entry of timeline.entries()) {
+			const label =
+				entry.role === "assistant"
+					? "PI"
+					: entry.role === "user"
+						? "YOU"
+						: "EVENT";
+			const color = entry.role === "assistant" ? "muted" : "text";
 			const body = wrapTextWithAnsi(
-				message.role === "PI"
-					? this.theme.fg("muted", plainMarkdown(message.text))
-					: this.theme.fg("text", plainMarkdown(message.text)),
+				this.theme.fg(color, plainMarkdown(entry.text)),
 				bodyWidth,
 			);
 			for (const [index, line] of body.entries()) {
-				const label = index === 0 ? this.theme.fg("dim", message.role) : "";
-				lines.push(`${pad(label, gutter)}  ${line}`);
+				const cursor =
+					entry.streaming && index === body.length - 1
+						? this.theme.fg("accent", "▍")
+						: "";
+				lines.push(
+					`${pad(index === 0 ? this.theme.fg("dim", label) : "", gutter)}  ${line}${cursor}`,
+				);
 			}
-			if (message.role === "PI") {
-				const associated = [...this.store.completedActivities].reverse().find((item) => item.text === message.text);
-				if (associated) {
-					const visible = associated.activity.filter((item) => item.state === "running" || item.state === "error");
-					for (const item of associated.activity.slice(-3)) if (!visible.includes(item)) visible.push(item);
-					const unique = [...new Map(visible.map((item) => [item.id, item])).values()].slice(-3);
-					const hidden = Math.max(0, associated.activity.length - unique.length);
-					if (hidden) lines.push(`${pad("", gutter)}  ${this.theme.fg("dim", `… ${hidden} earlier tools`)}`);
-					for (const activity of unique) {
-						const glyph = activity.state === "done" ? this.theme.fg("success", "✓") : activity.state === "error" ? this.theme.fg("error", "×") : this.theme.fg("accent", this.spinner.frame());
-						lines.push(`${pad("", gutter)}  ${glyph} ${this.theme.fg("dim", activity.label)}`);
-					}
-				}
+			const compact = timeline.visibleTools(
+				entry.id,
+				this.store.config.recentOutputLines,
+			);
+			if (compact.hidden)
+				lines.push(
+					`${pad("", gutter)}  ${this.theme.fg("dim", `… ${compact.hidden} earlier tools`)}`,
+				);
+			for (const tool of compact.visible) {
+				const glyph =
+					tool.state === "running"
+						? this.theme.fg("accent", this.spinner.frame())
+						: tool.state === "error"
+							? this.theme.fg("error", "×")
+							: this.theme.fg("success", "✓");
+				lines.push(
+					`${pad("", gutter)}  ${glyph} ${this.theme.fg("dim", `${tool.name}${tool.summary ? ` · ${firstLine(tool.summary)}` : ""}`)}`,
+				);
 			}
 			lines.push("");
 		}
-		if (this.store.streamingText) {
-			const body = wrapTextWithAnsi(
-				this.theme.fg("muted", plainMarkdown(this.store.streamingText)),
-				bodyWidth,
-			);
-			for (const [index, line] of body.entries())
-				lines.push(
-					`${pad(index === 0 ? this.theme.fg("dim", "PI") : "", gutter)}  ${line}`,
-				);
-		}
-		if (this.store.activity.length) {
-			lines.push(
-				`${pad("", gutter)}  ${this.theme.fg("dim", "RECENT ACTIVITY")}`,
-			);
-			for (const activity of this.store.activity.slice(-3)) {
-				const glyph =
-					activity.state === "done"
-						? this.theme.fg("success", "✓")
-						: activity.state === "error"
-							? this.theme.fg("error", "!")
-							: this.theme.fg("accent", this.spinner.frame());
-				lines.push(
-					`${pad("", gutter)}  ${glyph} ${this.theme.fg("dim", activity.label)}`,
-				);
-			}
-		}
-		for (const event of this.stoppedEvents.slice(-2))
-			lines.push(
-				`${pad(this.theme.fg("dim", "EVENT"), gutter)}  ${this.theme.fg("muted", event)}`,
-			);
 		this.transcript.setHeight(height);
 		this.transcript.setContent(lines, true);
 		return this.transcript.render(width);
@@ -1675,17 +2113,24 @@ class WorkspaceShell implements Component {
 		selected: boolean,
 	): string[] {
 		const focus = selected && this.conversationFocus === "agents";
-		const marker =
-			row.state === "stopping"
+		const marker = !ACTIVE_STATES.has(row.state)
+			? this.theme.fg("success", "✓")
+			: row.state === "stopping"
 				? this.theme.fg("warning", this.spinner.frame())
 				: row.state === "paused"
 					? this.theme.fg("warning", "●")
 					: this.theme.fg("accent", this.spinner.frame());
 		const prefix = focus ? this.theme.fg("borderAccent", "│") : " ";
-		const name = selected
-			? this.theme.fg("accent", this.theme.bold(row.agent))
-			: this.theme.fg("text", this.theme.bold(row.agent));
-		const runtime = [shortModel(row.model), row.thinking]
+		const name = !ACTIVE_STATES.has(row.state)
+			? this.theme.fg("muted", this.theme.bold(row.agent))
+			: selected
+				? this.theme.fg("accent", this.theme.bold(row.agent))
+				: this.theme.fg("text", this.theme.bold(row.agent));
+		const liveRuntime = this.agentRuntime.get(row.key);
+		const runtime = [
+			shortModel(liveRuntime?.model || row.model),
+			liveRuntime?.thinking || row.thinking,
+		]
 			.filter(Boolean)
 			.join(" · ");
 		if (width >= 112) {
@@ -1698,7 +2143,9 @@ class WorkspaceShell implements Component {
 				width - nameWidth - nowWidth - runtimeWidth - actionWidth - 8,
 			);
 			const actions = selected
-				? `${this.theme.fg("accent", "↵")} interact  ${this.theme.fg("error", "x")} stop`
+				? ACTIVE_STATES.has(row.state)
+					? `${this.theme.fg("accent", "↵")} interact  ${this.theme.fg("error", "x")} stop`
+					: `${this.theme.fg("accent", "↵")} inspect`
 				: "";
 			return [
 				[
@@ -1723,13 +2170,27 @@ class WorkspaceShell implements Component {
 			width,
 		);
 		const action = focus
-			? `${this.theme.fg("accent", "↵")} interact  ${this.theme.fg("error", "x")} stop`
+			? ACTIVE_STATES.has(row.state)
+				? `${this.theme.fg("accent", "↵")} interact  ${this.theme.fg("error", "x")} stop`
+				: `${this.theme.fg("accent", "↵")} inspect`
 			: this.theme.fg("dim", row.currentTool || row.state);
 		return [first, alignRight(detail, action, width)];
 	}
 
 	private renderAgents(width: number, maximumLines: number): string[] {
-		const agents = this.store.agents().filter((agent) => !this.hiddenAgentKeys.has(agent.key));
+		const active = this.store
+			.agents()
+			.filter((agent) => !this.hiddenAgentKeys.has(agent.key));
+		const completed = [
+			...this.store.completedAgents(),
+			...this.finishedAgents.values(),
+		]
+			.filter(
+				(agent, index, rows) =>
+					rows.findIndex((candidate) => candidate.key === agent.key) === index,
+			)
+			.sort((left, right) => right.startedAt - left.startedAt);
+		const agents = [...active, ...completed];
 		if (agents.length === 0) return [];
 		this.agentList.setItems(agents);
 		const rowHeight = width < 112 ? 2 : 1;
@@ -1739,21 +2200,29 @@ class WorkspaceShell implements Component {
 		);
 		const position = this.agentList.position();
 		const title = `${this.theme.fg("borderAccent", this.theme.bold("SUBAGENTS"))} ${this.theme.fg("dim", `${position.start}–${position.end} / ${position.total} · newest`)}`;
-		const attention = agents.filter((agent) => agent.state === "paused").length;
-		const status = `${attention ? `${this.theme.fg("warning", `! ${attention}`)}  ` : ""}${this.theme.fg("success", "●")} ${agents.length} active`;
+		const attention = active.filter((agent) => agent.state === "paused").length;
+		const status = `${attention ? `${this.theme.fg("warning", `! ${attention}`)}  ` : ""}${this.theme.fg("success", "●")} ${active.length} active${completed.length ? `  ${this.theme.fg("dim", `✓ ${completed.length} completed`)}` : ""}`;
 		const lines = [
 			alignRight(title, status, width),
 			this.theme.fg("borderMuted", "─".repeat(width)),
 		];
+		let completedHeaderShown = false;
 		for (const match of this.agentList.visibleItems()) {
 			const row = match.item;
+			if (!ACTIVE_STATES.has(row.state) && !completedHeaderShown) {
+				lines.push(
+					this.theme.fg("dim", "COMPLETED · transcripts are read-only"),
+				);
+				completedHeaderShown = true;
+			}
 			lines.push(
 				...this.renderAgentRow(row, width, row === this.agentList.selected()),
 			);
-			if (this.confirmStopKey === row.key) {
+			if (this.confirmStopKey === row.key && ACTIVE_STATES.has(row.state)) {
+				const error = this.stopErrors.get(row.key);
 				lines.push(
 					truncateToWidth(
-						`${this.theme.fg("borderAccent", "│")}   ${this.theme.fg("warning", `Stop ${row.agent}?`)}   ${this.theme.fg("accent", "enter")} stop   ${this.theme.fg("dim", "any other key cancel")}`,
+						`${this.theme.fg("borderAccent", "│")}   ${error ? this.theme.fg("error", error) : this.theme.fg("warning", `Stop ${row.agent}?`)}   ${this.theme.fg("accent", "enter")} ${error ? "retry" : "stop"}   ${this.theme.fg("dim", "any other key cancel")}`,
 						width,
 					),
 				);
@@ -1762,9 +2231,107 @@ class WorkspaceShell implements Component {
 		return lines;
 	}
 
+	private hydrateChildTranscript(agent: AgentRow): void {
+		const transcriptPath = agent.transcriptPath;
+		if (!transcriptPath || this.loadedTranscriptPaths.has(transcriptPath))
+			return;
+		this.loadedTranscriptPaths.add(transcriptPath);
+		let records: unknown[];
+		try {
+			records = readFileSync(transcriptPath, "utf8")
+				.split(/\r?\n/)
+				.filter(Boolean)
+				.slice(-2_000)
+				.flatMap((line) => {
+					try {
+						return [JSON.parse(line)];
+					} catch {
+						return [];
+					}
+				});
+		} catch {
+			return;
+		}
+		let timeline = this.childTimelines.get(agent.key);
+		if (!timeline) {
+			timeline = new BubbleTimeline();
+			this.childTimelines.set(agent.key, timeline);
+		}
+		let assistantOrdinal = 0;
+		let userOrdinal = 0;
+		const runtime: AgentRuntime = {
+			model: agent.model,
+			thinking: agent.thinking,
+			performance: {
+				input: 0,
+				output: 0,
+				cacheRead: 0,
+				cacheWrite: 0,
+				cost: 0,
+			},
+		};
+		for (const value of records) {
+			if (!isRecord(value)) continue;
+			if (
+				value.recordType === "message" &&
+				value.role === "user" &&
+				typeof value.text === "string"
+			) {
+				timeline.appendText({
+					id: `${agent.key}:history:user:${userOrdinal++}`,
+					role: "user",
+					text: value.text,
+				});
+			} else if (value.recordType === "message" && value.role === "assistant") {
+				const text = typeof value.text === "string" ? value.text : "";
+				timeline.appendText({
+					id: `${agent.key}:history:assistant:${assistantOrdinal++}`,
+					role: "assistant",
+					text,
+				});
+				if (typeof value.model === "string") runtime.model = value.model;
+				if (isRecord(value.usage)) {
+					runtime.performance.input += finiteMetric(value.usage.input);
+					runtime.performance.output += finiteMetric(value.usage.output);
+					runtime.performance.cacheRead += finiteMetric(value.usage.cacheRead);
+					runtime.performance.cacheWrite += finiteMetric(
+						value.usage.cacheWrite,
+					);
+					runtime.performance.cost += finiteMetric(value.usage.cost);
+				}
+			} else if (
+				value.recordType === "tool_start" &&
+				typeof value.toolCallId === "string" &&
+				typeof value.toolName === "string"
+			) {
+				timeline.startTool({
+					id: value.toolCallId,
+					name: value.toolName,
+					summary:
+						typeof value.argsPreview === "string"
+							? value.argsPreview
+							: undefined,
+				});
+			} else if (
+				value.recordType === "tool_end" &&
+				typeof value.toolCallId === "string"
+			) {
+				timeline.endTool(value.toolCallId, value.isError === true);
+			}
+		}
+		this.agentRuntime.set(agent.key, runtime);
+	}
+
 	private agentTranscriptLines(width: number, height: number): string[] {
 		const agent = this.agentList.selected();
 		if (!agent) return Array.from({ length: height }, () => "");
+		this.hydrateChildTranscript(agent);
+		let viewport = this.childViewports.get(agent.key);
+		if (!viewport) {
+			viewport = new BubbleViewport(height);
+			viewport.goToEnd();
+			this.childViewports.set(agent.key, viewport);
+		}
 		const labelWidth = width >= 100 ? 10 : 7;
 		const bodyWidth = Math.max(16, width - labelWidth - 2);
 		const live = this.childTimelines.get(agent.key);
@@ -1772,43 +2339,45 @@ class WorkspaceShell implements Component {
 			const liveLines: string[] = [];
 			for (const entry of live.entries()) {
 				const label = entry.role === "user" ? "YOU" : agent.agent.toUpperCase();
-				for (const [index, line] of wrapTextWithAnsi(this.theme.fg(entry.role === "user" ? "text" : "muted", plainMarkdown(entry.text)), bodyWidth).entries()) {
-					liveLines.push(`${pad(index === 0 ? this.theme.fg("dim", label) : "", labelWidth)}  ${line}${entry.streaming && index === wrapTextWithAnsi(plainMarkdown(entry.text), bodyWidth).length - 1 ? this.theme.fg("accent", "▍") : ""}`);
+				for (const [index, line] of wrapTextWithAnsi(
+					this.theme.fg(
+						entry.role === "user" ? "text" : "muted",
+						plainMarkdown(entry.text),
+					),
+					bodyWidth,
+				).entries()) {
+					liveLines.push(
+						`${pad(index === 0 ? this.theme.fg("dim", label) : "", labelWidth)}  ${line}${entry.streaming && index === wrapTextWithAnsi(plainMarkdown(entry.text), bodyWidth).length - 1 ? this.theme.fg("accent", "▍") : ""}`,
+					);
 				}
-				const compact = live.visibleTools(entry.id, this.store.config.recentOutputLines);
-				if (compact.hidden) liveLines.push(`${pad("", labelWidth)}  ${this.theme.fg("dim", `… ${compact.hidden} earlier tools`)}`);
+				const compact = live.visibleTools(
+					entry.id,
+					this.store.config.recentOutputLines,
+				);
+				if (compact.hidden)
+					liveLines.push(
+						`${pad("", labelWidth)}  ${this.theme.fg("dim", `… ${compact.hidden} earlier tools`)}`,
+					);
 				for (const tool of compact.visible) {
-					const glyph = tool.state === "running" ? this.theme.fg("accent", this.spinner.frame()) : tool.state === "error" ? this.theme.fg("error", "×") : this.theme.fg("success", "✓");
-					liveLines.push(`${pad("", labelWidth)}  ${glyph} ${this.theme.fg("dim", `${tool.name}${tool.summary ? ` · ${firstLine(tool.summary)}` : ""}`)}`);
+					const glyph =
+						tool.state === "running"
+							? this.theme.fg("accent", this.spinner.frame())
+							: tool.state === "error"
+								? this.theme.fg("error", "×")
+								: this.theme.fg("success", "✓");
+					liveLines.push(
+						`${pad("", labelWidth)}  ${glyph} ${this.theme.fg("dim", `${tool.name}${tool.summary ? ` · ${firstLine(tool.summary)}` : ""}`)}`,
+					);
 				}
 				liveLines.push("");
 			}
-			while (liveLines.length < height) liveLines.unshift("");
-			return liveLines.slice(-height);
+			viewport.setHeight(height);
+			viewport.setContent(liveLines, true);
+			return viewport.render(width);
 		}
-		const lines: string[] = [];
-		const addBlock = (
-			label: string,
-			value: string,
-			color: "text" | "muted" = "muted",
-		) => {
-			for (const [index, line] of wrapTextWithAnsi(
-				this.theme.fg(color, value),
-				bodyWidth,
-			).entries()) {
-				lines.push(
-					`${pad(index === 0 ? this.theme.fg("dim", label) : "", labelWidth)}  ${line}`,
-				);
-			}
-		};
-		addBlock("TASK", agent.goal || "No task description", "text");
-		lines.push("");
-		addBlock("NOW", agent.currentTool || agent.state);
-		if (agent.recentOutput.length) {
-			lines.push("");
-			for (const [index, output] of agent.recentOutput.entries())
-				addBlock(index === 0 ? "RECENT" : "", output);
-		}
+		const lines: string[] = [
+			`${pad(this.theme.fg("dim", "EVENT"), labelWidth)}  ${this.theme.fg("muted", agent.transcriptPath ? "Transcript has no displayable messages yet." : "Transcript unavailable for this run.")}`,
+		];
 		if (this.confirmStopKey === agent.key) {
 			lines.push("");
 			lines.push(
@@ -1818,14 +2387,23 @@ class WorkspaceShell implements Component {
 				),
 			);
 		}
-		while (lines.length < height) lines.push("");
-		return lines.slice(-height);
+		viewport.setHeight(height);
+		viewport.setContent(lines, true);
+		return viewport.render(width);
 	}
 
 	private renderQueue(width: number): string[] {
 		const queue = this.targetQueue();
 		if (!queue.length) return [];
-		const visible = queue.slice(Math.max(0, queue.length - 3));
+		this.selectedQueue = Math.max(
+			0,
+			Math.min(this.selectedQueue, queue.length - 1),
+		);
+		const windowStart = Math.max(
+			0,
+			Math.min(queue.length - 3, this.selectedQueue - 1),
+		);
+		const visible = queue.slice(windowStart, windowStart + 3);
 		const inner = Math.max(1, width - 2);
 		const lines = [
 			`╭${this.theme.fg("borderMuted", "─".repeat(inner))}╮`,
@@ -1852,18 +2430,24 @@ class WorkspaceShell implements Component {
 										"retarget",
 						);
 			lines.push(
-				`│${pad(alignRight(
-					`${prefix} ${this.theme.fg("accent", `${absolute + 1}.`)} ${this.theme.fg("text", item.text)}`,
-					`→ ${state}`,
+				`│${pad(
+					alignRight(
+						`${prefix} ${this.theme.fg("accent", `${absolute + 1}.`)} ${this.theme.fg("text", item.text)}`,
+						`→ ${state}`,
+						inner,
+					),
 					inner,
-				), inner)}│`,
+				)}│`,
 			);
 			if (this.redirectQueueId === item.id) {
 				lines.push(
-					`│${pad(truncateToWidth(
-						`${this.theme.fg("warning", "│   Interrupt the current turn and deliver immediately?")}   ${this.theme.fg("accent", "enter")} redirect   ${this.theme.fg("dim", "any other key cancel")}`,
+					`│${pad(
+						truncateToWidth(
+							`${this.theme.fg("warning", "│   Interrupt the current turn and deliver immediately?")}   ${this.theme.fg("accent", "enter")} redirect   ${this.theme.fg("dim", "any other key cancel")}`,
+							inner,
+						),
 						inner,
-					), inner)}│`,
+					)}│`,
 				);
 			} else if (item.error && selected)
 				lines.push(
@@ -1875,8 +2459,21 @@ class WorkspaceShell implements Component {
 	}
 
 	private runtimeLine(width: number): string {
-		const usage = this.ctx.getContextUsage();
-		const percent = usage?.percent ?? 0;
+		const selectedAgent =
+			this.screen === "agent" ? this.agentList.selected() : undefined;
+		const childRuntime = selectedAgent
+			? this.agentRuntime.get(selectedAgent.key)
+			: undefined;
+		const performance = childRuntime?.performance ?? this.store.performance;
+		const mainUsage = selectedAgent ? undefined : this.ctx.getContextUsage();
+		const childTokens =
+			selectedAgent?.tokens ?? performance.input + performance.output;
+		const childContextLimit = selectedAgent?.contextLimit;
+		const percent =
+			mainUsage?.percent ??
+			(childContextLimit
+				? Math.min(100, (childTokens / childContextLimit) * 100)
+				: 0);
 		const barWidth = width >= 100 ? 10 : 5;
 		const filled = Math.max(
 			0,
@@ -1884,40 +2481,72 @@ class WorkspaceShell implements Component {
 		);
 		const bar = `${this.theme.fg("borderAccent", "█".repeat(filled))}${this.theme.fg("borderMuted", "░".repeat(barWidth - filled))}`;
 		const ttft =
-			this.store.performance.ttftMs === undefined
+			performance.ttftMs === undefined
 				? "TTFT —"
-				: `TTFT ${(this.store.performance.ttftMs / 1_000).toFixed(2)}s`;
+				: `TTFT ${(performance.ttftMs / 1_000).toFixed(2)}s`;
 		const tpot =
-			this.store.performance.tokensPerSecond === undefined
+			performance.tokensPerSecond === undefined
 				? "TPOT —"
-				: `TPOT ${this.store.performance.tokensPerSecond.toFixed(1)} tok/s`;
-		const context = usage
-			? `${usage.tokens === null ? "—" : compactTokens(usage.tokens)}/${compactTokens(usage.contextWindow)}`
-			: "—";
-		const io = `↑${compactTokens(this.store.performance.input)} ↓${compactTokens(this.store.performance.output)} cache ${compactTokens(this.store.performance.cacheRead)} $${this.store.performance.cost.toFixed(3)}`;
+				: `TPOT ${performance.tokensPerSecond.toFixed(1)} tok/s`;
+		const context = mainUsage
+			? `${mainUsage.tokens === null ? "—" : compactTokens(mainUsage.tokens)}/${compactTokens(mainUsage.contextWindow)}`
+			: childContextLimit
+				? `${compactTokens(childTokens)}/${compactTokens(childContextLimit)}`
+				: compactTokens(childTokens);
+		const io = `↑${compactTokens(performance.input)} ↓${compactTokens(performance.output)} cache ${compactTokens(performance.cacheRead)} $${performance.cost.toFixed(3)}`;
 		const left = `${this.theme.fg("dim", "CTX")} ${bar} ${this.theme.fg("muted", `${percent.toFixed(1)}% · ${context}`)}   ${this.theme.fg("dim", ttft)}   ${this.theme.fg("dim", tpot)}${width >= 120 ? `   ${this.theme.fg("dim", io)}` : ""}`;
 		const right =
 			this.statusUntil > Date.now()
 				? this.theme.fg("accent", this.statusMessage)
 				: this.theme.fg(
 						"muted",
-						`${shortModel(this.store.modelId || this.ctx.model?.id)} · ${this.store.thinking || this.ctx.thinkingLevel || this.pi.getThinkingLevel()}`,
+						selectedAgent
+							? `${shortModel(childRuntime?.model || selectedAgent.model)} · ${childRuntime?.thinking || selectedAgent.thinking || "—"}`
+							: `${shortModel(this.store.modelId || this.ctx.model?.id)} · ${this.store.thinking || this.ctx.thinkingLevel || this.pi.getThinkingLevel()}`,
 					);
 		return alignRight(left, right, width);
 	}
 
 	private composerLines(width: number): string[] {
+		const selectedAgent =
+			this.screen === "agent" ? this.agentList.selected() : undefined;
+		if (selectedAgent && this.confirmStopKey === selectedAgent.key) {
+			this.composer.focused = false;
+			const error = this.stopErrors.get(selectedAgent.key);
+			return [
+				this.theme.fg("dim", `STOP · ${selectedAgent.agent}`),
+				truncateToWidth(
+					`${this.theme.fg("borderAccent", "│")} ${error ? this.theme.fg("error", error) : this.theme.fg("warning", `Stop ${selectedAgent.agent}?`)}   ${this.theme.fg("accent", "enter")} ${error ? "retry" : "stop"}   ${this.theme.fg("dim", "any other key cancel")}`,
+					width,
+				),
+			];
+		}
+		if (
+			this.screen === "agent" &&
+			!ACTIVE_STATES.has(this.agentList.selected()?.state ?? "")
+		) {
+			this.composer.focused = false;
+			return [
+				this.theme.fg("dim", "COMPLETED TRANSCRIPT · read-only"),
+				this.theme.fg("muted", "esc back to conversation"),
+			];
+		}
 		const target =
 			this.screen === "agent"
 				? this.agentList.selected()?.agent || "subagent"
 				: "Pi";
-		const label = this.editingQueueId ? `EDIT QUEUED · ${target}` : `TO · ${target}`;
+		const label = this.editingQueueId
+			? `EDIT QUEUED · ${target}`
+			: `TO · ${target}`;
 		this.composer.focused = this.conversationFocus === "composer";
 		return [this.theme.fg("dim", label), ...this.composer.render(width)];
 	}
 
 	private renderConversation(width: number, rows: number): string[] {
 		const selected = this.agentList.selected();
+		const selectedRuntime = selected
+			? this.agentRuntime.get(selected.key)
+			: undefined;
 		const title = this.screen === "agent" ? "SUBAGENT" : "CONVERSATION";
 		const crumb =
 			this.screen === "agent"
@@ -1929,7 +2558,10 @@ class WorkspaceShell implements Component {
 			title,
 			crumb,
 			this.screen === "agent"
-				? [shortModel(selected?.model), selected?.thinking]
+				? [
+						shortModel(selectedRuntime?.model || selected?.model),
+						selectedRuntime?.thinking || selected?.thinking,
+					]
 						.filter(Boolean)
 						.join(" · ")
 				: homeRelative(this.ctx.cwd),
@@ -2028,9 +2660,21 @@ export default function workspaceShell(pi: ExtensionAPI): void {
 		if (ctx.mode !== "tui") return;
 		store.modelId = ctx.model?.id ?? "";
 		store.thinking = ctx.thinkingLevel ?? pi.getThinkingLevel();
-		const initialScreen: Screen = event.reason === "resume" || event.reason === "fork" || ctx.sessionManager.getBranch().length > 0 ? "conversation" : "overview";
+		const initialScreen: Screen =
+			event.reason === "resume" || event.reason === "fork"
+				? "conversation"
+				: "overview";
 		ctx.ui.setRootView((tui, theme, _keybindings, actions, composer) => {
-			shell = new WorkspaceShell(pi, ctx, store, tui, theme, actions, composer, initialScreen);
+			shell = new WorkspaceShell(
+				pi,
+				ctx,
+				store,
+				tui,
+				theme,
+				actions,
+				composer,
+				initialScreen,
+			);
 			void listWorkspaceSessions()
 				.then((sessions) => shell?.setSessions(sessions))
 				.catch((error) => shell?.setSessionLoadError(error));
@@ -2084,12 +2728,16 @@ export default function workspaceShell(pi: ExtensionAPI): void {
 			);
 			store.performance.tokensPerSecond = (outputTokens - 1) / seconds;
 		}
-		store.finishAssistant(event.message.content.flatMap((part) => part.type === "text" ? [part.text] : []).join("\n"));
 		store.streamingText = "";
 		render();
 	});
 	pi.on("tool_execution_start", (event) => {
-		store.addActivity(event.toolCallId, event.toolName, "running");
+		store.addActivity(
+			event.toolCallId,
+			event.toolName,
+			"running",
+			toolSummary(event.args),
+		);
 		render();
 	});
 	pi.on("tool_execution_end", (event) => {
@@ -2100,8 +2748,9 @@ export default function workspaceShell(pi: ExtensionAPI): void {
 		);
 		render();
 	});
-	pi.on("turn_end", () => {
-		void shell?.flushMainQueue();
+	pi.on("turn_end", (event) => {
+		void shell?.flushMainQueue(event.turnIndex);
+		store.activity.length = 0;
 	});
 	pi.on("model_select", (event) => {
 		store.modelId = event.model.id;
