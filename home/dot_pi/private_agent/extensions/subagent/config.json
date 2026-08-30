@@ -1,9 +1,3 @@
 {
-	"fleetView": false,
-	"asyncWidget": false,
-	"inlineToolDisplay": "rich",
-	"mainWindowRenderer": {
-		"horizontalSpacing": 0,
-		"compactResultMaxLines": 3
-	}
+	"inlineToolDisplay": "summary"
 }

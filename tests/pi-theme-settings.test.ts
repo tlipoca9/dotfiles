@@ -23,6 +23,9 @@ test("renders the managed Pi appearance and notification settings", () => {
 	assert.equal(result.status, 0, result.stderr);
 	const settings = JSON.parse(result.stdout) as {
 		theme?: string;
+		subagents?: {
+			defaultThinking?: string;
+		};
 		"observational-memory"?: {
 			passive?: boolean;
 			showWorkerNotifications?: boolean;
@@ -30,6 +33,7 @@ test("renders the managed Pi appearance and notification settings", () => {
 	};
 	assert.equal(settings.theme, theme.name);
 	assert.equal(theme.colors.thinkingHigh, "focus");
+	assert.equal(settings.subagents?.defaultThinking, "medium");
 	assert.equal(
 		settings["observational-memory"]?.showWorkerNotifications,
 		false,
