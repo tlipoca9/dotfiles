@@ -21,6 +21,7 @@ import {
 
 import {
 	buildSessionBrowserItems,
+	DASHBOARD_COMMAND,
 	filterSessionBrowserItems,
 	readSessionBranch,
 	relativeSessionTime,
@@ -111,7 +112,7 @@ function selectedLine(theme: Theme, value: string, width: number, selected: bool
 	return selected ? theme.bg("selectedBg", line) : line;
 }
 
-class SessionsBrowser implements Component, Focusable {
+class Dashboard implements Component, Focusable {
 	readonly #tui: TUI;
 	readonly #theme: Theme;
 	readonly #keybindings: KeybindingsManager;
@@ -268,13 +269,15 @@ class SessionsBrowser implements Component, Focusable {
 
 	#browsePane(width: number, height: number): string[] {
 		const focused = this.#focus === "browse";
-		const lines = this.#paneHeader("Browse", `${this.#workspaces.length} workspaces`, width, focused);
+		const lines = this.#paneHeader("Dashboard", `${this.#workspaces.length} workspaces`, width, focused);
 		const choices = this.#choices();
 		const recent = choices[0];
 		if (recent) {
 			const selected = this.#browseIndex === 0;
-			const marker = selected ? this.#theme.fg("borderAccent", "▎") : " ";
-			const name = selected ? this.#theme.fg("borderAccent", recent.name) : recent.name;
+			const marker = selected
+				? this.#theme.fg(focused ? "borderAccent" : "muted", "▎")
+				: " ";
+			const name = selected && focused ? this.#theme.fg("borderAccent", recent.name) : recent.name;
 			const count = this.#theme.fg("dim", String(recent.count));
 			const gap = Math.max(1, width - 8 - plainWidth(name) - plainWidth(count));
 			lines.push(selectedLine(this.#theme, `  ${marker}${name}${" ".repeat(gap)}${count}   `, width, selected));
@@ -293,8 +296,10 @@ class SessionsBrowser implements Component, Focusable {
 			const workspace = choices[index];
 			if (!workspace) continue;
 			const selected = index === this.#browseIndex;
-			const marker = selected ? this.#theme.fg("borderAccent", "▎") : " ";
-			const name = selected ? this.#theme.fg("borderAccent", workspace.name) : workspace.name;
+			const marker = selected
+				? this.#theme.fg(focused ? "borderAccent" : "muted", "▎")
+				: " ";
+			const name = selected && focused ? this.#theme.fg("borderAccent", workspace.name) : workspace.name;
 			lines.push(selectedLine(this.#theme, `  ${marker}${name}`, width, selected));
 			lines.push(selectedLine(this.#theme, `  ${marker}${this.#theme.fg("dim", workspace.suffix)}`, width, selected));
 			lines.push(selectedLine(this.#theme, `  ${marker}`, width, selected));
@@ -305,7 +310,7 @@ class SessionsBrowser implements Component, Focusable {
 	#sessionsHeader(width: number): string[] {
 		const scope = this.#scope === "recent"
 			? "Recent work"
-			: this.#workspaces.find((workspace) => workspace.key === this.#scope)?.name ?? "Sessions";
+			: this.#workspaces.find((workspace) => workspace.key === this.#scope)?.name ?? "Recent work";
 		if (this.#focus === "search") {
 			const inputWidth = Math.max(3, width - 7);
 			const input = (this.#search.render(inputWidth)[0] ?? "").slice(2);
@@ -319,7 +324,7 @@ class SessionsBrowser implements Component, Focusable {
 		const lines = this.#sessionsHeader(width);
 		const filtered = this.#filtered();
 		if (!filtered.length) {
-			lines.push(this.#theme.fg("dim", `   ${this.#items.length ? "No matches" : "No sessions yet"}`));
+			lines.push(this.#theme.fg("dim", `   ${this.#items.length ? "No matches" : "No recent work"}`));
 			return lines.concat(Array.from({ length: Math.max(0, height - lines.length) }, () => "")).slice(0, height);
 		}
 		const selectedItem = this.#selected();
@@ -332,8 +337,11 @@ class SessionsBrowser implements Component, Focusable {
 		const start = Math.max(0, Math.min(selectedIndex - Math.floor(capacity / 2), filtered.length - capacity));
 		for (const item of filtered.slice(start, start + capacity)) {
 			const selected = item.id === this.#selected()?.id;
-			const marker = selected ? this.#theme.fg("borderAccent", "▎") : " ";
-			const title = selected ? this.#theme.fg("borderAccent", item.title) : item.title;
+			const active = this.#focus === "sessions" || this.#focus === "search";
+			const marker = selected
+				? this.#theme.fg(active ? "borderAccent" : "muted", "▎")
+				: " ";
+			const title = selected && active ? this.#theme.fg("borderAccent", item.title) : item.title;
 			const time = this.#theme.fg("dim", relativeSessionTime(item.modified));
 			const titleWidth = Math.max(1, width - 9 - plainWidth(time));
 			const clippedTitle = truncateToWidth(title, titleWidth, "…");
@@ -343,7 +351,9 @@ class SessionsBrowser implements Component, Focusable {
 			lines.push(selectedLine(this.#theme, `  ${marker}${workspace}${this.#theme.fg("muted", item.summary)}`, width, selected));
 			if (selected && expandSelected) {
 				const action = item.workspaceExists
-					? this.#theme.fg("borderAccent", this.#theme.bold("enter  Resume session →"))
+					? active
+						? this.#theme.fg("borderAccent", this.#theme.bold("enter  Continue →"))
+						: this.#theme.fg("muted", "enter  Continue →")
 					: this.#theme.fg("warning", "! Workspace missing");
 				for (const pathLine of selectedPathLines) {
 					lines.push(selectedLine(this.#theme, `  ${marker}${this.#theme.fg("mdLink", pathLine)}`, width, true));
@@ -367,7 +377,7 @@ class SessionsBrowser implements Component, Focusable {
 		const lines = [
 			"",
 			"",
-			line(this.#theme.fg("dim", `SESSION · ${relativeSessionTime(selected.modified)}`)),
+			line(this.#theme.fg("dim", `WORK · ${relativeSessionTime(selected.modified)}`)),
 			"",
 			...title.map(line),
 			"",
@@ -381,7 +391,7 @@ class SessionsBrowser implements Component, Focusable {
 			"",
 			"",
 		];
-		if (selected.workspaceExists) lines.push(line(this.#theme.fg("borderAccent", this.#theme.bold("Resume session →"))));
+		if (selected.workspaceExists) lines.push(line(this.#theme.fg("borderAccent", this.#theme.bold("Continue →"))));
 		else lines.push(line(this.#theme.fg("warning", "! Workspace missing")));
 		return lines.concat(Array.from({ length: Math.max(0, height - lines.length) }, () => "")).slice(0, height);
 	}
@@ -392,12 +402,12 @@ class SessionsBrowser implements Component, Focusable {
 		const selected = this.#selected();
 		if (this.#focus === "search") hints = [["esc", "close search"]];
 		else if (this.#focus === "detail")
-			hints = selected?.workspaceExists ? [["enter", "resume"], ["esc", "sessions"]] : [["esc", "sessions"]];
-		else if (this.#focus === "browse") hints = [["↑/↓", "filter"], ["tab", "sessions"]];
+			hints = selected?.workspaceExists ? [["enter", "continue"], ["esc", "list"]] : [["esc", "list"]];
+		else if (this.#focus === "browse") hints = [["↑/↓", "filter"], ["tab", "work"]];
 		else {
 			const sessionHints: [string, string][] = [["↑/↓", "move"], ["/", "search"]];
 			if (selected?.workspaceExists) {
-				sessionHints.push(["enter", layoutMode === "narrow" ? "details" : "resume"]);
+				sessionHints.push(["enter", layoutMode === "narrow" ? "details" : "continue"]);
 			}
 			sessionHints.push(["tab", "workspace"]);
 			hints = sessionHints;
@@ -441,31 +451,31 @@ class SessionsBrowser implements Component, Focusable {
 	}
 }
 
-async function loadSessions(): Promise<readonly SessionBrowserItem[]> {
+async function loadDashboardItems(): Promise<readonly SessionBrowserItem[]> {
 	const sessions = await SessionManager.listAll();
 	return buildSessionBrowserItems(sessions.map(toBrowserRecord));
 }
 
-export default function sessionsExtension(pi: ExtensionAPI): void {
-	pi.registerCommand("sessions", {
-		description: "Browse and resume sessions across workspaces",
+export default function dashboardExtension(pi: ExtensionAPI): void {
+	pi.registerCommand(DASHBOARD_COMMAND.name, {
+		description: DASHBOARD_COMMAND.description,
 		handler: async (_args, ctx) => {
 			if (ctx.mode !== "tui") {
-				ctx.ui.notify("Sessions requires interactive mode", "warning");
+				ctx.ui.notify("Dashboard requires interactive mode", "warning");
 				return;
 			}
 			let items: readonly SessionBrowserItem[];
 			try {
-				items = await loadSessions();
+				items = await loadDashboardItems();
 			} catch (error) {
 				ctx.ui.notify(
-					`Couldn’t load sessions: ${error instanceof Error ? error.message : String(error)}`,
+					`Couldn’t load work history: ${error instanceof Error ? error.message : String(error)}`,
 					"error",
 				);
 				return;
 			}
 			const result = await ctx.ui.custom<BrowserResult>((tui, theme, keybindings, done) =>
-				new SessionsBrowser(
+				new Dashboard(
 					tui,
 					theme,
 					keybindings as unknown as KeybindingsManager,
@@ -478,7 +488,7 @@ export default function sessionsExtension(pi: ExtensionAPI): void {
 				await ctx.switchSession(result.sessionPath);
 			} catch (error) {
 				ctx.ui.notify(
-					`Couldn’t resume session: ${error instanceof Error ? error.message : String(error)}`,
+					`Couldn’t continue work: ${error instanceof Error ? error.message : String(error)}`,
 					"error",
 				);
 			}
@@ -486,4 +496,4 @@ export default function sessionsExtension(pi: ExtensionAPI): void {
 	});
 }
 
-export { loadSessions, recentUserText, SessionsBrowser, toBrowserRecord };
+export { Dashboard, loadDashboardItems, recentUserText, toBrowserRecord };

@@ -52,6 +52,11 @@ export interface SessionBrowserLayout {
 	detailWidth: number;
 }
 
+export const DASHBOARD_COMMAND = {
+	name: "dashboard",
+	description: "Browse and resume work across workspaces",
+} as const;
+
 const CONTROL_SEQUENCE = /[\u0000-\u001f\u007f-\u009f]/g;
 
 export function cleanSessionText(value: string): string {

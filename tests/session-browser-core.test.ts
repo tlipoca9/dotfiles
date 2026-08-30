@@ -7,6 +7,7 @@ import { join } from "node:path";
 import {
 	buildSessionBrowserItems,
 	cleanSessionText,
+	DASHBOARD_COMMAND,
 	filterSessionBrowserItems,
 	readSessionBranch,
 	relativeSessionTime,
@@ -14,6 +15,17 @@ import {
 	shortestUniqueWorkspaceSuffixes,
 	type SessionBrowserRecord,
 } from "../home/dot_pi/private_agent/session-browser-core.ts";
+
+const atomOneDarkTheme = JSON.parse(
+	readFileSync(
+		new URL("../home/dot_pi/private_agent/themes/atom-one-dark.json", import.meta.url),
+		"utf8",
+	),
+) as {
+	name: string;
+	vars: Record<string, string>;
+	colors: Record<string, string>;
+};
 
 function record(overrides: Partial<SessionBrowserRecord> = {}): SessionBrowserRecord {
 	return {
@@ -28,6 +40,42 @@ function record(overrides: Partial<SessionBrowserRecord> = {}): SessionBrowserRe
 		...overrides,
 	};
 }
+
+test("publishes Dashboard as the only named work browser entry", () => {
+	assert.deepEqual(DASHBOARD_COMMAND, {
+		name: "dashboard",
+		description: "Browse and resume work across workspaces",
+	});
+});
+
+test("uses Atom One Dark focus, selection, hierarchy, and status colors", () => {
+	assert.equal(atomOneDarkTheme.name, "atom-one-dark");
+	assert.deepEqual(
+		{
+			focus: atomOneDarkTheme.vars.focus,
+			selection: atomOneDarkTheme.vars.selected,
+			secondary: atomOneDarkTheme.vars.subtle,
+			dim: atomOneDarkTheme.vars.dim,
+			success: atomOneDarkTheme.vars.success,
+			warning: atomOneDarkTheme.vars.warning,
+			error: atomOneDarkTheme.vars.error,
+		},
+		{
+			focus: "#528bff",
+			selection: "#3a3f4b",
+			secondary: "#828997",
+			dim: "#5c6370",
+			success: "#73c990",
+			warning: "#e2c08d",
+			error: "#ff6347",
+		},
+	);
+	assert.equal(atomOneDarkTheme.colors.accent, "focus");
+	assert.equal(atomOneDarkTheme.colors.borderAccent, "focus");
+	assert.equal(atomOneDarkTheme.colors.selectedBg, "selected");
+	assert.equal(atomOneDarkTheme.colors.muted, "subtle");
+	assert.equal(atomOneDarkTheme.colors.dim, "dim");
+});
 
 test("uses an explicit name before recent user text and keeps a separate summary", () => {
 	const [item] = buildSessionBrowserItems([
