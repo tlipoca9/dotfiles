@@ -225,6 +225,10 @@ class Dashboard implements Component, Focusable {
 		}
 
 		const layout = sessionBrowserLayout(this.#tui.terminal.columns);
+		const vimUp = matchesKey(data, "k");
+		const vimDown = matchesKey(data, "j");
+		const vimLeft = matchesKey(data, "h");
+		const vimRight = matchesKey(data, "l");
 		if (this.#keybindings.matches(data, "tui.input.tab")) {
 			this.#focus = this.#focus === "browse" ? "sessions" : "browse";
 			this.#requestRender();
@@ -236,12 +240,25 @@ class Dashboard implements Component, Focusable {
 			this.#requestRender();
 			return;
 		}
+		if (vimLeft) {
+			if (this.#focus === "detail") this.#focus = "sessions";
+			else if (this.#focus === "sessions") this.#focus = "browse";
+			this.#requestRender();
+			return;
+		}
+		if (vimRight) {
+			if (this.#focus === "browse") this.#focus = "sessions";
+			else if (layout.mode === "narrow" && this.#focus === "sessions" && this.#selected())
+				this.#focus = "detail";
+			this.#requestRender();
+			return;
+		}
 
 		const page = Math.max(1, Math.floor((this.#tui.terminal.rows - 10) / 3));
-		if (this.#keybindings.matches(data, "tui.select.up")) {
+		if (this.#keybindings.matches(data, "tui.select.up") || vimUp) {
 			if (this.#focus === "browse") this.#moveWorkspace(-1);
 			else this.#moveSelection(-1);
-		} else if (this.#keybindings.matches(data, "tui.select.down")) {
+		} else if (this.#keybindings.matches(data, "tui.select.down") || vimDown) {
 			if (this.#focus === "browse") this.#moveWorkspace(1);
 			else this.#moveSelection(1);
 		} else if (this.#keybindings.matches(data, "tui.select.pageUp")) {
@@ -402,14 +419,14 @@ class Dashboard implements Component, Focusable {
 		const selected = this.#selected();
 		if (this.#focus === "search") hints = [["esc", "close search"]];
 		else if (this.#focus === "detail")
-			hints = selected?.workspaceExists ? [["enter", "continue"], ["esc", "list"]] : [["esc", "list"]];
-		else if (this.#focus === "browse") hints = [["↑/↓", "filter"], ["tab", "work"]];
+			hints = selected?.workspaceExists ? [["enter", "continue"], ["h/esc", "list"]] : [["h/esc", "list"]];
+		else if (this.#focus === "browse") hints = [["j/k", "filter"], ["l/tab", "work"]];
 		else {
-			const sessionHints: [string, string][] = [["↑/↓", "move"], ["/", "search"]];
+			const sessionHints: [string, string][] = [["j/k", "move"], ["/", "search"]];
 			if (selected?.workspaceExists) {
-				sessionHints.push(["enter", layoutMode === "narrow" ? "details" : "continue"]);
+				sessionHints.push([layoutMode === "narrow" ? "l/enter" : "enter", layoutMode === "narrow" ? "details" : "continue"]);
 			}
-			sessionHints.push(["tab", "workspace"]);
+			sessionHints.push(["h/tab", "workspace"]);
 			hints = sessionHints;
 		}
 		const text = hints
