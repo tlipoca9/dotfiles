@@ -23,7 +23,7 @@ import {
 	type DashboardCreateIntent,
 	type DashboardSessionAnchor,
 	createDashboardSession,
-} from "./dashboard-session-actions.ts";
+} from "./lib/dashboard-session-actions.ts";
 
 import {
 	buildSessionBrowserItems,

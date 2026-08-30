@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { createDashboardSession } from "../home/dot_pi/private_agent/extensions/dashboard-session-actions.ts";
+import { createDashboardSession } from "../home/dot_pi/private_agent/extensions/lib/dashboard-session-actions.ts";
 
 type ListedSession = { id: string; path: string; cwd: string };
 const session = (id: string, path: string, cwd: string): ListedSession => ({ id, path, cwd });
