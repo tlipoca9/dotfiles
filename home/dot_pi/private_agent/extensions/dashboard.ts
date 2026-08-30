@@ -20,6 +20,12 @@ import {
 } from "@earendil-works/pi-tui";
 
 import {
+	type DashboardCreateIntent,
+	type DashboardSessionAnchor,
+	createDashboardSession,
+} from "./dashboard-session-actions.ts";
+
+import {
 	buildSessionBrowserItems,
 	DASHBOARD_COMMAND,
 	filterSessionBrowserItems,
@@ -34,7 +40,7 @@ import {
 	type SessionWorkspace,
 } from "../session-browser-core.ts";
 
-type BrowserResult = { sessionPath: string } | undefined;
+type BrowserResult = { sessionPath: string } | { createIntent: DashboardCreateIntent } | undefined;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -170,6 +176,18 @@ class Dashboard implements Component, Focusable {
 		return filtered.find((item) => item.id === this.#selectedId) ?? filtered[0];
 	}
 
+	#anchor(item: SessionBrowserItem): DashboardSessionAnchor {
+		return Object.freeze({ id: item.id, path: item.path, cwd: item.cwd });
+	}
+
+	#createIntent(): DashboardCreateIntent | undefined {
+		if (this.#browseIndex === 0) return undefined;
+		const workspace = this.#workspaces[this.#browseIndex - 1];
+		if (!workspace) return undefined;
+		const anchor = this.#items.find((item) => item.cwd === workspace.key && item.workspaceExists);
+		return anchor ? { cwd: workspace.key, anchor: this.#anchor(anchor) } : undefined;
+	}
+
 	#syncSelection(): void {
 		const filtered = this.#filtered();
 		if (!filtered.some((item) => item.id === this.#selectedId)) this.#selectedId = filtered[0]?.id;
@@ -229,6 +247,11 @@ class Dashboard implements Component, Focusable {
 		const vimDown = matchesKey(data, "j");
 		const vimLeft = matchesKey(data, "h");
 		const vimRight = matchesKey(data, "l");
+		if (matchesKey(data, "n")) {
+			const createIntent = this.#createIntent();
+			if (createIntent) this.#done({ createIntent });
+			return;
+		}
 		if (this.#keybindings.matches(data, "tui.input.tab")) {
 			this.#focus = this.#focus === "browse" ? "sessions" : "browse";
 			this.#requestRender();
@@ -418,15 +441,24 @@ class Dashboard implements Component, Focusable {
 		let hints: readonly [string, string][];
 		const selected = this.#selected();
 		if (this.#focus === "search") hints = [["esc", "close search"]];
-		else if (this.#focus === "detail")
-			hints = selected?.workspaceExists ? [["enter", "continue"], ["h/esc", "list"]] : [["h/esc", "list"]];
-		else if (this.#focus === "browse") hints = [["j/k", "filter"], ["l/tab", "work"]];
+		else if (this.#focus === "detail") {
+			const detailHints: [string, string][] = selected?.workspaceExists ? [["enter", "continue"]] : [];
+			if (this.#createIntent()) detailHints.push(["n", "new"]);
+			detailHints.push(["h/esc", "list"]);
+			hints = detailHints;
+		} else if (this.#focus === "browse") {
+			const browseHints: [string, string][] = [["j/k", "filter"], ["l/tab", "work"]];
+			if (this.#createIntent()) browseHints.push(["n", "new"]);
+			hints = browseHints;
+		}
 		else {
-			const sessionHints: [string, string][] = [["j/k", "move"], ["/", "search"]];
+			const sessionHints: [string, string][] = [["j/k", "move"]];
+			if (this.#createIntent()) sessionHints.push(["n", "new"]);
 			if (selected?.workspaceExists) {
-				sessionHints.push([layoutMode === "narrow" ? "l/enter" : "enter", layoutMode === "narrow" ? "details" : "continue"]);
+				sessionHints.push([layoutMode === "narrow" ? "l" : "enter", layoutMode === "narrow" ? "details" : "continue"]);
 			}
-			sessionHints.push(["h/tab", "workspace"]);
+			sessionHints.push([layoutMode === "narrow" ? "h" : "h/tab", layoutMode === "narrow" ? "workspaces" : "workspace"]);
+			sessionHints.push(["/", "search"]);
 			hints = sessionHints;
 		}
 		const text = hints
@@ -501,6 +533,38 @@ export default function dashboardExtension(pi: ExtensionAPI): void {
 				),
 			);
 			if (!result) return;
+			if ("createIntent" in result) {
+				try {
+					const outcome = await createDashboardSession(result.createIntent, {
+						currentCwd: ctx.cwd,
+						listSessions: () => SessionManager.listAll(),
+						newSession: () => ctx.newSession(),
+						switchSession: (path, options) => ctx.switchSession(path, options),
+						onTargetActive: (replacement, cwd, error) => {
+							(replacement as typeof ctx).ui.notify(
+								error
+									? `Couldn’t create session; now viewing ${cwd}: ${error instanceof Error ? error.message : String(error)}`
+									: `New session was cancelled; now viewing ${cwd}`,
+								"warning",
+							);
+						},
+					});
+					if (outcome.status === "refused") {
+						ctx.ui.notify(
+							outcome.reason === "missing-workspace"
+								? "Couldn’t create session: workspace is missing"
+								: "Couldn’t create session: workspace changed; reopen Dashboard",
+							"warning",
+						);
+					}
+				} catch (error) {
+					ctx.ui.notify(
+						`Couldn’t create session: ${error instanceof Error ? error.message : String(error)}`,
+						"error",
+					);
+				}
+				return;
+			}
 			try {
 				await ctx.switchSession(result.sessionPath);
 			} catch (error) {

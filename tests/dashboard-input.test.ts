@@ -33,9 +33,12 @@ function record(id: string, cwd: string, modified: number): SessionBrowserRecord
 	};
 }
 
-function harness(columns: number, records?: readonly SessionBrowserRecord[]): {
+function harness(
+	columns: number,
+	records?: readonly SessionBrowserRecord[],
+): {
 	dashboard: Dashboard;
-	results: Array<{ sessionPath: string } | undefined>;
+	results: unknown[];
 	frame: () => string;
 } {
 	const terminal = { columns, rows: 62 };
@@ -50,7 +53,7 @@ function harness(columns: number, records?: readonly SessionBrowserRecord[]): {
 			return (keyMap[binding] ?? []).some((key) => matchesKey(data, key));
 		},
 	};
-	const results: Array<{ sessionPath: string } | undefined> = [];
+	const results: unknown[] = [];
 	const items = buildSessionBrowserItems(
 		records ?? [
 			record("alpha", "/code/acme/alpha", 3_000),
@@ -139,4 +142,50 @@ test("narrow l keeps empty and no-match Dashboard states visible", () => {
 	noMatch.dashboard.handleInput("\r");
 	noMatch.dashboard.handleInput("l");
 	assert.match(noMatch.frame(), /No matches/);
+});
+
+test("n is available only for the concrete workspace selected in the left pane", () => {
+	const recent = harness(120);
+	recent.dashboard.handleInput("n");
+	assert.deepEqual(recent.results, []);
+	assert.doesNotMatch(recent.frame(), /n new/);
+
+	const selected = harness(120);
+	selected.dashboard.handleInput("j");
+	selected.dashboard.handleInput("j");
+	selected.dashboard.handleInput("h");
+	selected.dashboard.handleInput("j");
+	assert.match(selected.frame(), /n new/);
+	selected.dashboard.handleInput("n");
+	assert.deepEqual(selected.results, [{
+		createIntent: {
+			cwd: "/code/acme/alpha",
+			anchor: { id: "alpha", path: "/sessions/alpha.jsonl", cwd: "/code/acme/alpha" },
+		},
+	}]);
+
+	const empty = harness(80, []);
+	empty.dashboard.handleInput("n");
+	assert.deepEqual(empty.results, []);
+	assert.doesNotMatch(empty.frame(), /n new/);
+	assert.doesNotMatch(empty.frame(), /j\/k move|h\/tab workspace|\/ search/);
+});
+
+test("search owns n and d as text input", () => {
+	const subject = harness(120);
+	subject.dashboard.handleInput("/");
+	subject.dashboard.handleInput("n");
+	subject.dashboard.handleInput("d");
+	assert.match(subject.frame(), /nd/);
+	assert.deepEqual(subject.results, []);
+});
+
+test("missing workspaces do not offer or accept new-session actions", () => {
+	const missing = { ...record("gone", "/missing/workspace", 1), workspaceExists: false };
+	const subject = harness(120, [missing]);
+	subject.dashboard.handleInput("h");
+	subject.dashboard.handleInput("j");
+	subject.dashboard.handleInput("n");
+	assert.deepEqual(subject.results, []);
+	assert.doesNotMatch(subject.frame(), /n new/);
 });
