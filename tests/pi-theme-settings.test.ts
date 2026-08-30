@@ -10,7 +10,7 @@ const theme = JSON.parse(
 	),
 ) as { name: string; colors: Record<string, string> };
 
-test("uses the Atom One Dark focus color for the default high-thinking editor", () => {
+test("renders the managed Pi appearance and notification settings", () => {
 	const settingsTemplate = new URL(
 		"../home/dot_pi/private_agent/modify_settings.json.tmpl",
 		import.meta.url,
@@ -21,7 +21,18 @@ test("uses the Atom One Dark focus color for the default high-thinking editor", 
 	});
 
 	assert.equal(result.status, 0, result.stderr);
-	const settings = JSON.parse(result.stdout) as { theme?: string };
+	const settings = JSON.parse(result.stdout) as {
+		theme?: string;
+		"observational-memory"?: {
+			passive?: boolean;
+			showWorkerNotifications?: boolean;
+		};
+	};
 	assert.equal(settings.theme, theme.name);
 	assert.equal(theme.colors.thinkingHigh, "focus");
+	assert.equal(
+		settings["observational-memory"]?.showWorkerNotifications,
+		false,
+	);
+	assert.equal(settings["observational-memory"]?.passive, undefined);
 });
