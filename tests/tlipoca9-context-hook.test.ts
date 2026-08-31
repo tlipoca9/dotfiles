@@ -6,9 +6,9 @@ import {
 	type SessionEntry,
 } from "@earendil-works/pi-coding-agent";
 
-import observationalMemoryExtra, {
+import tlipoca9ContextHook, {
 	selectCompactedContext,
-} from "../home/dot_pi/private_agent/extensions/observational-memory-extra.ts";
+} from "../home/dot_pi/private_agent/extensions/tlipoca9-context-hook.ts";
 
 let sequence = 0;
 
@@ -294,7 +294,7 @@ test("keeps the latest tool call and result complete without a detail budget", (
 test("context hook projects from the live branch", () => {
 	const handlers = new Map<string, (event: any, context: any) => unknown>();
 	const tools: string[] = [];
-	observationalMemoryExtra({
+	tlipoca9ContextHook({
 		on(name: string, candidate: (event: any, context: any) => unknown) {
 			handlers.set(name, candidate);
 		},
@@ -305,7 +305,7 @@ test("context hook projects from the live branch", () => {
 	const handler = handlers.get("context");
 	assert.ok(handler);
 	assert.equal(handlers.has("session_before_compact"), false);
-	assert.deepEqual(tools, ["history_search", "history_recall"]);
+	assert.deepEqual(tools, []);
 
 	const history = scenario();
 	const entries = withCompaction(history, 0);

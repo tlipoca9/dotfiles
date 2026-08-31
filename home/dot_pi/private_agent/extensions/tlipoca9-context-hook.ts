@@ -6,8 +6,6 @@ import {
 	type SessionEntry,
 } from "@earendil-works/pi-coding-agent";
 
-import { registerCompactedHistoryTools } from "./lib/compacted-history.ts";
-
 export const MIN_RECENT_TEXT_ROUNDS = 3;
 export const MAX_FULL_TRAILING_TOOL_CALLS = 5;
 export const RECENT_TEXT_TOKEN_BUDGET = 2_000;
@@ -136,7 +134,7 @@ function retainedPrelude(
 	if (transcript.length === 0) return undefined;
 	return {
 		role: "custom",
-		customType: "tlipoca9.observational-memory-extra.retained-text",
+		customType: "tlipoca9.context-hook.retained-text",
 		content: [
 			"The following verbatim assistant text rounds and their preceding or intervening user messages were retained from earlier conversation history:",
 			"",
@@ -158,7 +156,7 @@ function retainedTextTokens(
 	const prelude = retainedPrelude(entries, selectedRounds, latestText);
 	return (prelude ? estimateTokens(prelude) : 0) + estimateTokens({
 		role: "custom",
-		customType: "tlipoca9.observational-memory-extra.retained-text-estimate",
+		customType: "tlipoca9.context-hook.retained-text-estimate",
 		content: latestText.text,
 		display: false,
 		timestamp: Date.parse(entries[latestText.entryIndex]!.timestamp),
@@ -288,9 +286,7 @@ export function selectCompactedContext(
 	];
 }
 
-export default function observationalMemoryExtra(pi: ExtensionAPI): void {
-	registerCompactedHistoryTools(pi);
-
+export default function tlipoca9ContextHook(pi: ExtensionAPI): void {
 	pi.on("context", (event, context) => ({
 		messages: selectCompactedContext(
 			context.sessionManager.getBranch(),

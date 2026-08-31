@@ -3,11 +3,28 @@ import test from "node:test";
 
 import type { SessionEntry } from "@earendil-works/pi-coding-agent";
 
+import omHistory from "../home/dot_pi/private_agent/extensions/om-history.ts";
 import {
 	compactedSourceEntries,
 	recallCompactedHistory,
 	searchCompactedHistory,
 } from "../home/dot_pi/private_agent/extensions/lib/compacted-history.ts";
+
+test("om-history registers exactly the two compacted-history tools", () => {
+	const tools: string[] = [];
+	const handlers: string[] = [];
+	omHistory({
+		registerTool(tool: { name: string }) {
+			tools.push(tool.name);
+		},
+		on(name: string) {
+			handlers.push(name);
+		},
+	} as never);
+
+	assert.deepEqual(tools, ["history_search", "history_recall"]);
+	assert.deepEqual(handlers, []);
+});
 
 function message(
 	id: string,
