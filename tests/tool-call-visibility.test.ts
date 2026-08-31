@@ -47,11 +47,15 @@ function tool(name: string): ToolExecutionComponent {
 		{ requestRender() {} } as never,
 		process.cwd(),
 	);
+	component.updateResult({
+		content: [{ type: "text", text: `${name}-result` }],
+		isError: false,
+	});
 	component.setExpanded(false);
 	return component;
 }
 
-test("restored tool visibility extension preserves latest-only, commands, turn end, and reload", async () => {
+test("tool visibility preserves thinking and compacts completed tool history", async () => {
 	initTheme("dark", false);
 	const originalSetExpanded = ToolExecutionComponent.prototype.setExpanded;
 	const first = extensionHarness();
@@ -79,7 +83,7 @@ test("restored tool visibility extension preserves latest-only, commands, turn e
 	assert.deepEqual(expanded, [true, false]);
 	assert.deepEqual(notifications, [
 		["All tool calls expanded", "info"],
-		["Restored latest-only tool view", "info"],
+		["Restored compact tool history", "info"],
 		["Usage: /tool-calls [show|hide]", "error"],
 	]);
 
@@ -90,30 +94,54 @@ test("restored tool visibility extension preserves latest-only, commands, turn e
 	assert.equal(expanded.at(-1), false);
 
 	first.event("agent_start")();
-	const older = tool("older_tool");
-	const latest = tool("latest_tool");
-	assert.deepEqual(older.render(80), []);
-	assert.match(latest.render(80).join("\n"), /latest_tool/);
-
-	const assistant = new AssistantMessageComponent();
-	assistant.updateContent({
+	const firstAssistant = new AssistantMessageComponent();
+	firstAssistant.updateContent({
 		role: "assistant",
 		content: [
-			{ type: "thinking", thinking: "hidden reasoning" },
+			{ type: "thinking", thinking: "first first-step reasoning" },
+			{ type: "thinking", thinking: "second first-step reasoning" },
+		],
+		stopReason: "toolUse",
+		timestamp: Date.now(),
+	} as never, true);
+	const older = tool("older_tool");
+
+	const secondAssistant = new AssistantMessageComponent();
+	secondAssistant.updateContent({
+		role: "assistant",
+		content: [
+			{ type: "thinking", thinking: "first second-step reasoning" },
 			{ type: "text", text: "visible answer" },
-			{ type: "thinking", thinking: "latest reasoning" },
+			{ type: "thinking", thinking: "second second-step reasoning" },
 		],
 		stopReason: "stop",
 		timestamp: Date.now(),
 	} as never, true);
-	const activeAssistant = assistant.render(80).join("\n");
-	assert.doesNotMatch(activeAssistant, /hidden reasoning/);
-	assert.match(activeAssistant, /visible answer/);
-	assert.match(activeAssistant, /latest reasoning/);
+	const latest = tool("latest_tool");
+	assert.equal(older.render(80).length, 1);
+	assert.match(older.render(80)[0] ?? "", /older_tool/);
+	older.setExpanded(true);
+	assert.ok(older.render(80).length > 1);
+	older.setExpanded(false);
+	assert.equal(older.render(80).length, 1);
+	assert.ok(latest.render(80).length > 1);
+	assert.match(latest.render(80).join("\n"), /latest_tool/);
+
+	const firstStep = firstAssistant.render(80).join("\n");
+	assert.match(firstStep, /first first-step reasoning/);
+	assert.match(firstStep, /second first-step reasoning/);
+	const secondStep = secondAssistant.render(80).join("\n");
+	assert.match(secondStep, /first second-step reasoning/);
+	assert.match(secondStep, /visible answer/);
+	assert.match(secondStep, /second second-step reasoning/);
 
 	first.event("agent_end")();
-	assert.deepEqual(latest.render(80), []);
-	assert.doesNotMatch(assistant.render(80).join("\n"), /latest reasoning/);
+	assert.equal(latest.render(80).length, 1);
+	assert.match(latest.render(80)[0] ?? "", /latest_tool/);
+	assert.match(firstAssistant.render(80).join("\n"), /first first-step reasoning/);
+	assert.match(firstAssistant.render(80).join("\n"), /second first-step reasoning/);
+	assert.match(secondAssistant.render(80).join("\n"), /first second-step reasoning/);
+	assert.match(secondAssistant.render(80).join("\n"), /second second-step reasoning/);
 
 	first.event("session_shutdown")({ reason: "reload" });
 	const second = extensionHarness();
