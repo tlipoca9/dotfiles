@@ -16,8 +16,13 @@ commentary message that states:
 
 - what the tool operation will do;
 - why the operation is necessary for the user's task; and
-- whether any skill will be used, naming each skill, or explicitly stating that
-  no skill will be used and why.
+- on the first operation sequence of a logical task, whether any skill will be
+  used, naming each skill, or explicitly stating that no skill will be used and
+  why; and
+- on later operation sequences in the same logical task, only whether the skill
+  selection changed. If it changed, name only the added or removed skills. If it
+  did not change, say that the previously named skills remain in use and are
+  already loaded instead of listing them again.
 
 The preamble must appear before the first tool call in the sequence, not as a
 retrospective summary. It applies to read-only inspection, local or external
@@ -25,6 +30,29 @@ mutations, and validation. One preamble covers the whole sequence while its
 immediate objective, rationale, and skill usage remain unchanged, whether the
 tool calls run sequentially or in parallel. Send a new preamble only when one of
 those materially changes; do not repeat it before every individual tool call.
+
+## Skill reuse
+
+Treat model/tool iterations, commentary updates, automatic continuations, Goal
+resume messages, compaction, and recovery from transient failures as part of the
+same logical task while they continue pursuing the same user objective.
+
+After fully reading a selected skill in a logical task, keep applying it without
+rereading its `SKILL.md` on later operation sequences. A new preamble, another
+tool-result loop, an automatic continuation, compaction, or the absence of the
+original read result from the visible context is not by itself a reason to read
+the file again. Rely on the retained task context and state that the skill is
+already loaded.
+
+Reread a skill only when at least one of these conditions holds:
+
+- the user starts or materially changes the task and the skill is selected for
+  that new scope;
+- an exact instruction needed for the next action is no longer available in the
+  retained context.
+
+Do not claim a skill is already loaded when only its name or description was
+seen; its full `SKILL.md` must have been read earlier in the logical task.
 
 ## Command execution style
 
