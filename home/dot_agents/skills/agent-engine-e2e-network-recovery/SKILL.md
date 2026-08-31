@@ -1,6 +1,6 @@
 ---
 name: agent-engine-e2e-network-recovery
-description: Use only while running or diagnosing root E2E in a checkout of `git.woa.com/agentpass/agent-engine` when it fails with intermittent EOF, SSL/TLS connection or handshake timeout, TencentCloud ClientError.NetworkError, missing Customs request logs, or different iOA/SmartVPN versus physical-network behavior. Do not use for other repositories, ordinary application failures, or standalone endpoint diagnostics.
+description: Use only while running or diagnosing root E2E in a checkout of `git.woa.com/agentpaas/agent-engine` when it fails with intermittent EOF, SSL/TLS connection or handshake timeout, TencentCloud ClientError.NetworkError, missing Customs request logs, or different iOA/SmartVPN versus physical-network behavior. Do not use for other repositories, ordinary application failures, or standalone endpoint diagnostics.
 ---
 
 # Agent Engine E2E Network Recovery
@@ -11,7 +11,7 @@ Treat network-path health as a prerequisite for interpreting E2E business failur
 
 Use this workflow only when all three conditions hold:
 
-1. The current checkout has a configured Git remote whose normalized host and path are exactly `git.woa.com/agentpass/agent-engine`.
+1. The current checkout has a configured Git remote whose normalized host and path are exactly `git.woa.com/agentpaas/agent-engine`.
 2. The failing command is this repository's root E2E runner or an E2E suite launched through it.
 3. The observed failure matches one of the network-path symptoms in the description.
 
