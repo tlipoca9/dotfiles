@@ -26,6 +26,20 @@ immediate objective, rationale, and skill usage remain unchanged, whether the
 tool calls run sequentially or in parallel. Send a new preamble only when one of
 those materially changes; do not repeat it before every individual tool call.
 
+## Command execution style
+
+For command-line work and one-off operational tasks, prefer a sequence of
+small, directly executed commands over a large shell script or multi-stage
+one-liner.
+
+Each command should have one observable objective. Inspect its result before
+proceeding to the next state-changing step. Do not bundle discovery, mutation,
+verification, recovery, and report generation into one invocation, especially
+when the operations affect systems that cannot be rolled back atomically.
+
+Use a script only when repetition, atomicity, or durable reuse materially
+justifies it. Keep one-off commands short and expose their intermediate output.
+
 ## Durable repository state
 
 Repository contents are long-lived state.
