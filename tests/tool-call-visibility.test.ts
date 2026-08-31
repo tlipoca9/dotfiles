@@ -55,11 +55,14 @@ function tool(name: string): ToolExecutionComponent {
 	return component;
 }
 
-test("tool visibility preserves thinking and compacts completed tool history", async () => {
+test("tool visibility groups compact history between text messages", async () => {
 	initTheme("dark", false);
+	const originalAssistantUpdate = AssistantMessageComponent.prototype.updateContent;
 	const originalSetExpanded = ToolExecutionComponent.prototype.setExpanded;
 	const first = extensionHarness();
+	const patchedAssistantUpdate = AssistantMessageComponent.prototype.updateContent;
 	const patchedSetExpanded = ToolExecutionComponent.prototype.setExpanded;
+	assert.notEqual(patchedAssistantUpdate, originalAssistantUpdate);
 	assert.notEqual(patchedSetExpanded, originalSetExpanded);
 
 	const expanded: boolean[] = [];
@@ -93,61 +96,72 @@ test("tool visibility preserves thinking and compacts completed tool history", a
 	});
 	assert.equal(expanded.at(-1), false);
 
-	first.event("agent_start")();
 	const firstAssistant = new AssistantMessageComponent();
 	firstAssistant.updateContent({
 		role: "assistant",
 		content: [
 			{ type: "thinking", thinking: "first first-step reasoning" },
+			{ type: "text", text: "first visible answer" },
 			{ type: "thinking", thinking: "second first-step reasoning" },
 		],
 		stopReason: "toolUse",
 		timestamp: Date.now(),
 	} as never, true);
-	const older = tool("older_tool");
+	const hiddenBetweenTexts = tool("hidden_between_texts");
+	const keptBetweenTexts = tool("kept_between_texts");
 
 	const secondAssistant = new AssistantMessageComponent();
 	secondAssistant.updateContent({
 		role: "assistant",
 		content: [
 			{ type: "thinking", thinking: "first second-step reasoning" },
-			{ type: "text", text: "visible answer" },
+			{ type: "text", text: "second visible answer" },
 			{ type: "thinking", thinking: "second second-step reasoning" },
 		],
 		stopReason: "stop",
 		timestamp: Date.now(),
 	} as never, true);
-	const latest = tool("latest_tool");
-	assert.equal(older.render(80).length, 1);
-	assert.match(older.render(80)[0] ?? "", /older_tool/);
-	older.setExpanded(true);
-	assert.ok(older.render(80).length > 1);
-	older.setExpanded(false);
-	assert.equal(older.render(80).length, 1);
-	assert.ok(latest.render(80).length > 1);
-	assert.match(latest.render(80).join("\n"), /latest_tool/);
+	const trailingOlder = tool("trailing_older");
+	const trailingLatest = tool("trailing_latest");
+	assert.deepEqual(hiddenBetweenTexts.render(80), []);
+	assert.equal(keptBetweenTexts.render(80).length, 1);
+	assert.match(keptBetweenTexts.render(80)[0] ?? "", /kept_between_texts/);
+	assert.equal(trailingOlder.render(80).length, 1);
+	assert.match(trailingOlder.render(80)[0] ?? "", /trailing_older/);
+	assert.ok(trailingLatest.render(80).length > 1);
+	assert.match(trailingLatest.render(80).join("\n"), /trailing_latest/);
+	hiddenBetweenTexts.setExpanded(true);
+	assert.ok(hiddenBetweenTexts.render(80).length > 1);
+	hiddenBetweenTexts.setExpanded(false);
+	assert.deepEqual(hiddenBetweenTexts.render(80), []);
 
 	const firstStep = firstAssistant.render(80).join("\n");
-	assert.match(firstStep, /first first-step reasoning/);
-	assert.match(firstStep, /second first-step reasoning/);
+	assert.doesNotMatch(firstStep, /first first-step reasoning/);
+	assert.doesNotMatch(firstStep, /second first-step reasoning/);
 	const secondStep = secondAssistant.render(80).join("\n");
-	assert.match(secondStep, /first second-step reasoning/);
-	assert.match(secondStep, /visible answer/);
+	assert.doesNotMatch(secondStep, /first second-step reasoning/);
+	assert.match(secondStep, /second visible answer/);
 	assert.match(secondStep, /second second-step reasoning/);
 
-	first.event("agent_end")();
-	assert.equal(latest.render(80).length, 1);
-	assert.match(latest.render(80)[0] ?? "", /latest_tool/);
-	assert.match(firstAssistant.render(80).join("\n"), /first first-step reasoning/);
-	assert.match(firstAssistant.render(80).join("\n"), /second first-step reasoning/);
-	assert.match(secondAssistant.render(80).join("\n"), /first second-step reasoning/);
+	assert.ok(trailingLatest.render(80).length > 1);
+	assert.match(trailingLatest.render(80).join("\n"), /trailing_latest/);
+	assert.doesNotMatch(firstAssistant.render(80).join("\n"), /first first-step reasoning/);
+	assert.doesNotMatch(firstAssistant.render(80).join("\n"), /second first-step reasoning/);
+	assert.doesNotMatch(secondAssistant.render(80).join("\n"), /first second-step reasoning/);
 	assert.match(secondAssistant.render(80).join("\n"), /second second-step reasoning/);
 
 	first.event("session_shutdown")({ reason: "reload" });
 	const second = extensionHarness();
+	assert.equal(AssistantMessageComponent.prototype.updateContent, patchedAssistantUpdate);
 	assert.equal(ToolExecutionComponent.prototype.setExpanded, patchedSetExpanded);
-	second.event("agent_start")();
-	const afterReload = tool("after_reload");
-	assert.match(afterReload.render(80).join("\n"), /after_reload/);
+	assert.deepEqual(hiddenBetweenTexts.render(80), []);
+	assert.equal(keptBetweenTexts.render(80).length, 1);
+	assert.equal(trailingOlder.render(80).length, 1);
+	assert.ok(trailingLatest.render(80).length > 1);
+	assert.doesNotMatch(firstAssistant.render(80).join("\n"), /first first-step reasoning/);
+	assert.doesNotMatch(firstAssistant.render(80).join("\n"), /second first-step reasoning/);
+	assert.doesNotMatch(secondAssistant.render(80).join("\n"), /first second-step reasoning/);
+	assert.match(secondAssistant.render(80).join("\n"), /second second-step reasoning/);
+	assert.ok(trailingLatest.render(80).length > 1);
 	second.event("session_shutdown")({ reason: "exit" });
 });
