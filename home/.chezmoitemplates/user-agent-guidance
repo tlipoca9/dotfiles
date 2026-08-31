@@ -9,6 +9,21 @@ Use English when the artifact or context explicitly calls for it, including
 code comments and skill authoring. When editing existing content, preserve its
 established language unless the task requires changing it.
 
+## Tool execution preamble
+
+Before every actual tool operation, send a concise commentary message that
+states:
+
+- what the tool operation will do;
+- why the operation is necessary for the user's task; and
+- whether any skill will be used, naming each skill, or explicitly stating that
+  no skill will be used and why.
+
+The preamble must appear before the tool call, not as a retrospective summary.
+It applies to read-only inspection, local or external mutations, and validation.
+One preamble may cover multiple tool calls submitted together as a single
+parallel batch when they share the stated purpose and skill usage.
+
 ## Durable repository state
 
 Repository contents are long-lived state.
