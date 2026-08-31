@@ -12,3 +12,4 @@
 .agents/skills/write-coherent-content
 .agents/skills/writing-for-agents
 .agents/skills/writing-great-skills
+.pi/agent/extensions/compaction-text-retention.ts
