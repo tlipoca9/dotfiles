@@ -13,4 +13,6 @@
 .agents/skills/writing-for-agents
 .agents/skills/writing-great-skills
 .pi/agent/extensions/compaction-text-retention.ts
+.pi/agent/extensions/lib/compacted-history.ts
+.pi/agent/extensions/om-history.ts
 .pi/agent/extensions/observational-memory-extra.ts
