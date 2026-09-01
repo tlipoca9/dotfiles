@@ -1,36 +1,3 @@
-# AGENTS.md
-
-## Language
-
-Use Chinese by default when the user has not requested another language. Keep
-proper nouns in English.
-
-Use English when the artifact or context explicitly calls for it, including
-code comments and skill authoring. When editing existing content, preserve its
-established language unless the task requires changing it.
-
-## Tool execution preamble
-
-Before beginning a sequence of related tool operations, send a concise
-commentary message that states:
-
-- what the tool operation will do;
-- why the operation is necessary for the user's task; and
-- on the first operation sequence of a logical task, whether any skill will be
-  used, naming each skill, or explicitly stating that no skill will be used and
-  why; and
-- on later operation sequences in the same logical task, only whether the skill
-  selection changed. If it changed, name only the added or removed skills. If it
-  did not change, say that the previously named skills remain in use and are
-  already loaded instead of listing them again.
-
-The preamble must appear before the first tool call in the sequence, not as a
-retrospective summary. It applies to read-only inspection, local or external
-mutations, and validation. One preamble covers the whole sequence while its
-immediate objective, rationale, and skill usage remain unchanged, whether the
-tool calls run sequentially or in parallel. Send a new preamble only when one of
-those materially changes; do not repeat it before every individual tool call.
-
 ## Skill reuse
 
 Treat model/tool iterations, commentary updates, automatic continuations, Goal
