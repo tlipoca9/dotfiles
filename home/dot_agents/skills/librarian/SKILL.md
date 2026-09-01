@@ -1,14 +1,16 @@
 ---
 name: librarian
-description: "Cache and refresh remote git repositories under ~/.cache/checkouts/<host>/<org>/<repo> so future references can reuse a local copy. Use this skill when the user points you to a remote git repository as reference or you encountered a remote git repo through other means."
+description: "Cache and refresh remote git repositories for read-only reference. When a referenced repository needs edits, use an existing checkout in the task working directory or clone it there instead of modifying the cache or working under /tmp."
 ---
 
 Use this skill when the user points you to a remote git repository (GitHub/GitLab/Bitbucket URLs, `git@...`, or `owner/repo` shorthand).
 
-The goal is to keep a reusable local checkout that is:
+The goal is to keep a reusable read-only checkout that is:
 - **stable** (predictable path)
 - **up to date** (periodic fetch + fast-forward when safe)
 - **efficient** (partial clone with `--filter=blob:none`, no repeated full clones)
+
+The shared cache is reference material, not a task workspace.
 
 ## Cache location
 
@@ -50,15 +52,27 @@ The script will:
 bash checkout.sh <repo> --force-update --path-only
 ```
 
-## Recommended workflow
+## Read-only workflow
 
 1. Resolve repository path via `checkout.sh --path-only`.
 2. Use that path for searching, reading, and analysis.
 3. On later references to the same repo, call `checkout.sh` again; it will find and update the cached checkout.
 
-## If edits are needed
+## Editable workflow
 
-Prefer not to edit directly in the shared cache. Create a separate worktree or copy from the cached checkout for task-specific modifications.
+Decide where edits will happen before changing directory into the cache. Treat the task's
+initial working directory as the task workspace.
+
+1. If the task workspace is already a checkout of the target repository, modify it directly.
+2. Otherwise clone the repository into `<task-workspace>/<repo>` and make all changes there.
+3. If that destination already exists, verify that it is the intended repository and preserve
+   any existing changes before using it.
+4. If a read-only investigation becomes an implementation task, stop using the cached path and
+   switch to an editable clone in the task workspace before the first modification.
+
+Never edit the shared cache. Never create an editable checkout under `/tmp` or another temporary
+directory. Do not copy the cached checkout or attach a task-specific worktree to it as a substitute
+for a clone in the task workspace.
 
 ## Notes
 
