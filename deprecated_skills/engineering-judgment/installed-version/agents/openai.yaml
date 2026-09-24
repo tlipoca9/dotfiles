@@ -1,0 +1,4 @@
+interface:
+  display_name: "Engineering Judgment"
+  short_description: "Evidence-led design, implementation, and review"
+  default_prompt: "Use $engineering-judgment to assess this engineering task and verify the result against its requirements."
