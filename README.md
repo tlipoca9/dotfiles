@@ -90,8 +90,9 @@ configurations; Pi reads it from the file when connecting. The file contains
 only the raw token, without a `Bearer ` prefix.
 Retired skills live in `deprecated_skills/` at the repository root, outside
 chezmoi's `home/` source, and are not deployed.
-Active skills are stored as plain source. Private archived skills remain
-age-encrypted in `deprecated_skills/`.
+Shared skills use plain source or age-encrypted source for private content.
+Chezmoi decrypts private active skills when deploying them to `~/.agents/skills`.
+Private archived skills remain age-encrypted in `deprecated_skills/`.
 The repository retains
 current declarations and durable lifecycle automation; completed migrations
 remain available through Git history.
