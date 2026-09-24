@@ -8,9 +8,7 @@
 .agents/skills/tencentcloud-yunapi-cam-tag-integration
 .agents/skills/tencentcloud-yunapi-gateway-request-id-escalation
 .agents/skills/tlipoca9-perspective
-.agents/skills/wizard
 .agents/skills/write-coherent-content
-.agents/skills/writing-for-agents
 .agents/skills/writing-great-skills
 .pi/agent/extensions/compaction-text-retention.ts
 .pi/agent/extensions/lib/compacted-history.ts

@@ -68,6 +68,8 @@ chezmoi apply
 - system Zsh with exact, reviewed Antidote plugin commits
 - current Homebrew packages and current VS Code extension releases
 - Pi with exact, reviewed extension pins and preserved runtime state
+- Firecrawl, iWiki, TAPD, Gongfeng, and Zhiyan Log MCP servers shared by
+  Cursor, Codex, and Pi; Chrome DevTools and Playwright MCP servers in Pi only
 - shared vendored skills deployed to `~/.agents/skills`, plus explicitly
   whitelisted Codex-specific skills deployed to `~/.codex/skills`
 - only `~/.ssh/id_ed25519` and `id_ed25519.pub` under SSH management
@@ -78,6 +80,14 @@ extensions live in `home/.chezmoidata/darwin/vscode.toml`; Pi pins live only in
 only in `home/dot_agents/skills`. Installers and generators must update the
 matching chezmoi source instead of creating duplicate runtime copies.
 Codex-specific skills live only in `home/dot_codex/skills`.
+Shared MCP endpoints live in `home/.chezmoidata/mcp.toml`. Each client's MCP
+modifier preserves unrelated servers. The Firecrawl launcher reads its
+age-managed API key from
+`~/.config/firecrawl/api-key`. iWiki, TAPD, Gongfeng, and Zhiyan Log share
+the bearer token in `~/.config/taihu.txt`, which is age-managed with mode
+`0600`. Cursor and Codex receive the token in their private MCP
+configurations; Pi reads it from the file when connecting. The file contains
+only the raw token, without a `Bearer ` prefix.
 Retired skills live in `deprecated_skills/` at the repository root, outside
 chezmoi's `home/` source, and are not deployed.
 Active skills are stored as plain source. Private archived skills remain

@@ -4,8 +4,11 @@
 from __future__ import annotations
 
 import json
+import shlex
 import sys
 from typing import Any
+
+SHARED_SERVERS = json.loads({{ .mcp.shared | toJson | quote }})
 
 MANAGED_SERVERS: dict[str, dict[str, Any]] = {
     "chrome-devtools": {
@@ -25,43 +28,28 @@ MANAGED_SERVERS: dict[str, dict[str, Any]] = {
         "lifecycle": "lazy",
         "requestTimeoutMs": 120_000,
     },
-    "firecrawl": {
-        "command": "npx",
-        "args": ["-y", "firecrawl-mcp@3.24.0"],
-        "env": {
-            "FIRECRAWL_API_KEY": (
-                "!/bin/cat ${HOME}/.config/firecrawl/api-key"
-            ),
-        },
-        "lifecycle": "lazy",
-        "requestTimeoutMs": 600_000,
-    },
-    "iWiki": {
-        "url": "https://prod.mcp.it.woa.com/app_iwiki_mcp/mcp3",
-        "auth": "bearer",
-        "bearerTokenStore": True,
-    },
-    "tapd_mcp_http": {
-        "url": "https://mcpgw.knot.woa.com/tapd/",
-        "auth": "bearer",
-        "bearerTokenStore": True,
-        "httpTransport": "streamable-http",
-        "requestTimeoutMs": 20_000,
-    },
-    "gongfeng": {
-        "url": "https://mcpgw.knot.woa.com/gongfeng",
-        "auth": "bearer",
-        "bearerTokenStore": True,
-        "requestTimeoutMs": 60_000,
-    },
-    "zhiyan-log": {
-        "url": "https://mcpgw.knot.woa.com/zhiyan/log",
-        "auth": "bearer",
-        "bearerTokenStore": True,
-        "httpTransport": "streamable-http",
-        "requestTimeoutMs": 60_000,
-    },
 }
+
+for name, shared in SHARED_SERVERS.items():
+    if "command" in shared:
+        MANAGED_SERVERS[name] = {
+            "command": {{ .chezmoi.homeDir | quote }} + "/" + shared["command"],
+            "lifecycle": "lazy",
+            "requestTimeoutMs": 600_000,
+        }
+    else:
+        server = {
+            "url": shared["url"],
+            "auth": "bearer",
+            "bearerToken": "!/bin/cat " + shlex.quote({{ .chezmoi.homeDir | quote }} + "/.config/taihu.txt"),
+        }
+        if name in ("tapd_mcp_http", "zhiyan-log"):
+            server["httpTransport"] = "streamable-http"
+        if name == "tapd_mcp_http":
+            server["requestTimeoutMs"] = 20_000
+        elif name in ("gongfeng", "zhiyan-log"):
+            server["requestTimeoutMs"] = 60_000
+        MANAGED_SERVERS[name] = server
 
 
 def merge_server(existing: object, managed: dict[str, Any]) -> dict[str, Any]:
@@ -76,10 +64,11 @@ def merge_server(existing: object, managed: dict[str, Any]) -> dict[str, Any]:
             "requestHeadersCommand",
             "auth",
             "oauth",
+            "env",
         ):
             server.pop(key, None)
     elif "url" in managed:
-        for key in ("command", "args", "cwd", "socket"):
+        for key in ("command", "args", "cwd", "socket", "env", "oauth", "requestHeadersCommand"):
             server.pop(key, None)
 
     headers = server.get("headers")
@@ -94,10 +83,10 @@ def merge_server(existing: object, managed: dict[str, Any]) -> dict[str, Any]:
         else:
             server.pop("headers", None)
 
-    # Stored bearer credentials are URL-bound in the OS credential store. Remove
-    # plaintext and environment alternatives because they take precedence.
+    # Use the age-managed token file for every shared remote server.
     server.pop("bearerToken", None)
     server.pop("bearerTokenEnv", None)
+    server.pop("bearerTokenStore", None)
     server.pop("transportType", None)
     server.update(managed)
     return server
