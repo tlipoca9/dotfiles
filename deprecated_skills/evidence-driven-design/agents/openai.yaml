@@ -1,0 +1,4 @@
+interface:
+  display_name: "Evidence-Driven Design"
+  short_description: "Evidence-backed architecture design"
+  default_prompt: "Use $evidence-driven-design to apply Socratic inquiry and derive, write, or review a technical design from code evidence, production constraints, alternatives, scenarios, and validation plans."

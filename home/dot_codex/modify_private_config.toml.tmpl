@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""Update dotfiles-owned MCP tables without rewriting other Codex settings."""
+
+from __future__ import annotations
+
+import json
+import pathlib
+import re
+import sys
+
+try:
+    import tomllib
+except ImportError:  # macOS may provide Python 3.9.
+    tomllib = None
+
+
+SHARED_SERVERS = json.loads({{ .mcp.shared | toJson | quote }})
+TOKEN = ({{ include "dot_config/encrypted_private_taihu.txt.age" | decrypt | quote }}).strip()
+TABLE = re.compile(r"(?m)^[ \t]*\[([^\]\r\n]+)\][ \t]*(?:#.*)?$")
+FIELD = re.compile(r"^[ \t]*([A-Za-z_]+)[ \t]*=")
+
+
+def bearer_token(name: str) -> str:
+    token = TOKEN
+    if not token or "\r" in token or "\n" in token or token.startswith("Bearer "):
+        raise ValueError(f"Invalid MCP bearer token for {name}")
+    return token
+
+
+def managed_fields(name: str, shared: dict[str, str]) -> dict[str, object]:
+    if "command" in shared:
+        return {
+            "command": str(pathlib.Path.home() / shared["command"]),
+            "startup_timeout_sec": 120,
+            "tool_timeout_sec": 600,
+        }
+    return {
+        "url": shared["url"],
+        "http_headers": {"Authorization": "Bearer " + bearer_token(name)},
+    }
+
+
+def render_field(key: str, value: object) -> str:
+    if isinstance(value, dict):
+        entries = ", ".join(f"{entry_key} = {json.dumps(entry_value)}" for entry_key, entry_value in value.items())
+        return f"{key} = " + "{ " + entries + " }\n"
+    return f"{key} = {json.dumps(value)}\n"
+
+
+def update_table(config: str, name: str, fields: dict[str, object]) -> str:
+    tables = list(TABLE.finditer(config))
+    header = f"mcp_servers.{name}"
+    match = next((table for table in tables if table.group(1) == header), None)
+    rendered = "".join(render_field(key, value) for key, value in fields.items())
+
+    if match is None:
+        return config.rstrip("\n") + f"\n\n[{header}]\n" + rendered
+
+    end = next((table.start() for table in tables if table.start() > match.start()), len(config))
+    body = config[match.end():end]
+    removed = {"url", "command", "args", "http_headers", "http_headers_helper", "env_http_headers", "bearer_token_env_var"}
+    if "command" in fields:
+        removed.update({"startup_timeout_sec", "tool_timeout_sec"})
+    kept = "".join(
+        line
+        for line in body.splitlines(keepends=True)
+        if not (field := FIELD.match(line)) or field.group(1) not in removed
+    )
+    return config[:match.end()] + "\n" + rendered + kept.lstrip("\n") + config[end:]
+
+
+def main() -> int:
+    config = sys.stdin.read()
+    if tomllib is not None:
+        try:
+            tomllib.loads(config)
+        except tomllib.TOMLDecodeError as error:
+            print(f"Codex config is not valid TOML: {error}", file=sys.stderr)
+            return 1
+
+    for name, shared in SHARED_SERVERS.items():
+        config = update_table(config, name, managed_fields(name, shared))
+
+    if tomllib is not None:
+        try:
+            parsed = tomllib.loads(config)
+        except tomllib.TOMLDecodeError as error:
+            print(f"Generated Codex config is not valid TOML: {error}", file=sys.stderr)
+            return 1
+        for name, shared in SHARED_SERVERS.items():
+            fields = managed_fields(name, shared)
+            if any(parsed["mcp_servers"][name].get(key) != value for key, value in fields.items()):
+                print(f"Codex MCP server {name} did not render correctly", file=sys.stderr)
+                return 1
+
+    sys.stdout.write(config)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

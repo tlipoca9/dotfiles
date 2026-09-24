@@ -1,0 +1,69 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+set -eu
+
+# Package declarations checksum: {{ include ".chezmoidata/darwin/packages.toml" | sha256sum }}
+{{ template "darwin-shell-helpers" . }}
+
+if ! xcode-select -p >/dev/null 2>&1; then
+  xcode-select --install >/dev/null 2>&1 || true
+  die "finish installing the Command Line Tools, then run 'chezmoi apply' again"
+fi
+
+if ! command -v brew >/dev/null 2>&1 && [ -x /usr/libexec/path_helper ]; then
+  eval "$(/usr/libexec/path_helper -s)"
+fi
+
+if ! command -v brew >/dev/null 2>&1; then
+  if ! ( : </dev/tty >/dev/tty 2>/dev/tty ); then
+    die "Homebrew is missing; run 'chezmoi apply' again from an interactive terminal"
+  fi
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+    </dev/tty >/dev/tty 2>/dev/tty
+fi
+
+setup_brew
+
+shellenv_dir=${XDG_CACHE_HOME:-"$HOME/.cache"}/dotfiles
+shellenv_file=$shellenv_dir/brew-shellenv
+mkdir -p "$shellenv_dir"
+(
+  umask 077
+  temporary=$(mktemp "$shellenv_dir/.brew-shellenv.XXXXXX")
+  trap 'rm -f "$temporary"' EXIT HUP INT TERM
+  brew shellenv >"$temporary"
+  mv "$temporary" "$shellenv_file"
+  trap - EXIT HUP INT TERM
+)
+
+export HOMEBREW_NO_AUTO_UPDATE=1
+export HOMEBREW_NO_INSTALL_CLEANUP=1
+
+{{- range $id, $package := .darwin.packages }}
+{{- if eq $package.manager "homebrew" }}
+{{- $name := index $package "name" | default $id }}
+name={{ printf "'%s'" (replace "'" "'\"'\"'" $name) }}
+{{- if eq $package.kind "cask" }}
+if brew list --cask -- "$name" >/dev/null 2>&1; then
+{{- else if eq $package.kind "formula" }}
+if brew list --formula -- "$name" >/dev/null 2>&1; then
+{{- end }}
+  printf 'dotfiles: %s is already installed\n' "$name"
+else
+  printf 'dotfiles: installing %s\n' "$name"
+  {{- if eq $package.kind "cask" }}
+  brew install --cask "$name"
+  {{- else if eq $package.kind "formula" }}
+  brew install --formula "$name"
+  {{- end }}
+  {{- with (index $package "check") }}
+  check_command={{ printf "'%s'" (replace "'" "'\"'\"'" .command) }}
+  command -v "$check_command" >/dev/null 2>&1 || die "post-install check failed for $name: command $check_command is unavailable"
+  {{- end }}
+fi
+{{- end }}
+{{ end -}}
+{{- else -}}
+#!/bin/sh
+exit 0
+{{- end }}

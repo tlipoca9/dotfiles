@@ -1,0 +1,15 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+set -eu
+
+# Managed Pi settings checksum: {{ include "dot_pi/private_agent/modify_settings.json.tmpl" | sha256sum }}
+# The modifier is the sole declaration of exact pins; settings.json is its derived target.
+{{ template "darwin-shell-helpers" . }}
+setup_brew
+command -v pi >/dev/null 2>&1 || die "Pi CLI is unavailable after package installation"
+pi update --extensions
+pi list >/dev/null || die "Pi extension health check failed"
+{{- else -}}
+#!/bin/sh
+exit 0
+{{- end }}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Tencent Cloud"
+  short_description: "路由腾讯云 Rainbow、Tag、YunAPI 与 CAM 集成工作"
+  default_prompt: "Use $tencentcloud to route and handle this Tencent Cloud platform or API task."
+policy:
+  allow_implicit_invocation: true

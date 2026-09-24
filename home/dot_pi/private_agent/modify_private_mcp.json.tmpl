@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+"""Merge dotfiles-owned MCP servers while preserving other Pi MCP state."""
+
+from __future__ import annotations
+
+import json
+import shlex
+import sys
+from typing import Any
+
+SHARED_SERVERS = json.loads({{ .mcp.shared | toJson | quote }})
+
+MANAGED_SERVERS: dict[str, dict[str, Any]] = {
+    "chrome-devtools": {
+        "command": "npx",
+        "args": [
+            "-y",
+            "chrome-devtools-mcp@1.8.0",
+            "--headless",
+            "--no-usage-statistics",
+        ],
+        "lifecycle": "lazy",
+        "requestTimeoutMs": 120_000,
+    },
+    "playwright": {
+        "command": "npx",
+        "args": ["-y", "@playwright/mcp@0.0.79", "--headless"],
+        "lifecycle": "lazy",
+        "requestTimeoutMs": 120_000,
+    },
+}
+
+for name, shared in SHARED_SERVERS.items():
+    if "command" in shared:
+        MANAGED_SERVERS[name] = {
+            "command": {{ .chezmoi.homeDir | quote }} + "/" + shared["command"],
+            "lifecycle": "lazy",
+            "requestTimeoutMs": 600_000,
+        }
+    else:
+        server = {
+            "url": shared["url"],
+            "auth": "bearer",
+            "bearerToken": "!/bin/cat " + shlex.quote({{ .chezmoi.homeDir | quote }} + "/.config/taihu.txt"),
+        }
+        if name in ("tapd_mcp_http", "zhiyan-log"):
+            server["httpTransport"] = "streamable-http"
+        if name == "tapd_mcp_http":
+            server["requestTimeoutMs"] = 20_000
+        elif name in ("gongfeng", "zhiyan-log"):
+            server["requestTimeoutMs"] = 60_000
+        MANAGED_SERVERS[name] = server
+
+
+def merge_server(existing: object, managed: dict[str, Any]) -> dict[str, Any]:
+    server = dict(existing) if isinstance(existing, dict) else {}
+
+    if "command" in managed:
+        for key in (
+            "url",
+            "socket",
+            "httpTransport",
+            "headers",
+            "requestHeadersCommand",
+            "auth",
+            "oauth",
+            "env",
+        ):
+            server.pop(key, None)
+    elif "url" in managed:
+        for key in ("command", "args", "cwd", "socket", "env", "oauth", "requestHeadersCommand"):
+            server.pop(key, None)
+
+    headers = server.get("headers")
+    if isinstance(headers, dict):
+        safe_headers = {
+            key: value
+            for key, value in headers.items()
+            if key.lower() != "authorization"
+        }
+        if safe_headers:
+            server["headers"] = safe_headers
+        else:
+            server.pop("headers", None)
+
+    # Use the age-managed token file for every shared remote server.
+    server.pop("bearerToken", None)
+    server.pop("bearerTokenEnv", None)
+    server.pop("bearerTokenStore", None)
+    server.pop("transportType", None)
+    server.update(managed)
+    return server
+
+
+def main() -> int:
+    raw = sys.stdin.read()
+    try:
+        config = json.loads(raw) if raw.strip() else {}
+    except json.JSONDecodeError as error:
+        print(f"Pi MCP config is not valid JSON: {error}", file=sys.stderr)
+        return 1
+    if not isinstance(config, dict):
+        print("Pi MCP config must contain a JSON object", file=sys.stderr)
+        return 1
+
+    servers = config.get("mcpServers")
+    if not isinstance(servers, dict):
+        servers = {}
+    else:
+        servers = dict(servers)
+
+    for name, managed in MANAGED_SERVERS.items():
+        servers[name] = merge_server(servers.get(name), managed)
+
+    config["mcpServers"] = servers
+    json.dump(config, sys.stdout, ensure_ascii=False, indent=2)
+    sys.stdout.write("\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

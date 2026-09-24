@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""Merge shared MCP servers into Cursor's user configuration."""
+
+from __future__ import annotations
+
+import json
+import pathlib
+import sys
+
+
+SHARED_SERVERS = json.loads({{ .mcp.shared | toJson | quote }})
+TOKEN = ({{ include "dot_config/encrypted_private_taihu.txt.age" | decrypt | quote }}).strip()
+
+
+def bearer_token(name: str) -> str:
+    token = TOKEN
+    if not token or "\r" in token or "\n" in token or token.startswith("Bearer "):
+        raise ValueError(f"Invalid MCP bearer token for {name}")
+    return token
+
+
+def merge_server(existing: object, shared: dict[str, str], name: str) -> dict[str, object]:
+    server = dict(existing) if isinstance(existing, dict) else {}
+    if "command" in shared:
+        for key in ("url", "headers", "auth", "type", "env", "args", "cwd"):
+            server.pop(key, None)
+        server["command"] = str(pathlib.Path.home() / shared["command"])
+    else:
+        for key in ("command", "args", "cwd", "env", "type", "auth", "bearerToken", "bearerTokenEnv", "bearerTokenStore"):
+            server.pop(key, None)
+        server["url"] = shared["url"]
+        headers = server.get("headers")
+        headers = dict(headers) if isinstance(headers, dict) else {}
+        headers = {key: value for key, value in headers.items() if key.lower() != "authorization"}
+        headers["Authorization"] = "Bearer " + bearer_token(name)
+        server["headers"] = headers
+    return server
+
+
+def main() -> int:
+    raw = sys.stdin.read()
+    try:
+        config = json.loads(raw) if raw.strip() else {}
+    except json.JSONDecodeError as error:
+        print(f"Cursor MCP config is not valid JSON: {error}", file=sys.stderr)
+        return 1
+    if not isinstance(config, dict):
+        print("Cursor MCP config must contain a JSON object", file=sys.stderr)
+        return 1
+
+    servers = config.get("mcpServers")
+    servers = dict(servers) if isinstance(servers, dict) else {}
+
+    legacy_tapd = servers.get("tapd")
+    if isinstance(legacy_tapd, dict) and legacy_tapd.get("url") == SHARED_SERVERS["tapd_mcp_http"]["url"]:
+        if "tapd_mcp_http" not in servers:
+            servers["tapd_mcp_http"] = legacy_tapd
+        servers.pop("tapd")
+
+    for name, shared in SHARED_SERVERS.items():
+        servers[name] = merge_server(servers.get(name), shared, name)
+
+    config["mcpServers"] = servers
+    json.dump(config, sys.stdout, ensure_ascii=False, indent=2)
+    sys.stdout.write("\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

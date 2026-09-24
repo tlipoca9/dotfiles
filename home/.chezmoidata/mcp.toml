@@ -1,0 +1,14 @@
+[mcp.shared.firecrawl]
+command = ".local/bin/firecrawl-mcp"
+
+[mcp.shared.iWiki]
+url = "https://prod.mcp.it.woa.com/app_iwiki_mcp/mcp3"
+
+[mcp.shared.tapd_mcp_http]
+url = "https://mcpgw.knot.woa.com/tapd/"
+
+[mcp.shared.gongfeng]
+url = "https://mcpgw.knot.woa.com/gongfeng"
+
+[mcp.shared.zhiyan-log]
+url = "https://mcpgw.knot.woa.com/zhiyan/log"

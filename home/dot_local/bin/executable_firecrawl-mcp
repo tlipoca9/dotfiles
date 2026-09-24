@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+
+FIRECRAWL_API_KEY="$(cat "$HOME/.config/firecrawl/api-key")"
+export FIRECRAWL_API_KEY
+
+exec npx -y firecrawl-mcp@3.24.0

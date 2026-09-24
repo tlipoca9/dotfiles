@@ -1,0 +1,4 @@
+interface:
+  display_name: "Contract-Aware Change"
+  short_description: "Protect customer-visible contracts during engineering changes"
+  default_prompt: "Use $contract-aware-change to define the observable contract for this engineering change and verify the result."
