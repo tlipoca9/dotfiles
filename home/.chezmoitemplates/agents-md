@@ -79,6 +79,20 @@ non-obvious constraints, invariants, or rationale. Do not use comments as
 change logs, implementation journals, or records of the conversation that
 produced the code.
 
+## Domain understanding and design
+
+- Use the project's confirmed business and product vocabulary and naming
+  conventions for code names. When defining or changing domain concepts,
+  consult the relevant `CONTEXT.md` and business docs, in `docs/business/` by
+  default.
+- When code and business docs disagree about meaning or behavior, surface
+  concrete evidence and clarify the intended rule with the user before
+  building on it.
+- Keep the affected glossary, business docs, and design decisions aligned when
+  changing domain meaning or naming in code.
+- Use `grill-with-context` when implementation depends on unresolved domain or
+  architecture decisions.
+
 ## Change scope
 
 Keep changes focused on the task, but do not preserve a bad design merely to
