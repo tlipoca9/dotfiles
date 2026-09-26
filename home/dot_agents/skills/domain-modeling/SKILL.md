@@ -57,6 +57,41 @@ When domain relationships are being discussed, stress-test them with specific sc
 
 When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "Your code cancels entire Orders, but you just said partial cancellation is possible. Which is right?"
 
+### Align code names with business and product language
+
+Inspect existing and proposed names throughout the affected code: packages,
+directories, types, interfaces, functions, fields, variables, states, and
+externally visible names. Compare them with product scenarios, business docs,
+and the glossary. Look for multiple names for one concept, one name covering
+different concepts, unexplained abbreviations, and vague or misleading terms.
+Existing code is evidence to examine; its vocabulary still needs justification.
+
+When context is missing, work through concrete scenarios with the user to
+establish what each actor, object, action, and state means. Treat inferred
+meanings and names as proposals. Resolve the vocabulary over successive rounds,
+creating the glossary when the first term is confirmed. Save confirmed business
+scenarios and rules in `docs/business/` by default, following project conventions.
+
+Use one canonical term per concept within its domain context, with an agreed
+code-language equivalent when product language differs. Keep distinct concepts
+distinct. Use the repository's casing and abbreviation conventions consistently;
+retain established technical vocabulary for genuinely technical roles.
+When conventions are absent or conflicting, propose and agree on a consistent
+convention with the user.
+
+Group mismatches by concept. Show representative code locations, current names,
+business meaning, proposed names, rationale, and affected callers or data. Ask
+the user whether to keep, rename, or defer them. Include compatibility implications for
+public interfaces and persisted names. Record agreed renames, boundary mappings,
+and deferred work in the shared design document; keep the glossary focused on
+canonical terms, definitions, and synonyms to avoid.
+
+During implementation, apply the agreed vocabulary and rename decisions across
+the affected definitions, references, tests, and docs. Recheck touched names
+against the glossary and naming conventions so the increment introduces no
+unexplained competing terminology. Reopen the relevant discussion when a new
+concept or a conflict appears.
+
 ### Update CONTEXT.md inline
 
 When a term is resolved, update `CONTEXT.md` right there. Don't batch these up: capture them as they happen. Use the format in [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md).
