@@ -1,6 +1,8 @@
 .agents/skills/find-skills
+.agents/skills/domain-modeling/CONTEXT-FORMAT.md
 .agents/skills/huashu-nuwa
 .agents/skills/lean-ctx
+.agents/skills/resolving-merge-conflicts
 .agents/skills/tencentcloud-rainbow-all-in-one
 .agents/skills/tencentcloud-tag-all-in-one
 .agents/skills/tencentcloud-yunapi-3-spec

@@ -83,7 +83,7 @@ produced the code.
 
 - Use the project's confirmed business and product vocabulary and naming
   conventions for code names. When defining or changing domain concepts,
-  consult the relevant `CONTEXT.md` and business docs, in `docs/business/` by
+  consult the relevant `GLOSSARY.md` and business docs, in `docs/business/` by
   default.
 - When code and business docs disagree about meaning or behavior, surface
   concrete evidence and clarify the intended rule with the user before

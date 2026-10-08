@@ -80,6 +80,8 @@ extensions live in `home/.chezmoidata/darwin/vscode.toml`; Pi pins live only in
 only in `home/dot_agents/skills`. Installers and generators must update the
 matching chezmoi source instead of creating duplicate runtime copies.
 Codex-specific skills live only in `home/dot_codex/skills`.
+Upstream skill revisions, local adaptations, and update instructions live in
+[skill sources](docs/agents/skill-sources.md).
 Shared MCP endpoints live in `home/.chezmoidata/mcp.toml`. Each client's MCP
 modifier preserves unrelated servers. The Firecrawl launcher reads its
 age-managed API key from

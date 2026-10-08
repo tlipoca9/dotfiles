@@ -10,4 +10,4 @@ Triage state uses the five default role strings in each issue's `Status:` line. 
 
 ### Domain docs
 
-This is a single-context repo: read root `CONTEXT.md` and relevant `docs/adr/` entries when present. See `docs/agents/domain.md`.
+This is a single-context repo: read root `GLOSSARY.md` and relevant `docs/adr/` entries when present. See `docs/agents/domain.md`.

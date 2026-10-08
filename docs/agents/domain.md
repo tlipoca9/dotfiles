@@ -4,7 +4,7 @@ This is a single-context repo. The engineering skills use its domain documentati
 
 ## Before exploring, read these when present
 
-- Root `CONTEXT.md` for the project's domain vocabulary.
+- Root `GLOSSARY.md` for the project's domain vocabulary.
 - Relevant ADRs in root `docs/adr/` for decisions affecting the area of work.
 
 If these files do not exist, proceed. Create them when domain terms or decisions need to be recorded, not as part of initial setup.
@@ -12,14 +12,14 @@ If these files do not exist, proceed. Create them when domain terms or decisions
 ## File structure
 
     /
-    ├── CONTEXT.md
+    ├── GLOSSARY.md
     └── docs/
         └── adr/
             └── NNNN-<decision>.md
 
 ## Use the glossary's vocabulary
 
-When naming a domain concept in an issue, proposal, hypothesis, or test, use the term defined in `CONTEXT.md`. If a needed concept is absent, check the codebase's existing language and record a genuine gap through `/domain-modeling`.
+When naming a domain concept in an issue, proposal, hypothesis, or test, use the term defined in `GLOSSARY.md`. If a needed concept is absent, check the codebase's existing language and record a genuine gap through `/domain-modeling`.
 
 ## Flag ADR conflicts
 

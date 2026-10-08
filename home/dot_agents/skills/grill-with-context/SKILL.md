@@ -34,7 +34,7 @@ Choose and tell the user where the shared design will live. Reuse the relevant
 architecture document; otherwise create `docs/design/<topic>.md`.
 As soon as a concept or rule is confirmed, write it down in that round, before
 asking the next questions. Use [domain-modeling](../domain-modeling/SKILL.md)
-for the glossary in `CONTEXT.md` and consequential ADRs. Keep architecture and
+for the glossary in `GLOSSARY.md` and consequential ADRs. Keep architecture and
 design rationale in the shared design document, linking to business knowledge
 and authoritative definitions instead of duplicating them. Distinguish current
 behavior, agreed target behavior, proposals, and unresolved decisions.
