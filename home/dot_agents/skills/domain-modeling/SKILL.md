@@ -1,6 +1,6 @@
 ---
 name: domain-modeling
-description: Build and sharpen a project's domain model. Use when discussing codebase terminology, writing or editing a GLOSSARY.md, or recording or editing an ADR.
+description: Build and sharpen a project's domain model. Use when discussing codebase terminology, maintaining business knowledge, writing or editing a GLOSSARY.md, or recording or editing an ADR.
 ---
 
 # Domain Modeling
@@ -57,6 +57,31 @@ When domain relationships are being discussed, stress-test them with specific sc
 
 When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "Your code cancels entire Orders, but you just said partial cancellation is possible. Which is right?"
 
+### Track conflicts to closure
+
+When confirmed rules, code, tests, documents, or earlier decisions conflict,
+trace the affected sources. Resolve the conflict within the current scope or
+record an unchecked item in local `TODO.md` before moving on. Reuse the relevant
+existing file; otherwise create it at the repository root. This is the default
+even when the repository configures an external tracker. Use another tracker
+or Wayfinder only when the user explicitly requests that workflow.
+
+Keep each item concise: the conflict and evidence, the next action or open
+decision, and what counts as done. Include affected artifacts and prerequisites
+where needed. Group related conflicts by the action that closes them, updating
+an existing item when possible. Link from the owning design to `TODO.md` and
+keep completion status there. Revisit relevant open items when continuing the
+work or when their assumptions change.
+
+Separate deciding the rule from bringing the implementation into agreement.
+After a decision, reconcile the affected current definitions, rules, examples,
+and design assumptions, and mark superseded historical decisions explicitly.
+Keep remaining code and test changes tracked, with unresolved decisions as
+dependencies. Close each item only with its resolution and evidence that its
+affected artifacts agree; implementation items also need executed behavioral
+verification. Recording a discrepancy or agreeing on a design leaves the
+implementation item open. Deferred work retains its reason and revisit condition.
+
 ### Align code names with business and product language
 
 Inspect existing and proposed names throughout the affected code: packages,
@@ -91,6 +116,15 @@ the affected definitions, references, tests, and docs. Recheck touched names
 against the glossary and naming conventions so the increment introduces no
 unexplained competing terminology. Reopen the relevant discussion when a new
 concept or a conflict appears.
+
+### Consolidate business knowledge
+
+When creating or updating business documents, read
+[BUSINESS-DOCS.md](./BUSINESS-DOCS.md). Reuse the project's established document
+structure across sessions and integrate each confirmed answer into its owning
+topic so the documents form a coherent current reference. Reconcile
+related definitions, examples, design assumptions, and decisions when meaning
+changes; saving another paragraph is not sufficient.
 
 ### Update GLOSSARY.md inline
 

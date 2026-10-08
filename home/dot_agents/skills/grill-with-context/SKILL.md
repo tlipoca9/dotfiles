@@ -11,11 +11,11 @@ and challenge the design, then evolve the code through real iterations.
 
 Explore the code, tests, existing domain docs, and relevant decisions yourself.
 
-Start business knowledge discovery in `docs/business/`, and maintain confirmed
-business scenarios, rules, rationale, and boundaries there by default. Reuse
-the relevant document or create `docs/business/<topic>.md` as knowledge emerges.
-Follow explicit project documentation conventions and link existing sources
-rather than creating competing copies.
+Start business knowledge discovery in `docs/business/`. Use
+[domain-modeling](../domain-modeling/SKILL.md) to organize and consolidate
+confirmed scenarios, rules, rationale, and boundaries into reusable topic
+documents. Follow project documentation conventions and update the owning
+document as knowledge emerges.
 
 Distinguish observed implementation behavior from intended business rules. When
 business knowledge is missing, uncover the purpose, actors, concepts, rules, and
@@ -28,7 +28,10 @@ requirement, a technical constraint or workaround, or behavior to change, and
 why it exists. Clarify when it applies and its exceptions before recommending
 preserving or removing it. Keep unanswered cases explicit. Record the confirmed
 meaning, rationale, and boundaries in the appropriate business or design
-document in that round, and use them to guide refactoring.
+document in that round, and use them to guide refactoring. For discrepancies
+with existing code or decisions, use domain-modeling to
+[track conflicts to closure](../domain-modeling/SKILL.md#track-conflicts-to-closure),
+including the remaining work after a business rule is confirmed.
 
 Choose and tell the user where the shared design will live. Reuse the relevant
 architecture document; otherwise create `docs/design/<topic>.md`.
@@ -75,11 +78,12 @@ has been discussed and resolved or deliberately deferred by the user.
 
 An increment is ready when its business rules, names, structure, module pattern
 choices, composition, flows, and effects have been reviewed with the user,
-confirmed knowledge is saved, and no implementation-blocking decision remains.
+confirmed knowledge is consolidated in its owning documents, and no
+implementation-blocking decision remains. Known implementation gaps have
+tracked corrective work for the increment.
 Use the document and concrete scenarios to confirm shared understanding;
-agreement on scope alone is insufficient. For efforts spanning sessions, use
-[wayfinder](../wayfinder/SKILL.md) to carry open decisions and dependencies,
-linking to the shared documents.
+agreement on scope alone is insufficient. Carry unresolved work across sessions
+in local `TODO.md`, following domain-modeling's conflict closure rules.
 
 Apply grilling's final confirmation to implementation. When implementation is
 requested and the increment is ready, make the smallest coherent refactor
