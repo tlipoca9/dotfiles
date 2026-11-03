@@ -53,11 +53,9 @@ A customer-facing CAPI description:
 
 > AK；启用时由服务校验必填、非空白且不含 NUL。
 
-Verdict: "你别在 capi 的 description 里面写什么服务端校验吧？……这个是给客户看的啊." State the rule the customer must follow:
+Verdict: "你别在 capi 的 description 里面写什么服务端校验吧？……这个是给客户看的啊." A rewrite that listed the filling rules instead was still too long. The description names the field; required-ness and value limits belong in the constraint attributes:
 
-> 腾讯云访问密钥 ID（AK）。启用 Session Space 时需与 SecretKey 同时填写，不能为空白或包含 NUL。
-
-The ten-character limit above then applies on top.
+> 腾讯云访问密钥 ID
 
 Quick start help text that explained the mechanism:
 
