@@ -1,4 +1,0 @@
-interface:
-  display_name: "团队成长"
-  short_description: "Learn, apply, and maintain indexed team knowledge"
-  default_prompt: "Use $team-learning to apply a verified lesson and update the relevant personal or team knowledge index."

@@ -129,3 +129,13 @@ current task. Do not use `git add .` or `git add -A`.
 
 If unrelated or concurrent changes conflict with the task, report the conflict
 instead of discarding or silently resolving those changes.
+
+## Dotfiles
+
+Home-directory configuration on this Mac is managed by chezmoi from a dotfiles
+repository. Change the dotfiles source, not the deployed file; a deployed file
+edited in place is overwritten by the next apply.
+
+Before changing any agent configuration (AGENTS.md, skills, MCP servers, or
+Codex, Cursor, and Pi settings) or any other chezmoi-managed file, read
+`~/.agents/skills/dotfiles-skills/SKILL.md` and follow it.
