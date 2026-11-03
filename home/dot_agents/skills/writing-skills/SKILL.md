@@ -1,6 +1,6 @@
 ---
 name: writing-skills
-description: Router over writing skills. Read before writing or editing text a person reads after the turn, such as reports, tickets, design docs, READMEs, API field descriptions, doc comments, and PR bodies; when reviewing prose that reads as AI-written, padded, or defensive, including Chinese requests such as AI 味、防御性措辞、写得太啰嗦、润色; and when asked to update these skills.
+description: Router over writing skills. Read before writing or editing text a person reads after the turn, such as reports, research reports, tickets, design docs, READMEs, API field descriptions, product copy (UI text, error messages, demo narration, articles), code review findings, doc comments, and PR bodies; when reviewing prose that reads as AI-written, padded, or defensive, including Chinese requests such as 调研报告、文案、AI 味、防御性措辞、写得太啰嗦、润色; and when asked to update these skills.
 license: MIT
 ---
 
@@ -20,7 +20,7 @@ Each **sub-skill** lives in `references/<name>/` with its entry point at `refere
 
 | Sub-skill | Kind | Reach for it when |
 |---|---|---|
-| [`technical-writing`](references/technical-writing/INSTRUCTIONS.md) | Local | Writing or editing reports, tickets, docs, API descriptions, comments, PR bodies, or long replies |
+| [`technical-writing`](references/technical-writing/INSTRUCTIONS.md) | Local | Writing or editing reports, research reports, tickets, docs, API descriptions, product copy, code review findings, comments, PR bodies, or long replies |
 | [`blader-humanizer`](references/blader-humanizer/INSTRUCTIONS.md) | Vendored | Reviewing English prose for AI writing patterns |
 | [`jiji262-humanizer-chinese`](references/jiji262-humanizer-chinese/INSTRUCTIONS.md) | Vendored | Reviewing Chinese prose for AI writing patterns |
 

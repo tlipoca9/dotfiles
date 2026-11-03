@@ -47,6 +47,40 @@ Verdict: "太长了," at most ten characters or so:
 
 > 用于持久化会话的 Session Space ID
 
+## Product copy
+
+A customer-facing CAPI description:
+
+> AK；启用时由服务校验必填、非空白且不含 NUL。
+
+Verdict: "你别在 capi 的 description 里面写什么服务端校验吧？……这个是给客户看的啊." State the rule the customer must follow:
+
+> 腾讯云访问密钥 ID（AK）。启用 Session Space 时需与 SecretKey 同时填写，不能为空白或包含 NUL。
+
+The ten-character limit above then applies on top.
+
+Quick start help text that explained the mechanism:
+
+> 仅挂载已勾选的能力，最多 32 个 Skill 和 16 个 MCP Server。Skill 在实例启动时从 Git 的固定 commit 获取；MCP Server 的凭据直接送入实例，不在查询结果中返回。
+
+Verdict: "这种说明性文档，涉及具体实现的，都去掉." The same page had a step subtitle 都可以跳过，之后通过修改配置补充 and a 下一步 card, both judged unnecessary, and "quick start 要有专业性." Keep the limit the user must respect and drop the rest.
+
+Harness cards introduced each project by its features. Verdict: "每个 harness 的简短介绍应当从他们本身的 github 仓库中来，而不是特性." The card now carries the project's own definition, translated:
+
+> 可在任意环境运行、从多种入口访问的 Agent Harness：支持无限长的对话，能从内外部的严重故障中恢复，并允许多人共同引导同一组 Agent。
+
+An article title, 如何设计一套 Agent 底座，让 DeepSeek Harness 跑得更经济、更省心？, drew two objections: it did not lead with DeepSeek Harness, and it "天然把 dsh 放到生产可用的服务角色了" while the project was a developer preview. Narration for a deployment demo was judged "语气太居高临下了" and reminded that "这就是一段演示视频，不是生产可用的." Name the subject first and describe what the demo shows.
+
+## Research report
+
+A study of an upstream project ended in a list of borrowable items; the user accepted most and struck one with "这个不需要." Numbered, independent recommendations let the reader decide item by item.
+
+A study of credential injection drifted to the agent's own redesign. Verdict: "这个跟凭证注入没太大关系了." Another rested on a stale local checkout: "你更新下本地的." Answer the question asked, from current primary sources.
+
+## Code review findings
+
+Three reviews ended in the same requests: "格式按照 [标题] - 代码路径：相对仓库根目录的路径 - 现象： - 推荐修复方向：", "改成 markdown 格式，且代码路径改成相对路径", and, after a plain-text list, "？给我 markdown 就行." Follow-ups asked "都是本次变更引入的吗" and "其它没有存量风险了吗", which the 来源 line answers up front.
+
 ## Ticket for another team
 
 The request was a 技术需求 for a colleague with no background: "平铺直叙，不要写得对方已经了解上下文一样，也不要防御性措辞." A later version was plain text run together, and the verdict was "用 markdown 呀，现在感觉文字都挤在一起了." A ticket that works:
