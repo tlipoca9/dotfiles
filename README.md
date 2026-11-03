@@ -70,8 +70,10 @@ chezmoi apply
 - Pi with exact, reviewed extension pins and preserved runtime state
 - Firecrawl, iWiki, TAPD, Gongfeng, and Zhiyan Log MCP servers shared by
   Cursor, Codex, and Pi; Chrome DevTools and Playwright MCP servers in Pi only
-- shared vendored skills deployed to `~/.agents/skills`, plus explicitly
-  whitelisted Codex-specific skills deployed to `~/.codex/skills`
+- shared vendored skills deployed to `~/.agents/skills`
+- one shared agent instruction file deployed to Codex, Pi, and
+  `~/.agents/AGENTS.md`; Cursor has no global AGENTS.md loader, so a Cursor
+  User Rule directs its agent to read `~/.agents/AGENTS.md`
 - only `~/.ssh/id_ed25519` and `id_ed25519.pub` under SSH management
 
 System declarations live in `home/.chezmoidata/darwin/packages.toml`; VS Code
@@ -79,9 +81,9 @@ extensions live in `home/.chezmoidata/darwin/vscode.toml`; Pi pins live only in
 `home/dot_pi/private_agent/modify_settings.json.tmpl`; shared user skills live
 only in `home/dot_agents/skills`. Installers and generators must update the
 matching chezmoi source instead of creating duplicate runtime copies.
-Codex-specific skills live only in `home/dot_codex/skills`.
-Upstream skill revisions, local adaptations, and update instructions live in
-[skill sources](docs/agents/skill-sources.md).
+Vendored router skills record their upstream sources, pinned revisions, and
+licenses inside their own skill directories.
+Shared agent instructions live only in `home/.chezmoitemplates/agents-md`.
 Shared MCP endpoints live in `home/.chezmoidata/mcp.toml`. Each client's MCP
 modifier preserves unrelated servers. The Firecrawl launcher reads its
 age-managed API key from
@@ -90,11 +92,10 @@ the bearer token in `~/.config/taihu.txt`, which is age-managed with mode
 `0600`. Cursor and Codex receive the token in their private MCP
 configurations; Pi reads it from the file when connecting. The file contains
 only the raw token, without a `Bearer ` prefix.
-Retired skills live in `deprecated_skills/` at the repository root, outside
-chezmoi's `home/` source, and are not deployed.
 Shared skills use plain source or age-encrypted source for private content.
-Chezmoi decrypts private active skills when deploying them to `~/.agents/skills`.
-Private archived skills remain age-encrypted in `deprecated_skills/`.
+Chezmoi decrypts private skills when deploying them to `~/.agents/skills`.
+Removed skills are deleted from the source and their deployed paths are listed
+in `home/.chezmoiremove`.
 The repository retains
 current declarations and durable lifecycle automation; completed migrations
 remain available through Git history.

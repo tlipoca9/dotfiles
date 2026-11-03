@@ -1,0 +1,9 @@
+{
+  "sources": [
+    {
+      "repo": "https://github.com/mattpocock/skills.git",
+      "ref": "HEAD",
+      "manifest": ".claude-plugin/plugin.json"
+    }
+  ]
+}

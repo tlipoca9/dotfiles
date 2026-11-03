@@ -1,0 +1,12 @@
+{
+  "sources": [
+    {
+      "repo": "https://github.com/JetBrains/go-modern-guidelines.git",
+      "ref": "HEAD",
+      "prefix": true,
+      "skills": [
+        "plugin/skills/use-modern-go"
+      ]
+    }
+  ]
+}

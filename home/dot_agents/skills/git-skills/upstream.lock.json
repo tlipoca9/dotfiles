@@ -1,0 +1,24 @@
+{
+  "sources": [
+    {
+      "repo": "https://github.com/mitsuhiko/agent-stuff.git",
+      "ref": "HEAD",
+      "commit": "0865c849befd2021490679f96a8dee58c84ac857",
+      "committed_at": "2026-09-27T23:10:38+02:00",
+      "skills": [
+        {
+          "path": "skills/commit",
+          "name": "mitsuhiko-agent-stuff-commit"
+        },
+        {
+          "path": "skills/update-changelog",
+          "name": "mitsuhiko-agent-stuff-update-changelog"
+        },
+        {
+          "path": "skills/github",
+          "name": "mitsuhiko-agent-stuff-github"
+        }
+      ]
+    }
+  ]
+}

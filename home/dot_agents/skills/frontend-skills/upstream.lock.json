@@ -1,0 +1,16 @@
+{
+  "sources": [
+    {
+      "repo": "https://github.com/edisonmbli/refactoring-ui-skill.git",
+      "ref": "HEAD",
+      "commit": "4459662c4fbf36d54342b1546d8851273031442c",
+      "committed_at": "2026-08-22T01:01:49+08:00",
+      "skills": [
+        {
+          "path": "skills/refactoring-ui",
+          "name": "edisonmbli-refactoring-ui-skill-refactoring-ui"
+        }
+      ]
+    }
+  ]
+}

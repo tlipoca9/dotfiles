@@ -1,0 +1,16 @@
+{
+  "sources": [
+    {
+      "repo": "https://github.com/JetBrains/go-modern-guidelines.git",
+      "ref": "HEAD",
+      "commit": "155dc7ca10da5e1f6c841503086957b1b37f5815",
+      "committed_at": "2026-09-10T14:29:03+02:00",
+      "skills": [
+        {
+          "path": "plugin/skills/use-modern-go",
+          "name": "jetbrains-go-modern-guidelines-use-modern-go"
+        }
+      ]
+    }
+  ]
+}

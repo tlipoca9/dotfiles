@@ -83,15 +83,12 @@ produced the code.
 
 - Use the project's confirmed business and product vocabulary and naming
   conventions for code names. When defining or changing domain concepts,
-  consult the relevant `GLOSSARY.md` and business docs, in `docs/business/` by
-  default.
-- When code and business docs disagree about meaning or behavior, surface
-  concrete evidence and clarify the intended rule with the user before
+  consult the project's existing domain documentation.
+- When code and domain documentation disagree about meaning or behavior,
+  surface concrete evidence and clarify the intended rule with the user before
   building on it.
-- Keep the affected glossary, business docs, and design decisions aligned when
+- Keep the affected domain documentation and design decisions aligned when
   changing domain meaning or naming in code.
-- Use `grill-with-context` when implementation depends on unresolved domain or
-  architecture decisions.
 
 ## Change scope
 

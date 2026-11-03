@@ -1,0 +1,12 @@
+{
+  "sources": [
+    {
+      "repo": "https://github.com/edisonmbli/refactoring-ui-skill.git",
+      "ref": "HEAD",
+      "prefix": true,
+      "skills": [
+        "skills/refactoring-ui"
+      ]
+    }
+  ]
+}

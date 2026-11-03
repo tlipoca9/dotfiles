@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tencent Cloud Coding CI"
+  short_description: "Author and troubleshoot Zhiyan Coding CI pipelines"
+  default_prompt: "Use $tencentcloud-coding-ci to write or troubleshoot this Zhiyan Coding CI pipeline using the repository and build evidence."

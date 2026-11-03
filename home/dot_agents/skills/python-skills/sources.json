@@ -1,0 +1,12 @@
+{
+  "sources": [
+    {
+      "repo": "https://github.com/mitsuhiko/agent-stuff.git",
+      "ref": "HEAD",
+      "prefix": true,
+      "skills": [
+        "skills/uv"
+      ]
+    }
+  ]
+}
