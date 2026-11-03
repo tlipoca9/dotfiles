@@ -79,6 +79,18 @@ non-obvious constraints, invariants, or rationale. Do not use comments as
 change logs, implementation journals, or records of the conversation that
 produced the code.
 
+## Writing
+
+Write every reply, document, comment, and message for one colleague who
+arrives without this conversation. Open with the result or the request, call
+things by their real names, and state behavior, scope, and results as what
+they are. Put real uncertainty inside the claim it qualifies, once, with a
+precise word, and turn an open question into the next check. Keep the plain,
+neutral register of an engineer explaining their work to a peer.
+
+Before writing a report, ticket, design doc, API description, or PR body, read
+`~/.agents/skills/writing-skills/SKILL.md` and follow it.
+
 ## Domain understanding and design
 
 - Use the project's confirmed business and product vocabulary and naming

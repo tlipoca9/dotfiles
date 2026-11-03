@@ -19,8 +19,10 @@ sources.json lists upstream repos and the skill folders to vendor from each:
 In place of "skills", "manifest": "<path>.json" reads the folder list from
 that upstream file's "skills" array (e.g. .claude-plugin/plugin.json).
 Each sub-skill keeps its upstream folder name, or becomes
-<owner>-<repo>-<folder> when the source sets "prefix": true. Names must be
-unique.
+<owner>-<repo>-<folder> when the source sets "prefix": true. A skill at the
+repository root is listed as "." and takes the repo name in place of its
+folder name. Names must be unique. Hidden folders and upstream agent
+instruction files (AGENTS.md, CLAUDE.md) are not vendored.
 
 A top-level "local": ["<name>"] lists hand-written sub-skills with no
 upstream; sync keeps their references/, scripts/ and assets/ folders as they
@@ -53,6 +55,7 @@ SOURCES = ROOT / "sources.json"
 LOCK = ROOT / "upstream.lock.json"
 ENTRY = "INSTRUCTIONS.md"
 SKIP_DIRS = {"agents"}
+SKIP_FILES = {"AGENTS.md", "CLAUDE.md", ".DS_Store"}
 OUTPUT_DIRS = ("references", "scripts", "assets")
 LICENSE_NAMES = ("LICENSE", "LICENSE.md", "LICENSE.txt", "COPYING")
 
@@ -80,12 +83,14 @@ def locked_names() -> list[str]:
 
 
 def sub_skill_name(source: dict, folder: str) -> str:
-    if not source.get("prefix"):
-        return Path(folder).name
+    folder_name = Path(folder).name
+    if folder_name and not source.get("prefix"):
+        return folder_name
     m = re.search(r"[:/]([^/:]+)/([^/]+?)(?:\.git)?/?$", source["repo"])
     if not m:
         raise UpdateError(f"cannot parse owner/repo from {source['repo']!r}")
-    raw = f"{m.group(1)}-{m.group(2)}-{Path(folder).name}".lower()
+    parts = m.groups() if source.get("prefix") else (m.group(2),)
+    raw = "-".join([*parts, folder_name]).lower()
     return re.sub(r"-{2,}", "-", re.sub(r"[^a-z0-9-]", "-", raw)).strip("-")
 
 
@@ -155,7 +160,12 @@ def vendor_skill(src: Path, name: str, repo_root: Path, stage: Path) -> None:
 
     for path in sorted(p for p in src.rglob("*") if p.is_file()):
         rel = path.relative_to(src)
-        if rel.parts[0] in SKIP_DIRS or path.name == ".DS_Store":
+        if (
+            rel.parts[0] in SKIP_DIRS
+            or any(part.startswith(".") for part in rel.parts[:-1])
+            or path.name in SKIP_FILES
+            or rel.as_posix() in LICENSE_NAMES
+        ):
             continue
         if path.suffix == ".md":
             dest = ref_dir / (ENTRY if rel == Path("SKILL.md") else rel)

@@ -1,0 +1,28 @@
+{
+  "sources": [
+    {
+      "repo": "https://github.com/blader/humanizer.git",
+      "ref": "HEAD",
+      "commit": "0ef9fe5bc3572734fd3ae6c448fe00a30cd5dcf0",
+      "committed_at": "2026-10-28T00:17:33-07:00",
+      "skills": [
+        {
+          "path": ".",
+          "name": "blader-humanizer"
+        }
+      ]
+    },
+    {
+      "repo": "https://github.com/jiji262/humanizer-chinese.git",
+      "ref": "HEAD",
+      "commit": "1d6c08e10fbfe0e1b36ac784834451c6aae0a92c",
+      "committed_at": "2026-08-01T21:56:19+08:00",
+      "skills": [
+        {
+          "path": ".",
+          "name": "jiji262-humanizer-chinese"
+        }
+      ]
+    }
+  ]
+}

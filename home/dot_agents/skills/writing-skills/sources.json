@@ -1,0 +1,17 @@
+{
+  "sources": [
+    {
+      "repo": "https://github.com/blader/humanizer.git",
+      "ref": "HEAD",
+      "prefix": true,
+      "skills": ["."]
+    },
+    {
+      "repo": "https://github.com/jiji262/humanizer-chinese.git",
+      "ref": "HEAD",
+      "prefix": true,
+      "skills": ["."]
+    }
+  ],
+  "local": ["technical-writing"]
+}
