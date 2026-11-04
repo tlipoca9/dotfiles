@@ -1,8 +1,28 @@
 # Setup and recovery
 
-Use the executable selected in [SKILL.md](../SKILL.md) for every command.
-Resolve failures from status and the error message before changing services
-or data. A connection failure is not a reason to rebuild an index.
+Run `wxwork` from PATH as described in [SKILL.md](../SKILL.md). Resolve failures
+from status and the error message before changing services or data. A
+connection failure is not a reason to rebuild an index.
+
+## Installation and updates
+
+Install the local finofliu fork into `~/.local/bin`, which this Mac's shell
+configuration includes in PATH:
+
+```sh
+cargo install --path "$HOME/code/cnb.woa.com/finofliu/wxwork-cli" \
+  --root "$HOME/.local" --locked --force
+command -v wxwork
+wxwork daemon --help
+```
+
+Verify that command lookup resolves `~/.local/bin/wxwork` and that the indexed
+commands are available; the version string alone does not distinguish builds.
+If lookup selects another installation, remove that obsolete installation
+and refresh the shell's command cache with `rehash` in Zsh or `hash -r` in Bash.
+Use the installed command for queries. If a daemon is already running, also
+follow [the restart procedure](#service-control-and-binary-upgrades) so it
+loads the installed build.
 
 ## Configuration and service status
 
@@ -13,7 +33,7 @@ keys, state, or checkpoints. Keep these settings identical across queries,
 sync, and daemon control. Reuse the configured account even when its source
 is temporarily offline.
 
-Run `"$WXWORK_BIN" daemon status`. Top-level `ok: true` means the diagnostic
+Run `wxwork daemon status`. Top-level `ok: true` means the diagnostic
 ran, not that the service is healthy. Inspect these fields under `data`:
 
 | Field | Meaning and next check |
@@ -39,7 +59,7 @@ daemon is stopped. A daemon process alone does not prove that ES is usable.
    existing keys. For an unconfigured account with an available key file:
 
    ```sh
-   "$WXWORK_BIN" init --db-dir "<account-database-directory>" --keys-json "<local-key-file>"
+   wxwork init --db-dir "<account-database-directory>" --keys-json "<local-key-file>"
    ```
 
    When keys are unavailable, report that prerequisite and consult the fork's
@@ -53,7 +73,7 @@ daemon is stopped. A daemon process alone does not prove that ES is usable.
    machine is absent, resolve the runtime prerequisite; `daemon start`
    cannot install Podman or create the VM. Preserve the shared machine and
    other workloads.
-3. Run `"$WXWORK_BIN" daemon start` when enabling the service is within the
+3. Run `wxwork daemon start` when enabling the service is within the
    request or existing authorization. First enablement registers login
    startup. The daemon starts the existing VM if needed and creates or starts
    its own ES container and persistent volume. It binds loopback and uses
@@ -126,12 +146,12 @@ enables startup and resumes the service.
 
 The launchd job runs a copied binary under the state directory. Rebuilding
 the CLI does not update the running process. For an intended upgrade or a
-stuck job, use the same config/root and selected executable:
+stuck job, use the same config/root and installed command:
 
 ```sh
-"$WXWORK_BIN" daemon stop
-"$WXWORK_BIN" daemon start
-"$WXWORK_BIN" daemon status
+wxwork daemon stop
+wxwork daemon start
+wxwork daemon status
 ```
 
 Wait for readiness and verify the affected query. Do not edit the generated
@@ -158,5 +178,6 @@ There is no separate archive or backup.
 
 Rebuilds need a working ES endpoint. For connectivity problems, restore the
 service first. For implementation details or behavior absent from help,
-consult the selected fork's `docs/indexed-search.md`, `src/cli/indexed.rs`,
-and `src/indexed/`; keep recovery scoped to the configured account.
+consult `docs/indexed-search.md`, `src/cli/indexed.rs`, and `src/indexed/` in
+`~/code/cnb.woa.com/finofliu/wxwork-cli`; keep recovery scoped to the configured
+account.

@@ -11,24 +11,14 @@ then syncs hourly. Ordinary queries read the existing index immediately;
 they do not refresh the source databases. The agent interprets the results.
 Keep raw messages and database keys on this machine.
 
-## Select the executable once per task
+## Executable
 
-Use this Mac's fork build:
-
-```sh
-WXWORK_REPO="$HOME/code/cnb.woa.com/finofliu/wxwork-cli"
-WXWORK_BIN="$WXWORK_REPO/target/release/wxwork"
-"$WXWORK_BIN" daemon --help
-```
-
-Verify capabilities, not just the version string. `/usr/local/bin/wxwork`
-may be the legacy CLI without `daemon`, `sync`, or `rebuild`. If the fork
-binary is missing or lacks these commands, build it with
-`cargo build --release --manifest-path "$WXWORK_REPO/Cargo.toml"`.
-Use the selected executable throughout the task; repeat the variables in
-each separate shell call or use its absolute path. Check its command help
-for additional flags. For a running daemon's binary upgrade, read
-[operations](references/operations.md#service-control-and-binary-upgrades).
+Run `wxwork` from PATH. This Mac installs the finofliu fork at
+`~/.local/bin/wxwork`. Use `wxwork <command> --help` for flags.
+If the command is missing or lacks `daemon`, `sync`, or `rebuild`, follow
+[installation](references/operations.md#installation-and-updates). For a
+running daemon's binary upgrade, follow
+[service control](references/operations.md#service-control-and-binary-upgrades).
 
 ## Query workflow
 
@@ -45,7 +35,7 @@ for additional flags. For a running daemon's binary upgrade, read
    Use a timeline when needed and short evidence with chat, sender, and time.
    With no matches, state the actual window and filters searched.
 
-Each command below follows `"$WXWORK_BIN"`. Replace placeholders with resolved
+Each command below follows `wxwork`. Replace placeholders with resolved
 values. Repeat `--chat` or `--in` to combine known conversations.
 
 | Need | Command |
@@ -69,7 +59,7 @@ Preserve metadata when projecting fields. JSONL puts metadata in the last
   newest message time. `syncing: true` means batches from the current sync
   may already be visible. A source failure can leave `last_error` set while
   `ready: true` remains usable. Query that retained history and state its age.
-- If the user needs data through now, run `"$WXWORK_BIN" sync --wait` once
+- If the user needs data through now, run `wxwork sync --wait` once
   with ES available, check success, then query. Reuse that sync for the task.
   Plain `sync` only queues work; it does not establish freshness. If sync
   fails, any subsequent results still have the previous freshness limit.
