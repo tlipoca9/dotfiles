@@ -1,104 +1,94 @@
 ---
 name: wxwork-cli
-description: 企业微信 / WeCom 本地聊天记录查询与索引服务维护，通过 finofliu/wxwork-cli。Use for Enterprise WeChat history, keyword search, 日报、周报、个人或项目进展, new messages, or this CLI's daemon and local Elasticsearch setup, sync, and recovery. Not for personal WeChat (use wx-cli) or WeCom documents, calendars, and meetings.
+description: Query Enterprise WeChat / WeCom messages with wxwork for chat history, keyword search, 日报、周报、项目进展, and incremental message checks. Also use for wxwork index synchronization and service recovery. Excludes personal WeChat, documents, calendars, and meetings.
 ---
 
-# WeCom messages (`wxwork`)
+# WeCom messages
 
-On macOS, the finofliu fork reads all six message commands from local
-Elasticsearch (ES). A daemon imports the current account on first startup,
-then syncs hourly. Ordinary queries read the existing index immediately;
-they do not refresh the source databases. The agent interprets the results.
-Keep raw messages and database keys on this machine.
-
-## Executable
-
-Run `wxwork` from PATH. This Mac installs the finofliu fork at
-`~/.local/bin/wxwork`. Use `wxwork <command> --help` for flags.
-If the command is missing or lacks `daemon`, `sync`, or `rebuild`, follow
-[installation](references/operations.md#installation-and-updates). For a
-running daemon's binary upgrade, follow
-[service control](references/operations.md#service-control-and-binary-upgrades).
+Assume `wxwork` is installed and available in PATH. Use
+`wxwork <command> --help` when command syntax or supported options are unclear.
+The CLI retrieves messages; the agent summarizes findings and cites evidence.
 
 ## Query workflow
 
-1. Fix the requested time window as absolute `YYYY-MM-DD HH:MM:SS` values
-   in Asia/Shanghai. Resolve names with `find-chat "<name>"` or `sessions`;
-   reuse conversation IDs and fetched results within the task.
-2. Query directly. Healthy reads need neither `doctor` nor `daemon status`
-   first. If setup is missing, the index is unready, or a query fails, read
-   [operations](references/operations.md) and follow the matching branch.
-3. Inspect the full response before extracting messages: `ok`,
-   `error.code` / `error.message` on failure, and `meta.index` on success.
-   Report any freshness or coverage gap that affects the answer.
-4. Summarize by topic: progress, current state, remaining work, and owners.
-   Use a timeline when needed and short evidence with chat, sender, and time.
-   With no matches, state the actual window and filters searched.
-
-Each command below follows `wxwork`. Replace placeholders with resolved
-values. Repeat `--chat` or `--in` to combine known conversations.
+1. Identify the requested people, conversations, topics, and time range.
+   Convert relative dates to explicit start and end times in the timezone
+   relevant to the request. Clarify the timezone only when ambiguity affects
+   the result.
+2. Resolve conversation names with `find-chat` or `sessions`, then reuse the
+   returned conversation IDs. Query directly; healthy indexed reads need no
+   preliminary `doctor`, status check, or synchronization.
+3. Inspect the full response before extracting message fields. Check `ok`,
+   errors, freshness metadata, and result coverage. For an unavailable service
+   or unready index, follow [operations](references/operations.md).
+4. Answer within the retrieved evidence: summarize decisions, progress,
+   blockers, and owners, or give a timeline when requested. Cite the chat,
+   sender, and message time with short excerpts. With no matches, state the
+   time range and filters actually searched.
 
 | Need | Command |
 | --- | --- |
-| Locate a conversation | `find-chat "<name>"` |
-| Browse conversations | `sessions -n 30` |
-| Complete indexed history in a window | `history --chat <id> --since "<start>" --until "<end>" --all --order asc` |
-| Topic across chats | `search "podman 内存" --since "<start>" --until "<end>" -n 20` |
-| Topic in a known chat with context | `search "<terms>" --in <id> --context-before 2 --context-after 2` |
-| Exact error text | `search "connection reset by peer" --literal` |
-| Compact digest input | `summary-input --since "<start>" --until "<end>" --chat <id>` |
-| Intended incremental check | `new-messages -n 100` |
+| Find a conversation | `wxwork find-chat "<name>"` |
+| List recent conversations | `wxwork sessions -n 30` |
+| Read a complete time window | `wxwork history --chat <id> --since "<start>" --until "<end>" --all --order asc` |
+| Search across conversations | `wxwork search "<keywords>" --since "<start>" --until "<end>" -n 20` |
+| Search a conversation with context | `wxwork search "<keywords>" --in <id> --context-before 2 --context-after 2` |
+| Match exact text | `wxwork search "<text>" --literal` |
+| Prepare a digest | `wxwork summary-input --since "<start>" --until "<end>" --chat <id>` |
+| Check new captures | `wxwork new-messages -n 100` |
 
-For large results, use `--output <temporary-file>` and inspect it with `jq`.
-Preserve metadata when projecting fields. JSONL puts metadata in the last
-`_meta` line; default JSON is easier to inspect as a complete response.
+Repeat `--chat` or `--in` to select multiple conversations. Reuse retrieved
+results within the task. For large responses, use `--output <file>` and inspect
+selected fields while preserving metadata. JSONL stores metadata in the final
+`_meta` line.
 
-## Freshness and coverage
+## Search and coverage
 
-- `meta.index.last_successful_sync` is the last completed sync, not the
-  newest message time. `syncing: true` means batches from the current sync
-  may already be visible. A source failure can leave `last_error` set while
-  `ready: true` remains usable. Query that retained history and state its age.
-- If the user needs data through now, run `wxwork sync --wait` once
-  with ES available, check success, then query. Reuse that sync for the task.
-  Plain `sync` only queues work; it does not establish freshness. If sync
-  fails, any subsequent results still have the previous freshness limit.
-- macOS reads reject `--refresh` and `--freshness`, even though global help
-  lists them for Windows. `refresh-cache` does not update ES. `doctor`
-  diagnoses source databases, keys, and legacy caches; it is not an ES gate.
-- For complete `history` at offset 0, check `data.full_snapshot: true` and
-  `data.returned_count == data.snapshot_message_count`. Otherwise retrieve
-  the remainder or split the window. Counts cover the indexed history and
-  active filters; they do not prove that the desktop client has synced all
-  server history.
-- Search is a limited set of hits. A digest returning exactly its `-n`
-  limit may be truncated. Split by chat or time and verify important claims
-  with `history`. Deduplicate merged messages by
+- Indexed search requires all query terms and defaults to relevance order,
+  with newer messages first when relevance is equal. `--order asc|desc`
+  selects time order. `--literal` selects contiguous, case-insensitive text
+  matching; shell quotes alone do not select literal matching.
+- Search is text retrieval. Try alternate names or abbreviations when needed.
+  Context messages follow conversation order and can fall outside the hit's
+  time range; distinguish context from matching messages.
+- `summary-input` excludes noise and defaults to compact text. Repeated
+  `--keyword` filters mean AND with literal matching. For alternative topics,
+  query separately and merge, or filter a shared history result with OR.
+- Search and digest limits can truncate results. For complete history at
+  offset 0, check `data.full_snapshot` and that `data.returned_count` equals
+  `data.snapshot_message_count`. Retrieve the remainder or split the window
+  when necessary. These counts describe indexed data under the active filters,
+  not all messages that may exist on the server.
+- Deduplicate merged messages by
   `(conversation_id, source_table, message_id, server_id, sequence)`.
 
-## Search and incremental semantics
+## Freshness
 
-- Global and scoped search use the same ES index. Default search tokenizes
-  text, requires all query terms, and sorts by relevance, then newer time.
-  Use `--order asc|desc` for time order. Shell quotes keep one argument;
-  `--literal` selects contiguous, case-insensitive text matching. This is
-  text search; try alternate project names or abbreviations when needed.
-- Search context follows the full conversation's time order and can extend
-  beyond the hit's time window. Distinguish surrounding context from matches.
-- `summary-input` filters noise and defaults to compact text. Repeated
-  `--keyword` filters mean AND and use literal text matching. For alternatives,
-  query separately and merge, or filter a shared history result with OR.
-- `new-messages` advances a persisted checkpoint after successful output.
-  First use returns an empty list with `baseline: true`. Later calls return
-  messages first captured since that baseline, including old history newly
-  imported; edits to existing records are not new messages. A limit leaves
-  unreturned messages pending. Use fixed-window `history` for independent
-  investigations so they do not consume this stream.
-- `new-messages --reset-state` discards the pending interval by establishing
-  an empty baseline; use it only when that reset is intended. `--since` is
-  unsupported here. After a source rebuild, `generation_changed: true`
-  signals a new empty baseline. Use `history` to retrieve earlier messages.
+Indexed responses have `meta.freshness_mode: "indexed"`. Reads use history
+retained in Elasticsearch (ES) without capturing or decrypting the source.
+The daemon performs an initial full import and then synchronizes hourly.
 
-For first-time setup, ES outages, source/key failures, or rebuilds, use
-[operations](references/operations.md). This workflow targets macOS; Windows
-retains the legacy cache behavior and requires its own command help.
+- `meta.index.last_successful_sync` is the last completed sync, not the newest
+  message time. `syncing: true` allows partially published batches from the
+  current cycle. Report staleness when it affects the answer.
+- For data through now, run `wxwork sync --wait` once, check success, then
+  query. Plain `sync` only queues work. A failed sync leaves results subject
+  to the previous freshness limit.
+- Indexed reads reject `--refresh` and `--freshness`. `refresh-cache` updates
+  the cache backend, not ES. If the installed build uses a different backend,
+  follow its help and response metadata instead of assuming indexed behavior.
+
+## Incremental checks
+
+For indexed history, `new-messages` tracks first entry into the index and
+advances a persisted checkpoint after successful output. First use returns
+an empty baseline. Subsequent calls include newly imported old history;
+updates to existing records do not count as new messages. A limit leaves
+unreturned messages pending.
+
+Use this command for an intended incremental check. Use fixed-window history
+for independent investigations so they do not consume pending messages.
+`--reset-state` intentionally discards the pending interval by establishing a
+new baseline. `--since` is unsupported for indexed captures; use
+`wxwork history --since` for a send-time window. After a source rebuild,
+`generation_changed: true` indicates a new baseline.
