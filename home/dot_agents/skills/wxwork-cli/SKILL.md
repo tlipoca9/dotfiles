@@ -1,61 +1,114 @@
 ---
 name: wxwork-cli
-description: 企业微信 / WeCom 本地聊天记录查询，通过本机 `wxwork` CLI。Use when a task needs Enterprise WeChat messages, such as 日报、周报、个人或项目进展, a chat's history, keyword search, or new messages. Not for personal WeChat (use wx-cli) or WeCom documents, calendars, and meetings.
+description: 企业微信 / WeCom 本地聊天记录查询与索引服务维护，通过 finofliu/wxwork-cli。Use for Enterprise WeChat history, keyword search, 日报、周报、个人或项目进展, new messages, or this CLI's daemon and local Elasticsearch setup, sync, and recovery. Not for personal WeChat (use wx-cli) or WeCom documents, calendars, and meetings.
 ---
 
 # WeCom messages (`wxwork`)
 
-`wxwork` (source: `cnb.woa.com/garyyu/wxwork-cli`) reads the local Enterprise
-WeChat databases and prints JSON. The CLI retrieves and filters; you summarize,
-extract decisions, risks, and action items. Run `wxwork <command> --help` for
-flags.
+On macOS, the finofliu fork reads all six message commands from local
+Elasticsearch (ES). A daemon imports the current account on first startup,
+then syncs hourly. Ordinary queries read the existing index immediately;
+they do not refresh the source databases. The agent interprets the results.
+Keep raw messages and database keys on this machine.
 
-Messages are private local data. Keep them on this machine: no web tools or
-external services receive raw messages.
+## Select the executable once per task
 
-## Steps
+Use this Mac's fork build:
 
-1. **Health.** Run `wxwork doctor`. If it reports a configuration, key,
-   database, or cache problem, report it and stop. `init`, key import, and key
-   files stay as they are unless the user asks. Done when `doctor` returns
-   `"ok": true`; note its `cache_stale` flags for step 3.
-2. **Resolve the window and chats.** Convert relative dates to absolute
-   `YYYY-MM-DD HH:MM:SS` in Asia/Shanghai. Resolve chat names with
-   `wxwork find-chat "<keyword>"` or `wxwork sessions`; a person's direct chat
-   resolves by display name. Done when every chat is a `conversation_id` or an
-   exact name, and the window has both ends.
-3. **Query** with the smallest command that answers the question:
+```sh
+WXWORK_REPO="$HOME/code/cnb.woa.com/finofliu/wxwork-cli"
+WXWORK_BIN="$WXWORK_REPO/target/release/wxwork"
+"$WXWORK_BIN" daemon --help
+```
 
-   | Need | Command |
-   |---|---|
-   | Daily/weekly/monthly digest | `summary-input --today` or `--preset weekly\|monthly` |
-   | Topic across chats | `summary-input --keyword "<kw>" --since … --until …` |
-   | One chat, a time range | `history --chat "<id>" --since … --until … --all --order asc` |
-   | Since the last check | `new-messages` |
-   | Exact phrase with context | `search` (see below) |
+Verify capabilities, not just the version string. `/usr/local/bin/wxwork`
+may be the legacy CLI without `daemon`, `sync`, or `rebuild`. If the fork
+binary is missing or lacks these commands, build it with
+`cargo build --release --manifest-path "$WXWORK_REPO/Cargo.toml"`.
+Use the selected executable throughout the task; repeat the variables in
+each separate shell call or use its absolute path. Check its command help
+for additional flags. For a running daemon's binary upgrade, read
+[operations](references/operations.md#service-control-and-binary-upgrades).
 
-   The default freshness (`latest`, auto refresh) suits most queries. Use
-   `--freshness prefer-cache` only when `doctor` shows `cache_stale: false` or
-   the window ends before the last refresh; use `strict-latest` only when the
-   user needs the newest messages and accepts the wait. Write large results
-   with `--output <tmp-file>` and read them with `jq`. Done when the results
-   cover the whole window, or you can name what is missing.
-4. **Report.** For digests: key conversations, decisions and status changes,
-   risks and blockers, action items by owner, open questions. For a targeted
-   lookup: timeline, people and chats, facts, current state, next actions.
-   Quote only the shortest snippets that prove a point. With no matches, state
-   the exact window and filters queried.
+## Query workflow
 
-## Gotchas
+1. Fix the requested time window as absolute `YYYY-MM-DD HH:MM:SS` values
+   in Asia/Shanghai. Resolve names with `find-chat "<name>"` or `sessions`;
+   reuse conversation IDs and fetched results within the task.
+2. Query directly. Healthy reads need neither `doctor` nor `daemon status`
+   first. If setup is missing, the index is unready, or a query fails, read
+   [operations](references/operations.md) and follow the matching branch.
+3. Inspect the full response before extracting messages: `ok`,
+   `error.code` / `error.message` on failure, and `meta.index` on success.
+   Report any freshness or coverage gap that affects the answer.
+4. Summarize by topic: progress, current state, remaining work, and owners.
+   Use a timeline when needed and short evidence with chat, sender, and time.
+   With no matches, state the actual window and filters searched.
 
-- The first `search` builds a full-text index over every cached message
-  (hundreds of thousands of rows) and can run for many minutes; agent command
-  timeouts have killed it (exit 143). Prefer `summary-input --keyword` or
-  `find-chat` + `history`. When `search` is needed, run it once in the
-  background with a long timeout, not several in parallel.
-- A stale cache shows as results that stop at an old date while
-  `doctor` reports `cache_stale: true`. Rerun without `prefer-cache` so the
-  cache refreshes.
-- Commands that change state need an explicit user request:
-  `new-messages --reset-state`, `refresh-cache`, `init`, and `tags` changes.
-  The same holds for editing `~/.wxwork-cli/`.
+Each command below follows `"$WXWORK_BIN"`. Replace placeholders with resolved
+values. Repeat `--chat` or `--in` to combine known conversations.
+
+| Need | Command |
+| --- | --- |
+| Locate a conversation | `find-chat "<name>"` |
+| Browse conversations | `sessions -n 30` |
+| Complete indexed history in a window | `history --chat <id> --since "<start>" --until "<end>" --all --order asc` |
+| Topic across chats | `search "podman 内存" --since "<start>" --until "<end>" -n 20` |
+| Topic in a known chat with context | `search "<terms>" --in <id> --context-before 2 --context-after 2` |
+| Exact error text | `search "connection reset by peer" --literal` |
+| Compact digest input | `summary-input --since "<start>" --until "<end>" --chat <id>` |
+| Intended incremental check | `new-messages -n 100` |
+
+For large results, use `--output <temporary-file>` and inspect it with `jq`.
+Preserve metadata when projecting fields. JSONL puts metadata in the last
+`_meta` line; default JSON is easier to inspect as a complete response.
+
+## Freshness and coverage
+
+- `meta.index.last_successful_sync` is the last completed sync, not the
+  newest message time. `syncing: true` means batches from the current sync
+  may already be visible. A source failure can leave `last_error` set while
+  `ready: true` remains usable. Query that retained history and state its age.
+- If the user needs data through now, run `"$WXWORK_BIN" sync --wait` once
+  with ES available, check success, then query. Reuse that sync for the task.
+  Plain `sync` only queues work; it does not establish freshness. If sync
+  fails, any subsequent results still have the previous freshness limit.
+- macOS reads reject `--refresh` and `--freshness`, even though global help
+  lists them for Windows. `refresh-cache` does not update ES. `doctor`
+  diagnoses source databases, keys, and legacy caches; it is not an ES gate.
+- For complete `history` at offset 0, check `data.full_snapshot: true` and
+  `data.returned_count == data.snapshot_message_count`. Otherwise retrieve
+  the remainder or split the window. Counts cover the indexed history and
+  active filters; they do not prove that the desktop client has synced all
+  server history.
+- Search is a limited set of hits. A digest returning exactly its `-n`
+  limit may be truncated. Split by chat or time and verify important claims
+  with `history`. Deduplicate merged messages by
+  `(conversation_id, source_table, message_id, server_id, sequence)`.
+
+## Search and incremental semantics
+
+- Global and scoped search use the same ES index. Default search tokenizes
+  text, requires all query terms, and sorts by relevance, then newer time.
+  Use `--order asc|desc` for time order. Shell quotes keep one argument;
+  `--literal` selects contiguous, case-insensitive text matching. This is
+  text search; try alternate project names or abbreviations when needed.
+- Search context follows the full conversation's time order and can extend
+  beyond the hit's time window. Distinguish surrounding context from matches.
+- `summary-input` filters noise and defaults to compact text. Repeated
+  `--keyword` filters mean AND and use literal text matching. For alternatives,
+  query separately and merge, or filter a shared history result with OR.
+- `new-messages` advances a persisted checkpoint after successful output.
+  First use returns an empty list with `baseline: true`. Later calls return
+  messages first captured since that baseline, including old history newly
+  imported; edits to existing records are not new messages. A limit leaves
+  unreturned messages pending. Use fixed-window `history` for independent
+  investigations so they do not consume this stream.
+- `new-messages --reset-state` discards the pending interval by establishing
+  an empty baseline; use it only when that reset is intended. `--since` is
+  unsupported here. After a source rebuild, `generation_changed: true`
+  signals a new empty baseline. Use `history` to retrieve earlier messages.
+
+For first-time setup, ES outages, source/key failures, or rebuilds, use
+[operations](references/operations.md). This workflow targets macOS; Windows
+retains the legacy cache behavior and requires its own command help.
