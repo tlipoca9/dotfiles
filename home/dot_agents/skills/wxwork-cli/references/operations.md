@@ -50,6 +50,10 @@ A plain `sync` request requires a running daemon and returns before completion.
 | `index_missing` | Verify the intended account, endpoint, and index configuration. If data was lost, the daemon or `sync --wait` can import what remains in the source. |
 | Source/key/snapshot error with a ready index | Query retained history and disclose the last successful sync time. Diagnose the source with `doctor`; fix the reported cause before requesting another sync. |
 | `account_mismatch` | Correct the account/configuration mismatch. Do not replace another account's index. |
+| `invalid_reference` | Check that the complete opaque reference was passed unchanged; use a reference returned by the CLI. |
+| `message_not_found` | Report that the referenced record is absent from retained history. Keep any supplied snapshot as historical evidence. |
+| `index_upgrade_required` from `messages senders` | Follow the sender-index upgrade below. Other indexed reads remain available. |
+| `invalid_cursor`, `cursor_query_mismatch`, `cursor_generation_mismatch` | Restart sender discovery from its first page with the intended account and original query. |
 | `index_changed` | Retry the read once against the current generation. |
 | `capture_pending` | Let the daemon recover the capture batch, or run `sync --wait`, then retry the incremental check. |
 | `checkpoint_busy` | Let the other incremental delivery finish, then retry. Do not reset its checkpoint. |
@@ -89,6 +93,24 @@ wxwork daemon status
 
 Wait for readiness and retry the affected query. A successful start command
 alone does not verify recovery.
+
+## Sender-index upgrade
+
+An older index can serve `query`, `get`, `search`, and `history` while
+`messages senders` returns `index_upgrade_required`. Ordinary synchronization
+supports the old format without upgrading sender discovery. When that upgrade is intended, run:
+
+```sh
+wxwork rebuild
+wxwork messages senders -n 20
+```
+
+This rebuild uses retained ES history and preserves message references and capture
+checkpoints. Queries keep using the old index until the rebuilt index is published.
+Verify rebuild completion and a successful sender query. If rebuilding fails,
+inspect its error and retained-index readiness before retrying. A successful
+rebuild invalidates existing sender cursors; start again without `--cursor`.
+`--from-source` replaces retained history and is not the sender-index upgrade.
 
 ## Rebuilds and retained history
 

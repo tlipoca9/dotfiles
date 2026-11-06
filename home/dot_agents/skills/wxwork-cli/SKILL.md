@@ -1,6 +1,6 @@
 ---
 name: wxwork-cli
-description: Query Enterprise WeChat / WeCom messages with wxwork for chat history, keyword search, 日报、周报、项目进展, and incremental message checks. Also use for wxwork index synchronization and service recovery. Excludes personal WeChat, documents, calendars, and meetings.
+description: Query Enterprise WeChat / WeCom messages with wxwork for chat history, keyword search, stable message references, 日报、周报、项目进展, and incremental message checks. Also use for wxwork index synchronization, sender-index upgrades, and service recovery. Excludes personal WeChat, documents, calendars, and meetings.
 ---
 
 # WeCom messages
@@ -15,6 +15,10 @@ The CLI retrieves messages; the agent summarizes findings and cites evidence.
    Convert relative dates to explicit start and end times in the timezone
    relevant to the request. Clarify the timezone only when ambiguity affects
    the result.
+   When the request includes message attachments or opaque message references,
+   follow [message references](references/messages.md). Use an attached full-text
+   snapshot as evidence; fetch the current record or more context when the task
+   needs it.
 2. Resolve conversation names with `find-chat` or `sessions`, then reuse the
    returned conversation IDs. Query directly; healthy indexed reads need no
    preliminary `doctor`, status check, or synchronization.
@@ -30,6 +34,10 @@ The CLI retrieves messages; the agent summarizes findings and cites evidence.
 | --- | --- |
 | Find a conversation | `wxwork find-chat "<name>"` |
 | List recent conversations | `wxwork sessions -n 30` |
+| Browse recent messages with full text and stable references | `wxwork messages query -n 20` |
+| Search full text with a sender filter | `wxwork messages query "<keywords>" --in <id> --sender <sender-id> -n 20` |
+| Read one referenced message | `wxwork messages get --ref "$MESSAGE_REF"` |
+| Find senders in retained history | `wxwork messages senders "<name-or-id>" -n 20` |
 | Read a complete time window | `wxwork history --chat <id> --since "<start>" --until "<end>" --all --order asc` |
 | Search across conversations | `wxwork search "<keywords>" --since "<start>" --until "<end>" -n 20` |
 | Search a conversation with context | `wxwork search "<keywords>" --in <id> --context-before 2 --context-after 2` |
@@ -44,7 +52,7 @@ selected fields while preserving metadata. JSONL stores metadata in the final
 
 ## Search and coverage
 
-- Indexed search requires all query terms and defaults to relevance order,
+- `search` requires all query terms and defaults to relevance order,
   with newer messages first when relevance is equal. `--order asc|desc`
   selects time order. `--literal` selects contiguous, case-insensitive text
   matching; shell quotes alone do not select literal matching.
@@ -59,14 +67,18 @@ selected fields while preserving metadata. JSONL stores metadata in the final
   `data.snapshot_message_count`. Retrieve the remainder or split the window
   when necessary. These counts describe indexed data under the active filters,
   not all messages that may exist on the server.
-- Deduplicate merged messages by
+- For `messages` responses, deduplicate by `(account, ref)` and preserve ID
+  strings. For legacy responses without a reference, use
   `(conversation_id, source_table, message_id, server_id, sequence)`.
 
 ## Freshness
 
 Indexed responses have `meta.freshness_mode: "indexed"`. Reads use history
 retained in Elasticsearch (ES) without capturing or decrypting the source.
-The daemon performs an initial full import and then synchronizes hourly.
+The daemon performs an initial full import, then synchronizes committed source
+changes on a 30-second schedule. Cycles run serially; synchronization time and
+any caller-side cache affect when new content becomes visible. Source replacement,
+WAL discontinuity, or missing derived caches can require a full reconciliation.
 
 - `meta.index.last_successful_sync` is the last completed sync, not the newest
   message time. `syncing: true` allows partially published batches from the
