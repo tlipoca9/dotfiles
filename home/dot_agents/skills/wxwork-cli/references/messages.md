@@ -63,11 +63,14 @@ wxwork --format json messages senders "<name-or-id>" -n 20
 wxwork --format json messages senders "<same-name-or-id>" -n 20 --cursor "$NEXT_CURSOR"
 ```
 
-Read `data.items` as `{sender_id, sender}` and follow `data.next_cursor` while
+Read `data.items` as `{sender_id, sender, aliases?}` and follow `data.next_cursor` while
 `data.has_more` is true. Discovery covers unique senders in the account's retained
 history, including senders outside the current message results. Names use the
 current account-level display name, falling back to ID; group-specific aliases
-are not additional candidates.
+are not additional candidates. Name searches also match contact English names and
+accounts. Optional `aliases` preserves these alternate names in their original
+spelling. Select the returned `sender_id` for message queries; English aliases
+belong to sender discovery, not the display-name-only `query --sender` fallback.
 
 Keep the account and original query unchanged across pages. A query/account
 change or cursor error starts a new first page. Cursors also expire after an
