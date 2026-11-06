@@ -56,6 +56,34 @@ download or transcribe the original media.
 narrow the filters or raise the limit within the installed command's bounds.
 Complete results here describe retained indexed history, not all server history.
 
+## Browse matching conversations
+
+```sh
+wxwork --format json messages browse "<keywords>" -n 50
+wxwork --format json messages browse "<keywords>" --group <chat-id> -n 50
+wxwork --format json messages browse "<same-keywords>" --group <same-chat-id> -n 50 --cursor "$NEXT_CURSOR"
+wxwork --format json messages members "<name-or-id>" -n 20
+```
+
+`browse` returns exact `total`, per-conversation `groups[].count`, `selected_group`,
+`selected_total`, and full `messages`. Groups are ordered by match count; messages
+within the selected group are newest first. `--group` selects the reading pane
+without narrowing the group list. `--in` narrows the entire search. Up to 1,000
+groups are returned; `groups_truncated` indicates more groups, while each returned
+count remains exact. All counts cover retained history.
+
+Follow `next_cursor` while `has_more` is true. Keep the original query, filters,
+group argument and limit unchanged. Message pages share a five-minute read view;
+newly indexed messages appear in a new search. Expiry, account changes or rebuilds
+require restarting from the first page. Message and sender cursors are separate.
+
+Additional filters are `--chat-kind single|group|app`, `--message-type` with the
+installed help's named types, and `--member <id>`. Discover member IDs through
+`messages members`, which also supports its own query-bound `--cursor`.
+Members are observed local membership records, including people who never sent
+a retained message. They do not establish current group membership. `--member`
+selects conversations; `--sender` selects authored messages. The filters combine.
+
 ## Discover senders
 
 ```sh

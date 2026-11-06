@@ -37,6 +37,8 @@ The CLI retrieves messages; the agent summarizes findings and cites evidence.
 | Browse recent messages with full text and stable references | `wxwork messages query -n 20` |
 | Search full text with a sender filter | `wxwork messages query "<keywords>" --in <id> --sender <sender-id> -n 20` |
 | Read one referenced message | `wxwork messages get --ref "$MESSAGE_REF"` |
+| Group matching messages by conversation, with counts and pagination | `wxwork messages browse "<keywords>" -n 50` |
+| Find locally recorded members, including non-senders | `wxwork messages members "<name-or-id>" -n 20` |
 | Find senders in retained history | `wxwork messages senders "<name-or-id>" -n 20` |
 | Read a complete time window | `wxwork history --chat <id> --since "<start>" --until "<end>" --all --order asc` |
 | Search across conversations | `wxwork search "<keywords>" --since "<start>" --until "<end>" -n 20` |
