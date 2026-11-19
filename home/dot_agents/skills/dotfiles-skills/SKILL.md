@@ -1,6 +1,6 @@
 ---
 name: dotfiles-skills
-description: Maintain this Mac's chezmoi-managed dotfiles. Read before changing any agent configuration (AGENTS.md, skills under ~/.agents/skills, MCP servers, Codex, Cursor, or Pi settings and extensions) or any other file chezmoi manages. Covers where each source lives, the edit, preview, apply, and verify loop, encrypted content, and committing.
+description: Maintain the chezmoi-managed dotfiles on macOS or Linux. Read before changing any agent configuration (AGENTS.md, skills under ~/.agents/skills, MCP servers, Codex, Cursor, or Pi settings and extensions) or any other file chezmoi manages. Covers where each source lives, the edit, preview, apply, and verify loop, encrypted content, and committing.
 ---
 
 # Dotfiles
@@ -18,9 +18,11 @@ overwritten by the next `chezmoi apply`.
 Use the first location that applies:
 
 1. A path the user names.
-2. The checkout under `~/code`, currently
+2. The configured checkout, if `chezmoi git -- remote -v` identifies it as
+   `tlipoca9/dotfiles`.
+3. The macOS checkout under `~/code`, currently
    `~/code/github.com/tlipoca9/dotfiles`.
-3. `~/.local/share/chezmoi`, chezmoi's default source directory.
+4. `~/.local/share/chezmoi`, chezmoi's default source directory.
 
 `chezmoi source-path` reports the source state chezmoi is configured to use.
 When it does not point into the chosen repository, pass

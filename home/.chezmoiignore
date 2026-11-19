@@ -1,0 +1,19 @@
+{{- if eq .chezmoi.os "linux" }}
+**
+!.agents
+!.agents/AGENTS.md
+!.agents/skills/**
+!.codex
+!.codex/AGENTS.md
+!.codex/config.toml
+!.config
+!.config/firecrawl
+!.config/firecrawl/api-key
+!.config/taihu.txt
+!.local
+!.local/bin
+!.local/bin/firecrawl-mcp
+!.ssh
+!.ssh/id_ed25519
+!.ssh/id_ed25519.pub
+{{- end }}

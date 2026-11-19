@@ -1,7 +1,7 @@
 # dotfiles
 
-Personal macOS development environment managed directly by
-[chezmoi](https://www.chezmoi.io/) and [Homebrew](https://brew.sh/).
+Personal macOS development environment and shared macOS and Linux dotfiles
+managed by chezmoi. macOS packages are managed by Homebrew.
 
 This repository rebuilds the environment's **capabilities**, not an identical
 version snapshot. Homebrew formulae/casks and VS Code extensions intentionally
@@ -10,7 +10,7 @@ when missing; later `chezmoi apply` runs do not upgrade, downgrade, or otherwise
 converge installed tools.
 
 The repository is public. The managed SSH private key is age-encrypted. Its age
-identity is restored manually on each Mac and is never managed or committed.
+identity is restored manually on each machine and is never managed or committed.
 
 ## Initialize a new Mac
 
@@ -39,7 +39,67 @@ rendered `brew shellenv` with mode `0600`.
 > Keep a separate backup of the age identity. Losing every copy makes the
 > encrypted SSH key unrecoverable. Never add the identity to a repository.
 
-## Daily use
+## Initialize Linux
+
+Install chezmoi if needed and make sure `$HOME/.local/bin` is on your `PATH`.
+Run these commands as the user who runs Codex.
+
+```sh
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin"
+```
+
+If chezmoi is already configured, check `chezmoi source-path` before running
+`init`. If it points to another repository, use a separate `--config` file
+for this checkout and pass that option to each command.
+
+Restore the age identity at `$HOME/.config/chezmoi/age.txt` with mode `0600`.
+Chezmoi uses it for the SSH private key, private skills, and MCP credentials.
+Install Python 3 for the Codex config modifier and Node.js with `npx` for
+the Firecrawl launcher.
+
+From the root of your existing checkout, initialize and preview the targets.
+chezmoi records this checkout's path in its configuration.
+
+```sh
+chezmoi --source "$PWD" init
+chezmoi managed
+chezmoi diff
+```
+
+Linux manages `~/.agents/AGENTS.md`, `~/.codex/AGENTS.md` (the global
+instructions for the default Codex home), all shared skills under
+`~/.agents/skills`, and the Ed25519 key pair under `~/.ssh`. It also merges
+the shared MCP servers into Codex settings and deploys their credentials and
+Firecrawl launcher. The merge preserves unrelated Codex settings and MCP
+servers. Use `codex mcp list` to check the registered servers.
+
+If the preview shows existing files you want to keep, pass only the
+conflict-free target paths to both `apply` and `verify`. Check for
+`~/.codex/AGENTS.override.md` as well. Codex gives that file priority over
+`~/.codex/AGENTS.md`.
+
+```sh
+chezmoi apply
+chezmoi verify
+```
+
+Start a new Codex session to load the global instructions and discover the
+skills. Individual workflows may need tools such as `uv` for Python, Go for
+the Go guidelines wrapper, Python 3 for frontend helpers, and `gh` for
+GitHub operations. Install them as needed for the workflows you use.
+
+To update, run these commands from the checkout root and review the preview
+before applying. Use the same target selection if any conflicts remain.
+
+```sh
+git pull --ff-only
+chezmoi init
+chezmoi diff
+chezmoi apply
+chezmoi verify
+```
+
+## Daily use on macOS
 
 ```sh
 chezmoi diff     # always preview changes before applying to the real HOME
@@ -62,9 +122,8 @@ chezmoi state delete-bucket --bucket=scriptState
 chezmoi apply
 ```
 
-## Managed scope
+## macOS managed scope
 
-- macOS only, without machine-specific profiles
 - system Zsh with exact, reviewed Antidote plugin commits
 - current Homebrew packages and current VS Code extension releases
 - Pi with exact, reviewed extension pins and preserved runtime state

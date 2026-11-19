@@ -2,8 +2,8 @@
 #!/bin/sh
 set -eu
 
-# Encrypted private key source checksum: {{ include "dot_ssh/encrypted_private_id_ed25519.age" | sha256sum }}
-# Public key source checksum: {{ include "dot_ssh/id_ed25519.pub" | sha256sum }}
+# Encrypted private key source checksum: {{ include "private_dot_ssh/encrypted_private_id_ed25519.age" | sha256sum }}
+# Public key source checksum: {{ include "private_dot_ssh/id_ed25519.pub" | sha256sum }}
 home={{ .chezmoi.destDir | quote }}
 private_key=$home/.ssh/id_ed25519
 public_key=$home/.ssh/id_ed25519.pub

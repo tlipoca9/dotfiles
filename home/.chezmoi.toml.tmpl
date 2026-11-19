@@ -1,4 +1,8 @@
+{{- if eq .chezmoi.os "linux" -}}
+sourceDir = {{ .chezmoi.workingTree | quote }}
+{{ else -}}
 sourceDir = "~/code/github.com/tlipoca9/dotfiles"
+{{ end -}}
 encryption = "age"
 
 [age]

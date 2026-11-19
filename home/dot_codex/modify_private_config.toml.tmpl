@@ -57,7 +57,7 @@ def update_table(config: str, name: str, fields: dict[str, object]) -> str:
         return config.rstrip("\n") + f"\n\n[{header}]\n" + rendered
 
     end = next((table.start() for table in tables if table.start() > match.start()), len(config))
-    body = config[match.end():end]
+    body = config[match.end():end].removeprefix("\n")
     removed = {"url", "command", "args", "http_headers", "http_headers_helper", "env_http_headers", "bearer_token_env_var"}
     if "command" in fields:
         removed.update({"startup_timeout_sec", "tool_timeout_sec"})
@@ -66,7 +66,7 @@ def update_table(config: str, name: str, fields: dict[str, object]) -> str:
         for line in body.splitlines(keepends=True)
         if not (field := FIELD.match(line)) or field.group(1) not in removed
     )
-    return config[:match.end()] + "\n" + rendered + kept.lstrip("\n") + config[end:]
+    return config[:match.end()] + "\n" + rendered + kept + config[end:]
 
 
 def main() -> int:
