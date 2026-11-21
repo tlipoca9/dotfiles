@@ -5,7 +5,7 @@
 """Flag defensive and AI-sounding phrasing in Chinese and English prose.
 
 Usage:
-  uv run lint.py FILE...      lint files
+  uv run lint.py FILE...      lint files (pass - for stdin; use ./- for a literal file named -)
   uv run lint.py < text       lint stdin
 
 Prints one line per hit as path:line: rule: matched text. Fenced code blocks
@@ -146,7 +146,18 @@ def main() -> int:
         print(__doc__.strip())
         return 0
     try:
-        sources = [(p, Path(p).read_text()) for p in paths] or [("<stdin>", sys.stdin.read())]
+        if not paths:
+            sources = [("<stdin>", sys.stdin.read())]
+        else:
+            stdin_text: str | None = None
+            sources = []
+            for p in paths:
+                if p == "-":
+                    if stdin_text is None:
+                        stdin_text = sys.stdin.read()
+                    sources.append(("<stdin>", stdin_text))
+                else:
+                    sources.append((p, Path(p).read_text()))
     except OSError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2

@@ -12,6 +12,7 @@ Each **sub-skill** is an upstream skill vendored whole into `references/<name>/`
 
 1. Pick every sub-skill below whose trigger matches the task.
 2. Read its `INSTRUCTIONS.md` in full and follow it. Links and paths inside resolve from that file's folder; `<skill-dir>` means this router's folder.
+   - For `edisonmbli-refactoring-ui-skill-refactoring-ui`, numbered chapter files referenced by bare filename (such as `11-design-tokens.md`, `12-component-recipes.md`, `13-audit-rubric.md`, `14-antipatterns.md`, `16-component-libraries.md`) live inside its nested `references/` folder, e.g. `references/edisonmbli-refactoring-ui-skill-refactoring-ui/references/12-component-recipes.md`.
 3. Done when the sub-skill's own completion criterion is met.
 
 | Sub-skill | Reach for it when |

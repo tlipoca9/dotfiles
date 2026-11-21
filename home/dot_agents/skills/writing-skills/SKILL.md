@@ -1,6 +1,6 @@
 ---
 name: writing-skills
-description: Router over writing skills. Read before writing or editing text a person reads after the turn, such as reports, research reports, tickets, design docs, READMEs, API field descriptions, product copy (UI text, error messages, demo narration, articles), code review findings, doc comments, and PR bodies; when reviewing prose that reads as AI-written, padded, or defensive, including Chinese requests such as 调研报告、文案、AI 味、防御性措辞、写得太啰嗦、润色; and when asked to update these skills.
+description: Router over writing skills. Read before writing or editing text a person reads after the turn, such as reports, research reports, PRDs (产品需求文档), runbooks, tickets, design docs, READMEs, API field descriptions, product copy (UI text, error messages, demo narration, articles), code review findings, doc comments, and PR bodies; when reviewing prose that reads as AI-written, padded, or defensive, including Chinese requests such as 调研报告、产品需求文档、文案、AI 味、防御性措辞、写得太啰嗦、润色; and when asked to update these skills.
 license: MIT
 ---
 
@@ -15,12 +15,13 @@ Each **sub-skill** lives in `references/<name>/` with its entry point at `refere
 
 1. Writing anything a person reads: run `technical-writing`. It calls a humanizer for the review pass of long documents.
 2. Reviewing or rewriting existing prose for AI tells: run the humanizer for the text's language, keeping technical text in a neutral register as `technical-writing` describes.
+   - **Fact fidelity**: when running a humanizer on technical prose, rewrite phrasing only. Never introduce facts, numbers, dates, or opinions outside the source material and the `technical-writing` ledger, even where an upstream humanizer allows adding "known" detail.
 3. Read the chosen `INSTRUCTIONS.md` in full and follow it. Links and paths inside resolve from that file's folder; `<skill-dir>` means this router's folder.
 4. Done when the sub-skill's own completion criterion is met.
 
 | Sub-skill | Kind | Reach for it when |
 |---|---|---|
-| [`technical-writing`](references/technical-writing/INSTRUCTIONS.md) | Local | Writing or editing reports, research reports, tickets, docs, API descriptions, product copy, code review findings, comments, PR bodies, or long replies |
+| [`technical-writing`](references/technical-writing/INSTRUCTIONS.md) | Local | Writing or editing reports, research reports, PRDs, runbooks, tickets, docs, API descriptions, product copy, code review findings, comments, PR bodies, or long replies |
 | [`blader-humanizer`](references/blader-humanizer/INSTRUCTIONS.md) | Vendored | Reviewing English prose for AI writing patterns |
 | [`jiji262-humanizer-chinese`](references/jiji262-humanizer-chinese/INSTRUCTIONS.md) | Vendored | Reviewing Chinese prose for AI writing patterns |
 

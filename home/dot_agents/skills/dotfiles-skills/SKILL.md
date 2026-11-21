@@ -80,5 +80,15 @@ Cursor account rather than in the dotfiles, tells its agent to read
   the result back: delete `dot_agents/skills/<router>/` and
   `chezmoi add ~/.agents/skills/<router>`, so files removed upstream leave the
   source too.
+- Self-updating skills (such as `agentruntime-context`, whose `scripts/sync.sh`
+  is stored in source as `scripts/encrypted_executable_sync.sh.age`) must run
+  their sync script from the deployed `~/.agents/skills/<name>/` directory,
+  never from the chezmoi source directory where encrypted filenames do not
+  match deployed names. If the script reports a self-update, run
+  `chezmoi diff ~/.agents/skills/<name>` first to inspect what changed and
+  ensure no concurrent source edits would be lost, then re-add only the changed
+  deployed files while preserving their encryption attributes
+  (`chezmoi add --encrypt` for encrypted targets; never leave plaintext copies
+  in source), followed by `chezmoi verify ~/.agents/skills/<name>`.
 - Remove a skill by deleting both its source directory and its deployed
   directory. Chezmoi does not delete a target whose source has disappeared.

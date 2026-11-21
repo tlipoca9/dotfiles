@@ -14,7 +14,13 @@ The CLI retrieves messages; the agent summarizes findings and cites evidence.
 1. Identify the requested people, conversations, topics, and time range.
    Convert relative dates to explicit start and end times in the timezone
    relevant to the request. Clarify the timezone only when ambiguity affects
-   the result.
+   the result. Match each command's time format:
+   - `wxwork messages query`: accepts RFC3339 with explicit offset (preferred,
+     e.g. `2026-11-20T00:00:00+08:00`) or local `YYYY-MM-DD HH:MM:SS`.
+   - `wxwork history`, `wxwork search`, and `wxwork summary-input`: reject
+     RFC3339 (`T` and timezone offsets fail with `invalid date`). Pass local
+     `YYYY-MM-DD HH:MM:SS` or `YYYY-MM-DD` (interpreted in the machine's local
+     timezone), converting ISO/RFC3339 timestamps from snapshots first.
    When the request includes message attachments or opaque message references,
    follow [message references](references/messages.md). Use an attached full-text
    snapshot as evidence; fetch the current record or more context when the task
@@ -40,11 +46,11 @@ The CLI retrieves messages; the agent summarizes findings and cites evidence.
 | Group matching messages by conversation, with counts and pagination | `wxwork messages browse "<keywords>" -n 50` |
 | Find locally recorded members, including non-senders | `wxwork messages members "<name-or-id>" -n 20` |
 | Find senders in retained history | `wxwork messages senders "<name-or-id>" -n 20` |
-| Read a complete time window | `wxwork history --chat <id> --since "<start>" --until "<end>" --all --order asc` |
-| Search across conversations | `wxwork search "<keywords>" --since "<start>" --until "<end>" -n 20` |
+| Read a complete time window | `wxwork history --chat <id> --since "YYYY-MM-DD HH:MM:SS" --until "YYYY-MM-DD HH:MM:SS" --all --order asc` |
+| Search across conversations | `wxwork search "<keywords>" --since "YYYY-MM-DD HH:MM:SS" --until "YYYY-MM-DD HH:MM:SS" -n 20` |
 | Search a conversation with context | `wxwork search "<keywords>" --in <id> --context-before 2 --context-after 2` |
 | Match exact text | `wxwork search "<text>" --literal` |
-| Prepare a digest | `wxwork summary-input --since "<start>" --until "<end>" --chat <id>` |
+| Prepare a digest | `wxwork summary-input --since "YYYY-MM-DD HH:MM:SS" --until "YYYY-MM-DD HH:MM:SS" --chat <id>` |
 | Check new captures | `wxwork new-messages -n 100` |
 
 Repeat `--chat` or `--in` to select multiple conversations. Reuse retrieved

@@ -114,3 +114,27 @@ The second document keeps per-run data and method, linked from the summary.
 ## Status summary written as a diary
 
 A weekly progress summary went day by day with exact dates. Verdict: "有点流水账，不要太明确日期." Organize by capability: what progressed, where it stands, what remains, with the period stated once at the top.
+
+## Runbook ordered by component instead of execution order
+
+A rollout checklist grouped all database changes together, mixing pre-deploy migrations with post-deploy column drops, and wrapped simple checks in complex shell functions and `jq`. Verdicts: "db 变更发布前和发布后的写到一起了，我希望按执行顺序编排" and "好复杂，能不能简单易懂的 curl."
+
+Order runbooks by execution phase (pre-deploy, deploy, post-deploy, verify), placing each SQL or command at the exact step where the operator runs it, with direct runnable commands and pass/stop criteria inline. For narrative test summaries, connect rule, test, observation, and conclusion in prose with links to raw evidence instead of forcing the reader to piece together a matrix of evidence IDs ("你这么写不像人读的").
+
+## Customer report turned into an assistance request
+
+Asked to write a report for a customer after investigating a failure, the draft asked the customer to cross-check two requests on their side. Verdict: "？客户给你核对？我只是让你给个报告给客户."
+
+A status report states observed facts, verified conclusions, and next checks owned by our side. Only ask the recipient to take action or supply data when the user asked for an assistance request.
+
+## Terms and change scope stated without purpose or trigger condition
+
+A config change asked whether to replace a `PID` without explaining where it is used; a wrap-up listed `testenv` changes without saying what `testenv` is; a change-impact note summarized extra RPCs as "有限速的冷创建、重建" and missed template-hit creates. Verdicts: "先说明用途，然后我来判断", "啥意思，详细解释下 testenv", and "有限速的冷创建、重建：这个是指啥？"
+
+On first mention of a domain term, tool, or config field, state its business purpose and the concrete trigger condition that defines what is affected, then use the short name.
+
+## Observations presented as capability or root-cause conclusions
+
+A measurement report divided 7-day completed tasks by total time and labeled it "预热吞吐" ("吞吐是这么算的？"); a DB load estimate answered with SQL latency budgets while calling other regions "暂有余量" ("负载呢"); a troubleshooting reply treated a log warning or an external report's "拒收" claim as confirmed root cause before checking the actual code branch or raw HTTP response.
+
+State the observed metric or raw response with its sample definition and conditions first (completion rate over idle-inclusive wall time, SQL duration vs. CPU/IO utilization, external report claim vs. raw `HTTP 200 / returnCode=1101`). Keep conclusions within what those observations establish, and name the missing measurement or check directly.

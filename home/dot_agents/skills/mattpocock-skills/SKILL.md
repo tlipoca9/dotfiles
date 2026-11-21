@@ -17,7 +17,11 @@ Each **sub-skill** is an upstream skill vendored whole into `references/<name>/`
 3. Resolve upstream's skill-to-skill wording through this router:
    - "call the Skill tool with `<name>`" or "run `/<name>`", where `<name>` is a sub-skill below: read `references/<name>/INSTRUCTIONS.md` and follow it. Other slash commands (`/clear`, `/compact`) belong to the harness.
    - "that skill's `SKILL.md`": its `references/<name>/INSTRUCTIONS.md`.
-4. Done when the sub-skill's own completion criterion is met.
+4. Guardrails across flows:
+   - **Inherit confirmed baselines when grilling**: on an existing system or reference product, inspect code and docs first and state what is already confirmed/implemented vs. what this task changes. Put only actual deltas and open decisions into the design tree; do not reopen confirmed baseline behavior unless code and docs disagree.
+   - **Respect phase boundaries**: `grill*` (`grilling`, `grill-me`, `grill-with-docs`) only converges design and docs—do not edit production code or modify environments during grilling. Move from `grill*` to `to-spec`, `to-tickets`, or `implement*` only after the user explicitly transitions phases; confirming a design direction is not authorization to start implementing.
+   - **Align vocabulary before writing a spec**: in `to-spec`, check `GLOSSARY.md` and existing code before naming new types, components, or concepts so the spec uses the project's established terminology.
+5. Done when the sub-skill's own completion criterion is met.
 
 ## Model-invoked
 

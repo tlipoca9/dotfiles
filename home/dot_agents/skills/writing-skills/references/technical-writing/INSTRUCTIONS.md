@@ -1,6 +1,6 @@
 ---
 name: technical-writing
-description: Write reports, research reports, tickets, design docs, API field descriptions, product copy, code review findings, code comments, PR bodies, and long replies that a reader without the conversation can read and act on.
+description: Write reports, research reports, PRDs, runbooks, tickets, design docs, API field descriptions, product copy, code review findings, code comments, PR bodies, and long replies that a reader without the conversation can read and act on.
 ---
 
 # Technical writing
@@ -14,18 +14,22 @@ The reader of a report, ticket, doc, field description, or comment is one collea
 1. **Reader.** Name the reader and their next action in one sentence. Done when both are concrete; ask the user when they are not.
 2. **Ledger.** List what the text must carry: results, numbers with their units and conditions, decisions, open questions, next actions. Later edits may reshape everything except the ledger.
 3. **Draft.** Use the shape for the artifact in the table below, conclusion first.
-4. **Edit.** Run `uv run <skill-dir>/scripts/technical-writing/lint.py <file>`, or pipe the text on stdin, then reread each paragraph against the principles below. Done when every lint hit is rewritten or is a qualifier the ledger needs, and the text still carries the whole ledger with nothing added.
-5. **Cold read.** For a report, design doc, or article longer than a screen, give the text alone to a subagent with no conversation context. Ask it to list what it could not understand and to review the text with the humanizer for its language (`<skill-dir>/references/blader-humanizer/INSTRUCTIONS.md` or `<skill-dir>/references/jiji262-humanizer-chinese/INSTRUCTIONS.md`). Apply the findings that keep the ledger intact. Done when the subagent's questions are answered in the text.
+4. **Edit.** Run `uv run <skill-dir>/scripts/technical-writing/lint.py <file>`, pipe on stdin (`uv run <skill-dir>/scripts/technical-writing/lint.py -` or `< text`), or check a directory of Markdown files with `rg --files -0 <dir> -g '*.md' | xargs -0 uv run <skill-dir>/scripts/technical-writing/lint.py` (exit codes: `0` no hits, `1` hits, `2` read error). Then reread each paragraph against the principles below. Done when every lint hit is rewritten or is a qualifier the ledger needs, and the text still carries the whole ledger with nothing added.
+5. **Cold read.** For a report, PRD, design doc, or article longer than a screen, give the text alone to a subagent with no conversation context. Ask it to list what it could not understand and to review the text with the humanizer for its language (`<skill-dir>/references/blader-humanizer/INSTRUCTIONS.md` or `<skill-dir>/references/jiji262-humanizer-chinese/INSTRUCTIONS.md`). Apply the findings that keep the ledger intact. Done when the subagent's questions are answered in the text.
 
 | Artifact | Reader's next action | Shape |
 |---|---|---|
 | Measurement report | Decide what to do next | Conclusion and its numbers first, grouped by category and subcategory in tables. A long analysis goes in a second document holding the detail and raw data, linked from the summary. |
 | Research report | Make a decision or pick a direction | [Research report](#research-report) below. |
+| Product requirements document (PRD) | Align product, ops, and engineering on behavior and acceptance without reading code | [Product requirements document](#product-requirements-document) below. |
+| Runbook or rollout checklist | Execute a procedure step by step in order | Ordered by actual execution sequence (pre-checks, pre-deploy, deploy, post-deploy, verification, rollback). Place cross-phase actions (such as pre-deploy DDL vs. post-deploy cleanup) at the phase where they run, with runnable commands and pass/stop criteria inline. |
+| Customer or external report | Understand what happened and the current conclusion | Observed facts, verified conclusion, and remaining open checks owned by our side. Do not turn a status report into a request asking the customer to collect evidence unless the user asked for an assistance request. |
 | Ticket or requirement | Pick up the work | Background stated plainly as facts, then goal, scope, and acceptance criteria, under Markdown headings with lists. |
 | API field or parameter description | Fill in the field | The field's purpose in one short phrase, about ten Chinese characters. Constraints live in the constraint attributes; implementation stays out. For Tencent Cloud YunAPI, also follow `~/.agents/skills/tencentcloud-yunapi/SKILL.md`. |
 | Product copy | Use the product | [Product copy](#product-copy) below. |
 | Code review findings | Decide which findings to fix | [Code review findings](#code-review-findings) below. |
-| Design doc or README | Understand the current design | The current truth. History only where it explains the design. |
+| Design doc | Understand the current design | The current truth. History only where it explains the design. |
+| README or cookbook | Run, adopt, or navigate the project | Quickest path to working output first, without leaking the author's local machine state. |
 | Code comment | Change the code safely | The constraint, invariant, or reason the code cannot show, usually one line. |
 | Reply or status update | Know what happened | The outcome in the first sentence, then what the reader needs to act on. |
 
@@ -46,6 +50,20 @@ Covers how open-source projects or the industry solve a problem, comparisons of 
 9. **Appendix**, or a linked second document: raw data and the list of sources.
 
 A research reply that fits one screen keeps the summary, findings, and recommendations, with sources in one line. Study one representative case in depth before generalizing. Keep every section on the question asked; a finding that does not bear on it goes.
+
+### Product requirements document
+
+Covers product requirements translated from a technical design or written for product managers, operations, and stakeholders who do not read code. Translate internal names (database tables, structs, RPCs, config keys, code paths) into product concepts and observable behavior.
+
+Open with a one-paragraph summary right under the title: what the capability is, its core model, and its primary rule or boundary. Then follow this progression (omit sections that do not apply):
+
+1. **Background and goals**: current limitation stated as plain facts, followed by bulleted outcome-oriented goals (not implementation tasks).
+2. **Applicable scenarios**: a table mapping scenario, user or business action, and default rule or tier, plus explicit scope boundaries (what is included and what reuses existing results).
+3. **Core rules**: state decision order as numbered steps and calculations as plain product formulas. Follow each abstract rule with a concrete worked example (marking illustrative numbers as examples, not production defaults) and explicitly state what the rule does *not* change (invariants, non-preemption, backward compatibility).
+4. **Limits, merging, and boundaries**: define each constraint separately (such as resource-level vs. account-level limits), show cross-dimension behavior in a table with examples, and list explicit non-merge boundaries.
+5. **User experience and outcomes**: how users wait, query status, handle timeouts or failures, and reuse in-flight or completed work.
+6. **Operations and management**: a table of configurable settings (setting, default or convention, effective scope and timing), a numbered list of supported management operations, and precedence/fallback rules when rules are added, updated, or deleted.
+7. **Acceptance criteria**: a numbered table (`| ID | Scenario | Expected outcome |`) where each row is independently verifiable, covering main paths, precedence and edge cases, concurrency and failure recovery, live config changes, and compatibility with existing callers.
 
 ### Product copy
 

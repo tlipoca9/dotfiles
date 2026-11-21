@@ -20,7 +20,13 @@ Read source from a local clone under the current working directory, never from w
 
 ## Steps
 
-1. **Reuse or clone.** If `./.local/<host>/<path>` already exists, run `git -C <dir> fetch --depth 1 origin && git -C <dir> reset --hard origin/HEAD` to refresh it. Otherwise:
+1. **Reuse or clone.** Decide first whether the task targets the default branch or a specific tag/version.
+
+   If `./.local/<host>/<path>` already exists:
+   - For the default branch: run `git -C <dir> fetch --depth 1 origin && git -C <dir> reset --hard origin/HEAD`. If `origin/HEAD` is missing or unresolved (for example, the clone previously fetched only a tag), discover the default branch with `git -C <dir> ls-remote --symref origin HEAD` (reads `ref: refs/heads/<branch>\tHEAD`), then run `git -C <dir> fetch --depth 1 origin <branch> && git -C <dir> reset --hard FETCH_HEAD`.
+   - For a specific tag: run `git -C <dir> fetch --depth 1 origin tag <tag> && git -C <dir> checkout <tag>`. Find tag names with `git ls-remote --tags origin`.
+
+   Otherwise:
 
    ```bash
    mkdir -p .local/<host>/<parent-of-path>
@@ -28,8 +34,7 @@ Read source from a local clone under the current working directory, never from w
    ```
 
    Use the exact URL when one is given. If HTTPS authentication fails, retry with `git@<host>:<path>.git`.
-   When the task targets a specific version, fetch that tag instead (`git -C <dir> fetch --depth 1 origin tag <tag> && git -C <dir> checkout <tag>`). Find tag names with `git ls-remote --tags origin`.
-   Done when the directory exists and `git -C <dir> rev-parse HEAD` prints a commit.
+   Done when the directory exists and `git -C <dir> rev-parse HEAD` prints the expected commit.
 
 2. **Keep it out of the host repo.** If the working directory is a git repository, make sure `.local/` is listed in `.git/info/exclude` (append it if missing). Leave the host repo's `.gitignore` untouched.
 

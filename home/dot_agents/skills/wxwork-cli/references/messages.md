@@ -18,7 +18,10 @@ by the macOS indexed backend.
 
 3. When the question needs surrounding discussion, use `search` with explicit
    context or `history` with a conversation and time window. Fetch only the
-   context relevant to the question.
+   context relevant to the question. Note that `history` and `search` take
+   local `YYYY-MM-DD HH:MM:SS` (or `YYYY-MM-DD`) and reject RFC3339 offsets;
+   convert any RFC3339 timestamp from a message snapshot to local time before
+   passing `--since`/`--until`.
 4. Cite the conversation, sender, time, and reference. Distinguish a supplied
    snapshot from a newer value returned by `get` when their contents differ.
 

@@ -48,12 +48,14 @@ Weigh evidence by recurrence across sessions, and by whether the user stated it 
 
 ## Digests
 
-Each digest opens with its source transcript, project or cwd, kind (root, or subagent with its parent), active span, and the user-level skills it referenced. A name marked `(not installed)` predates the current skill set: map it to the skill or router sub-skill that now carries it, or to its removal. Entries follow in order:
+Each digest opens with its source transcript (or `sources` when a resumed session spans multiple files with the same ID), project or cwd, kind (root, or subagent with its parent), optional `forked from` parent session and ordinal, active span, and the user-level skills referenced in the current session (omitted inherited `<chat-history-summary>` blocks do not count as skill references). A name marked `(not installed)` predates the current skill set: map it to the skill or router sub-skill that now carries it, or to its removal. When `forked from` is set, check whether skills missing from the digest were already loaded in the parent before the fork ordinal. Entries follow in order:
 
 | Entry | Meaning |
 |---|---|
-| `**User**` | A user turn, quoted |
+| `**User**` | A human user turn (including unwrapped `<paseo-system kind="user-message">`), quoted; leading `<chat-history-summary>` blocks are replaced with `[inherited history: N chars omitted]` so the current request stays visible |
+| `**Paseo <kind>**` | A non-human Paseo system wrapper such as `agent-message` or `agent-notification`; excluded from the human `user msgs` count and not treated as a human correction |
 | `**Parent prompt**` | The task a parent agent gave a subagent |
+| `- [segment: <file>]` | Boundary where a complementary rollout file with the same session ID was merged chronologically |
 | `- agent: …` | Agent text, clipped |
 | `- skill invoked:` / `- skill attached:` | Explicit skill use: a Codex `<skill>` message, a Cursor attached skill |
 | `` - `$ …` `` and `- <Tool>: …` | Tool calls, clipped to their target |
