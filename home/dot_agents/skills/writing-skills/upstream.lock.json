@@ -3,8 +3,8 @@
     {
       "repo": "https://github.com/blader/humanizer.git",
       "ref": "HEAD",
-      "commit": "0ef9fe5bc3572734fd3ae6c448fe00a30cd5dcf0",
-      "committed_at": "2026-10-28T00:17:33-07:00",
+      "commit": "a32f24407364c74c812b43c15926d638bee1e072",
+      "committed_at": "2026-11-19T10:53:14-08:00",
       "skills": [
         {
           "path": ".",
