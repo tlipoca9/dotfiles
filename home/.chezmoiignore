@@ -10,6 +10,12 @@
 !.config/firecrawl
 !.config/firecrawl/api-key
 !.config/taihu.txt
+!.gemini
+!.gemini/config
+!.gemini/config/mcp_config.json
+!.gemini/config/rules
+!.gemini/config/rules/AGENTS.md
+!.gemini/config/skills.json
 !.local
 !.local/bin
 !.local/bin/firecrawl-mcp

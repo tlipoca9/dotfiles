@@ -67,11 +67,14 @@ chezmoi diff
 ```
 
 Linux manages `~/.agents/AGENTS.md`, `~/.codex/AGENTS.md` (the global
-instructions for the default Codex home), all shared skills under
-`~/.agents/skills`, and the Ed25519 key pair under `~/.ssh`. It also merges
-the shared MCP servers into Codex settings and deploys their credentials and
-Firecrawl launcher. The merge preserves unrelated Codex settings and MCP
-servers. Use `codex mcp list` to check the registered servers.
+instructions for the default Codex home), `~/.gemini/config/rules/AGENTS.md`
+(global instructions for Antigravity), all shared skills under
+`~/.agents/skills` (referenced by Antigravity via
+`~/.gemini/config/skills.json`), and the Ed25519 key pair under `~/.ssh`. It
+also merges the shared MCP servers into Codex and Antigravity
+(`~/.gemini/config/mcp_config.json`) settings and deploys their credentials and
+Firecrawl launcher. The merge preserves unrelated settings and MCP servers. Use
+`codex mcp list` or `agy mcp list` to check the registered servers.
 
 If the preview shows existing files you want to keep, pass only the
 conflict-free target paths to both `apply` and `verify`. Check for
@@ -128,11 +131,13 @@ chezmoi apply
 - current Homebrew packages and current VS Code extension releases
 - Pi with exact, reviewed extension pins and preserved runtime state
 - Firecrawl, iWiki, TAPD, Gongfeng, and Zhiyan Log MCP servers shared by
-  Cursor, Codex, and Pi; Chrome DevTools and Playwright MCP servers in Pi only
-- shared vendored skills deployed to `~/.agents/skills`
-- one shared agent instruction file deployed to Codex, Pi, and
-  `~/.agents/AGENTS.md`; Cursor has no global AGENTS.md loader, so a Cursor
-  User Rule directs its agent to read `~/.agents/AGENTS.md`
+  Antigravity, Cursor, Codex, and Pi; Chrome DevTools and Playwright MCP servers in Pi only
+- shared vendored skills deployed to `~/.agents/skills` (referenced by
+  Antigravity via `~/.gemini/config/skills.json`)
+- one shared agent instruction file deployed to Antigravity
+  (`~/.gemini/config/rules/AGENTS.md`), Codex, Pi, and `~/.agents/AGENTS.md`;
+  Cursor has no global AGENTS.md loader, so a Cursor User Rule directs its agent
+  to read `~/.agents/AGENTS.md`
 - only `~/.ssh/id_ed25519` and `id_ed25519.pub` under SSH management
 
 System declarations live in `home/.chezmoidata/darwin/packages.toml`; VS Code
@@ -148,7 +153,7 @@ modifier preserves unrelated servers. The Firecrawl launcher reads its
 age-managed API key from
 `~/.config/firecrawl/api-key`. iWiki, TAPD, Gongfeng, and Zhiyan Log share
 the bearer token in `~/.config/taihu.txt`, which is age-managed with mode
-`0600`. Cursor and Codex receive the token in their private MCP
+`0600`. Antigravity, Cursor, and Codex receive the token in their private MCP
 configurations; Pi reads it from the file when connecting. The file contains
 only the raw token, without a `Bearer ` prefix.
 Shared skills use plain source or age-encrypted source for private content.

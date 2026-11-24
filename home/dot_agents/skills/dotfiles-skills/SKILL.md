@@ -48,9 +48,9 @@ checkout.
 
 | Target | Source under `home/` |
 | --- | --- |
-| `~/.agents/AGENTS.md`, `~/.codex/AGENTS.md`, `~/.pi/agent/AGENTS.md` | `.chezmoitemplates/agents-md`, included by the one-line wrappers `dot_agents/AGENTS.md.tmpl`, `dot_codex/AGENTS.md.tmpl`, and `dot_pi/private_agent/AGENTS.md.tmpl` |
-| `~/.agents/skills/`, shared by Cursor, Codex, and Pi | `dot_agents/skills/` |
-| MCP servers for Cursor, Codex, and Pi | `.chezmoidata/mcp.toml`, merged into each client by `dot_cursor/modify_private_mcp.json.tmpl`, `dot_codex/modify_private_config.toml.tmpl`, and `dot_pi/private_agent/modify_private_mcp.json.tmpl` |
+| `~/.agents/AGENTS.md`, `~/.codex/AGENTS.md`, `~/.pi/agent/AGENTS.md`, `~/.gemini/config/rules/AGENTS.md` | `.chezmoitemplates/agents-md`, included by `dot_agents/AGENTS.md.tmpl`, `dot_codex/AGENTS.md.tmpl`, `dot_pi/private_agent/AGENTS.md.tmpl`, and `dot_gemini/config/rules/AGENTS.md.tmpl` |
+| `~/.agents/skills/`, shared by Antigravity, Cursor, Codex, and Pi | `dot_agents/skills/` (Antigravity loads it via `dot_gemini/config/skills.json.tmpl`) |
+| MCP servers for Antigravity, Cursor, Codex, and Pi | `.chezmoidata/mcp.toml`, merged into each client by `dot_gemini/config/modify_private_mcp_config.json.tmpl`, `dot_cursor/modify_private_mcp.json.tmpl`, `dot_codex/modify_private_config.toml.tmpl`, and `dot_pi/private_agent/modify_private_mcp.json.tmpl` |
 | MCP credentials | `dot_config/encrypted_private_taihu.txt.age`, `dot_config/private_firecrawl/encrypted_private_api-key.age` |
 | Pi settings, extensions, and themes | `dot_pi/private_agent/`; extension pins live in `modify_settings.json.tmpl` and are installed by `.chezmoiscripts/darwin/run_onchange_after_40-install-pi-extensions.sh.tmpl` |
 | Agent CLIs and other packages | `.chezmoidata/darwin/packages.toml` |
