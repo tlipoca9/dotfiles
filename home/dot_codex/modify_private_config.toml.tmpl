@@ -69,6 +69,20 @@ def update_table(config: str, name: str, fields: dict[str, object]) -> str:
     return config[:match.end()] + "\n" + rendered + kept + config[end:]
 
 
+def enable_multi_agent_v2(config: str) -> str:
+    """Migrate Codex's deprecated V1 flag to the current V2 feature."""
+    tables = list(TABLE.finditer(config))
+    match = next((table for table in tables if table.group(1) == "features"), None)
+    if match is None:
+        return config.rstrip("\n") + "\n\n[features]\nmulti_agent_v2 = true\n"
+
+    end = next((table.start() for table in tables if table.start() > match.start()), len(config))
+    body = config[match.end():end].removeprefix("\n")
+    kept = re.sub(r"(?m)^[ \t]*multi_agent(?:_v2)?[ \t]*=.*(?:\r?\n|$)", "", body)
+    kept = "multi_agent_v2 = true\n" + kept
+    return config[:match.end()] + "\n" + "".join(kept) + config[end:]
+
+
 def main() -> int:
     config = sys.stdin.read()
     if tomllib is not None:
@@ -77,6 +91,8 @@ def main() -> int:
         except tomllib.TOMLDecodeError as error:
             print(f"Codex config is not valid TOML: {error}", file=sys.stderr)
             return 1
+
+    config = enable_multi_agent_v2(config)
 
     for name, shared in SHARED_SERVERS.items():
         config = update_table(config, name, managed_fields(name, shared))
