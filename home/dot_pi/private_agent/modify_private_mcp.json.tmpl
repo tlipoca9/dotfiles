@@ -11,25 +11,12 @@ from typing import Any
 SHARED_SERVERS = json.loads({{ .mcp.shared | toJson | quote }})
 CURRENT_OS = {{ .chezmoi.os | quote }}
 
-MANAGED_SERVERS: dict[str, dict[str, Any]] = {
-    "chrome-devtools": {
-        "command": "npx",
-        "args": [
-            "-y",
-            "chrome-devtools-mcp@1.8.0",
-            "--headless",
-            "--no-usage-statistics",
-        ],
-        "lifecycle": "lazy",
-        "requestTimeoutMs": 120_000,
-    },
-    "playwright": {
-        "command": "npx",
-        "args": ["-y", "@playwright/mcp@0.0.79", "--headless"],
-        "lifecycle": "lazy",
-        "requestTimeoutMs": 120_000,
-    },
-}
+REMOVED_SERVERS = (
+    "chrome-devtools",
+    "playwright",
+)
+
+MANAGED_SERVERS: dict[str, dict[str, Any]] = {}
 
 for name, shared in SHARED_SERVERS.items():
     if shared.get("os") and shared["os"] != CURRENT_OS:
@@ -111,6 +98,9 @@ def main() -> int:
         servers = {}
     else:
         servers = dict(servers)
+
+    for name in REMOVED_SERVERS:
+        servers.pop(name, None)
 
     for name, managed in MANAGED_SERVERS.items():
         servers[name] = merge_server(servers.get(name), managed)

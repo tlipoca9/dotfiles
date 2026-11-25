@@ -89,6 +89,39 @@ def enable_multi_agent_v2(config: str) -> str:
     return config[:match.end()] + "\n" + "".join(kept) + config[end:]
 
 
+DISABLED_DARWIN_PLUGINS = (
+    "browser@openai-bundled",
+    "chrome@openai-bundled",
+    "computer-use@openai-bundled",
+    "unified-computer-use@openai-bundled",
+)
+
+
+def set_table_enabled(config: str, header: str, enabled: bool, *, create: bool) -> str:
+    tables = list(TABLE.finditer(config))
+    match = next((table for table in tables if table.group(1) == header), None)
+    rendered = f"enabled = {'true' if enabled else 'false'}\n"
+    if match is None:
+        if not create:
+            return config
+        return config.rstrip("\n") + f"\n\n[{header}]\n" + rendered
+
+    end = next((table.start() for table in tables if table.start() > match.start()), len(config))
+    body = config[match.end():end].removeprefix("\n")
+    kept = re.sub(r"(?m)^[ \t]*enabled[ \t]*=.*(?:\r?\n|$)", "", body)
+    return config[:match.end()] + "\n" + rendered + kept + config[end:]
+
+
+def disable_builtin_automation(config: str) -> str:
+    """Disable Codex's built-in desktop and browser plugins on macOS in favor of Peekaboo and Paseo."""
+    if CURRENT_OS != "darwin":
+        return config
+    for plugin_name in DISABLED_DARWIN_PLUGINS:
+        config = set_table_enabled(config, f'plugins."{plugin_name}"', False, create=True)
+    config = set_table_enabled(config, "mcp_servers.computer-use", False, create=False)
+    return config
+
+
 def main() -> int:
     config = sys.stdin.read()
     if tomllib is not None:
@@ -99,6 +132,7 @@ def main() -> int:
             return 1
 
     config = enable_multi_agent_v2(config)
+    config = disable_builtin_automation(config)
 
     for name, shared in ACTIVE_SHARED_SERVERS.items():
         config = update_table(config, name, managed_fields(name, shared))
@@ -113,6 +147,14 @@ def main() -> int:
             fields = managed_fields(name, shared)
             if any(parsed["mcp_servers"][name].get(key) != value for key, value in fields.items()):
                 print(f"Codex MCP server {name} did not render correctly", file=sys.stderr)
+                return 1
+        if CURRENT_OS == "darwin":
+            for plugin_name in DISABLED_DARWIN_PLUGINS:
+                if parsed.get("plugins", {}).get(plugin_name, {}).get("enabled") is not False:
+                    print(f"Codex plugin {plugin_name} was not disabled", file=sys.stderr)
+                    return 1
+            if "computer-use" in parsed.get("mcp_servers", {}) and parsed["mcp_servers"]["computer-use"].get("enabled") is not False:
+                print("Codex MCP server computer-use was not disabled", file=sys.stderr)
                 return 1
 
     sys.stdout.write(config)
