@@ -42,6 +42,13 @@ manager = "homebrew"
 kind = "formula"
 check = { command = "jq" }
 
+[darwin.packages.peekaboo]
+manager = "homebrew"
+kind = "formula"
+tap = "openclaw/tap"
+name = "openclaw/tap/peekaboo"
+check = { command = "peekaboo" }
+
 [darwin.packages.pi_coding_agent]
 manager = "homebrew"
 kind = "formula"

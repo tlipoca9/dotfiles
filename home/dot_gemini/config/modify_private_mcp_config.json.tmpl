@@ -9,6 +9,7 @@ import sys
 
 
 SHARED_SERVERS = json.loads({{ .mcp.shared | toJson | quote }})
+CURRENT_OS = {{ .chezmoi.os | quote }}
 TOKEN = ({{ include "dot_config/encrypted_private_taihu.txt.age" | decrypt | quote }}).strip()
 
 
@@ -64,6 +65,8 @@ def main() -> int:
     servers = dict(servers) if isinstance(servers, dict) else {}
 
     for name, shared in SHARED_SERVERS.items():
+        if shared.get("os") and shared["os"] != CURRENT_OS:
+            continue
         servers[name] = merge_server(servers.get(name), shared, name)
 
     config["mcpServers"] = servers

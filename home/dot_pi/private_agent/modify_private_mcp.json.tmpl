@@ -9,6 +9,7 @@ import sys
 from typing import Any
 
 SHARED_SERVERS = json.loads({{ .mcp.shared | toJson | quote }})
+CURRENT_OS = {{ .chezmoi.os | quote }}
 
 MANAGED_SERVERS: dict[str, dict[str, Any]] = {
     "chrome-devtools": {
@@ -31,6 +32,8 @@ MANAGED_SERVERS: dict[str, dict[str, Any]] = {
 }
 
 for name, shared in SHARED_SERVERS.items():
+    if shared.get("os") and shared["os"] != CURRENT_OS:
+        continue
     if "command" in shared:
         MANAGED_SERVERS[name] = {
             "command": {{ .chezmoi.homeDir | quote }} + "/" + shared["command"],

@@ -50,6 +50,13 @@ if brew list --formula -- "$name" >/dev/null 2>&1; then
 {{- end }}
   printf 'dotfiles: %s is already installed\n' "$name"
 else
+  {{- with (index $package "tap") }}
+  tap={{ printf "'%s'" (replace "'" "'\"'\"'" .) }}
+  if ! brew tap | grep -qx -- "$tap"; then
+    printf 'dotfiles: tapping %s\n' "$tap"
+    brew tap "$tap"
+  fi
+  {{- end }}
   printf 'dotfiles: installing %s\n' "$name"
   {{- if eq $package.kind "cask" }}
   brew install --cask "$name"

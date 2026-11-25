@@ -1,6 +1,10 @@
 [mcp.shared.firecrawl]
 command = ".local/bin/firecrawl-mcp"
 
+[mcp.shared.peekaboo]
+command = ".local/bin/peekaboo-mcp"
+os = "darwin"
+
 [mcp.shared.iWiki]
 url = "https://prod.mcp.it.woa.com/app_iwiki_mcp/mcp3"
 

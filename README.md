@@ -130,8 +130,9 @@ chezmoi apply
 - system Zsh with exact, reviewed Antidote plugin commits
 - current Homebrew packages and current VS Code extension releases
 - Pi with exact, reviewed extension pins and preserved runtime state
-- Firecrawl, iWiki, TAPD, Gongfeng, and Zhiyan Log MCP servers shared by
-  Antigravity, Cursor, Codex, and Pi; Chrome DevTools and Playwright MCP servers in Pi only
+- Firecrawl, Peekaboo (macOS only), iWiki, TAPD, Gongfeng, and Zhiyan Log MCP
+  servers shared by Antigravity, Cursor, Codex, and Pi; Chrome DevTools and
+  Playwright MCP servers in Pi only
 - shared vendored skills deployed to `~/.agents/skills` (referenced by
   Antigravity via `~/.gemini/config/skills.json`)
 - one shared agent instruction file deployed to Antigravity

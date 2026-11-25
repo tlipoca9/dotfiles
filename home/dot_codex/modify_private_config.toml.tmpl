@@ -15,6 +15,12 @@ except ImportError:  # macOS may provide Python 3.9.
 
 
 SHARED_SERVERS = json.loads({{ .mcp.shared | toJson | quote }})
+CURRENT_OS = {{ .chezmoi.os | quote }}
+ACTIVE_SHARED_SERVERS = {
+    name: shared
+    for name, shared in SHARED_SERVERS.items()
+    if not shared.get("os") or shared["os"] == CURRENT_OS
+}
 TOKEN = ({{ include "dot_config/encrypted_private_taihu.txt.age" | decrypt | quote }}).strip()
 TABLE = re.compile(r"(?m)^[ \t]*\[([^\]\r\n]+)\][ \t]*(?:#.*)?$")
 FIELD = re.compile(r"^[ \t]*([A-Za-z_]+)[ \t]*=")
@@ -94,7 +100,7 @@ def main() -> int:
 
     config = enable_multi_agent_v2(config)
 
-    for name, shared in SHARED_SERVERS.items():
+    for name, shared in ACTIVE_SHARED_SERVERS.items():
         config = update_table(config, name, managed_fields(name, shared))
 
     if tomllib is not None:
@@ -103,7 +109,7 @@ def main() -> int:
         except tomllib.TOMLDecodeError as error:
             print(f"Generated Codex config is not valid TOML: {error}", file=sys.stderr)
             return 1
-        for name, shared in SHARED_SERVERS.items():
+        for name, shared in ACTIVE_SHARED_SERVERS.items():
             fields = managed_fields(name, shared)
             if any(parsed["mcp_servers"][name].get(key) != value for key, value in fields.items()):
                 print(f"Codex MCP server {name} did not render correctly", file=sys.stderr)
