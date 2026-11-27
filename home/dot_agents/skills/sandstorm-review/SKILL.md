@@ -15,7 +15,7 @@ This skill is for `agentrun/sandstorm` and closely coupled E2E changes. It does 
 - Read repository `AGENTS.md`, `README.md`, relevant `.review/` rules, domain documents, and project review skills before drawing conclusions.
 - Preserve unrelated working-tree changes. Use a detached worktree or temporary checkout for experiments and tests when needed.
 - Treat the following as merge-blocking defects even when a new feature or gray flag is disabled by default:
-  - terminal-state convergence defects (duplicate paths, conflicting state models, unnecessary compatibility layers, incomplete migrations, or split responsibilities)
+  - terminal-state convergence defects (duplicate paths, conflicting state models, unnecessary compatibility layers, incomplete migrations, split responsibilities, avoidable call-chain/layer bloat from stacked patches, or brittle over-complex tests coupled to internal scaffolding)
   - default-config regressions on always-on shared paths, asymmetric protection across flag/degradation quadrants, or key-normalization blind spots against legacy rows
   - concurrency liveness defects, unsafe retry/CAS exhaustion fallback returns, or uncompensated post-commit cache invalidations that can fail-open after recovery
   - unbounded steady-state growth, unindexed or table-scanning runtime/runbook SQL, or split multi-branch queries missing a shared read-only snapshot (`TX-09`)

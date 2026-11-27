@@ -12,6 +12,22 @@ Compare the complete current branch (not just the narrow diff) against `develop`
 - compatibility layers kept for data that does not exist
 - migrations that are repeated, out of order, or incomplete
 
+### Call-chain and layer complexity
+
+Terminal-state convergence requires simplifying the final call graph, not merely proving that stacked patches pass tests:
+
+- Flag patch-on-patch layering: unnecessary pass-through wrappers, dead parameters, multi-hop callbacks, or duplicated guards/fallbacks split across adjacent layers (for example, Service and Cache both implementing coalescing or fallback branches).
+- Ask whether an invariant can be enforced with fewer hops, a single owning layer, or a merged branch/state source instead of preserving intermediate scaffolding from earlier iterations.
+
+### Test complexity and signal-to-noise
+
+Treat excessive test complexity as both a maintainability defect and a design smell pointing back to unconverged production boundaries:
+
+- Verify tests protect **durable behavior, contracts, and invariants** rather than internal implementation details, private state, or temporary scaffolding.
+- Flag heavy mock webs of internal collaborators, duplicated production branching inside test helpers, brittle timing/sleep hacks, or oversized fixtures required to verify a simple contract—and trace whether simplifying the production boundary eliminates that test complexity.
+- Flag repetitive test boilerplate that can collapse into focused table-driven or contract tests, as well as obsolete tests left behind after a design change.
+- Keep findings anchored to maintenance/regression risk and convergence; do not elevate personal style preferences to blocking defects.
+
 ## 2. Bidirectional authority-vs-projection lag matrix
 
 Whenever a state combines an authoritative source of truth with an asynchronous materialized projection (for example, a parent repository's `isolated_at` vs. member rows' `status`), build a **bidirectional lag matrix** before reading individual handlers:

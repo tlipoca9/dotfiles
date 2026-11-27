@@ -13,7 +13,7 @@ Describe the intended resource states, authoritative sources of truth, durable p
 
 ## Design convergence
 
-Describe how the current branch differs from `develop` as a complete implementation. Call out duplicate paths, conflicting state models, residual compatibility layers, redundant migrations, unnecessary fields, and responsibilities that have not converged.
+Describe how the current branch differs from `develop` as a complete implementation. Call out duplicate paths, conflicting state models, residual compatibility layers, redundant migrations, unnecessary fields, responsibilities that have not converged, and avoidable call-chain or test complexity that should be simplified.
 
 ## Lens summary
 

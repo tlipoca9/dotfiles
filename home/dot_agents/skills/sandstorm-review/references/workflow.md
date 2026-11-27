@@ -51,7 +51,7 @@ Choose the execution strategy from the change scope:
 | Fallback & Concurrency | [`lens-fallback-and-concurrency.md`](lens-fallback-and-concurrency.md) | Fence/CAS liveness, exhaustion return contracts, post-outage cache resurrection, flag × health protection symmetry |
 | SQL & Capacity | [`lens-sql-and-capacity.md`](lens-sql-and-capacity.md) | Hot-tenant capacity envelope, runtime + runbook SQL `EXPLAIN` & lock analysis, generated-column predicates, `TX-09` snapshots, steady-state reclamation |
 | Rollout & Compatibility | [`lens-rollout-and-compat.md`](lens-rollout-and-compat.md) | Always-on default-config amplification, producer/cleaner symmetry, legacy key normalization, mixed-version rollout, multi-doc rollout order & anchor cross-checks |
-| State & Contract | [`lens-state-and-contract.md`](lens-state-and-contract.md) | Terminal-state convergence, bidirectional authority-vs-projection lag matrix, business data-flow chain, API/UI/E2E contracts |
+| State & Contract | [`lens-state-and-contract.md`](lens-state-and-contract.md) | Terminal-state convergence, call-chain & test complexity simplification, bidirectional authority-vs-projection lag matrix, business data-flow chain, API/UI/E2E contracts |
 
 When fanning out, give each subagent:
 - the merge-base, current HEAD, changed file list, and the shared Terminal-State + Impact Map from Step 3;
@@ -107,7 +107,7 @@ Each finding must state:
 Severity boundaries:
 - **P0**: security, catastrophic data or service impact, deterministic livelock/starvation on a critical path, or default-config shared-path outages affecting non-gray tenants.
 - **P1**: correctness, compatibility, lifecycle, data integrity, cache poisoning / fail-open fallback returns, unbounded steady-state growth, or performance/liveness problems that materially affect users or operations.
-- **P2**: bounded correctness, runbook/doc contradictions, unindexed operational SQL, or maintainability problems that prevent terminal design convergence when they leave conflicting or incomplete behavior.
+- **P2**: bounded correctness, runbook/doc contradictions, unindexed operational SQL, or maintainability and convergence problems (including avoidable call-chain bloat from stacked patches or brittle, over-complex tests coupled to internal details) that prevent terminal design convergence.
 
 ## 8. Deliver the review
 
