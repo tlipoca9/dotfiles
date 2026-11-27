@@ -6,208 +6,112 @@ Resolve the repository and change under review.
 
 - For an MR, identify the source branch, target branch, latest MR commit, target tip, and merge-base. Use the Gongfeng MCP service when available and verify the same commits locally.
 - For a branch, use the requested target. Default to `develop` only when the user has not supplied another target and the repository confirms that branch exists.
-- Record `git status --short --branch`, the merge-base, the target commit, the current HEAD, changed files, and the existing MR notes.
+- Record `git status --short --branch`, the merge-base, the target commit, the current HEAD, changed files (total and non-test count), and the existing MR notes.
 - Fetch references before comparing. Do not treat a stale local branch as the current implementation.
 - Read the current branch as a whole. The diff identifies changed behavior, while full-tree searches identify old paths, duplicate models, residual compatibility code, and consumers outside the diff.
 
-Every finding must be attributed to one of these states.
+Every finding must be attributed to one of these states:
 
 - Baseline behavior already present in `develop`.
 - A regression introduced by the current branch.
 - A design-convergence defect in the current branch, including an incomplete migration or conflicting implementation that prevents the terminal design.
-- A problem that the author claims to have fixed but that remains after the latest commit.
+- A problem that the author claims to have fixed but that remains after the latest commit (or an incomplete fix that introduces asymmetry across sibling paths).
 - An unverified behavior blocked by credentials, unavailable services, shared-environment changes, or another explicit condition.
+
+**Re-review / Fix-Induced Asymmetry Check**: When reviewing follow-up fix commits, do not inspect only the line cited in the previous finding. Project every new guard, gate, cache protection, or SQL predicate added by the fix onto all sibling branches sharing the same responsibility (other flag states, degraded/fallback paths, companion read/write handlers, and runbook SQL) to confirm the fix did not create architectural asymmetry.
 
 ## 2. Load repository rules and domain context
 
-Read only the documents relevant to the changed area, plus the repository-level rules.
+Read only the documents relevant to the changed area, plus repository-level rules:
 
 - `AGENTS.md`, `README.md`, and any applicable nested instructions.
 - `.review/review-style-guide.md`, critic rules, severity rules, and relevant cases.
 - `.agents/skills/review-ags`, `e2e-review`, `developing-sandhub`, or other project skills when present.
-- Domain documents, glossary, ADRs, API definitions, lifecycle documents, and migration contracts.
+- Domain documents, glossary, ADRs, API definitions, lifecycle documents, and migration/rollout contracts.
 - `agentruntime-context` for AgentRuntime topology, service ownership, environment, logs, and operational vocabulary.
 
 When code and domain documents disagree, identify the concrete contradiction and treat the domain rule as unresolved until the user or an authoritative document settles it.
 
-## 3. Define the terminal state before judging the implementation
+## 3. Build the shared model (Terminal State + Impact Map)
 
-Write a short terminal-state model from the request, product requirements, domain documents, and existing public contracts.
+Before judging individual files—and before fanning out subagents on large PRs—build two compact artifacts:
 
-Include:
+1. **Terminal-state model**: resource states and legal transitions, authoritative source of truth for each state, durable progress and retry checkpoints, external callbacks/receipts/billing records, final reconciliation/read path, layer ownership of each invariant, and migration/rollback boundaries.
+2. **Impact map**: trace every entry point and consumer (API/YunAPI/CLI/UI/MCP/SDK/internal RPC; create/update/pause/resume/fork/pre-create/gateway/console/billing; queues/workers/schedulers/Redis keys/DB tables/external Cube or registry calls; every shared coordination primitive such as locks, leases, fences, epochs, version/generation keys, CAS targets, singleflight gates, and auxiliary state stores with their full reader/writer map; credentials/permissions; metrics/logs/error codes). Explicitly separate **flag-gated paths** from **always-on shared paths**.
 
-- the resource states and legal transitions
-- the source of truth for each state
-- durable progress and retry checkpoints
-- external callbacks, receipts, or billing records
-- the final reconciliation or read path
-- ownership of each responsibility
-- migration and rollback boundaries
+## 4. Route review execution: single-pass vs. multi-lens fan-out
 
-Then compare the current branch to `develop` and to this model. Look for duplicate old and new paths, state transitions that can be reached through only one entry point, fields that no longer carry a product meaning, compatibility layers for data that does not exist, migrations that are repeated or out of order, and logic placed in a layer that cannot enforce the required invariant.
+Choose the execution strategy from the change scope:
 
-When a state combines an authoritative source of truth with an asynchronous materialized projection (for example, a parent repository's `isolated_at` vs. member rows' `status`), build a **bidirectional lag matrix** before reading individual handlers:
+- **Focused change** (< 20 non-test files and < 3 high-risk domains): stay in the main session and apply only the relevant lens files below.
+- **Large or cross-cutting change** (≥ 20 non-test files, or spanning ≥ 3 domains among DB/SQL, Redis/concurrency, rollout/hot-paths, and runbooks/UI): fan out **3–4 clean-context, read-only subagents in parallel**, assigning one failure-mode lens per subagent so no single agent's context or attention is diluted by the whole diff.
 
-- **Forward lag**: authority has transitioned to restricted/terminal while the async projection still shows the prior active state.
-- **Reverse lag**: authority has resumed/cleared while the async projection still shows the prior restricted state.
-
-Check cache-hit reads, cache-miss reads, admission/reuse checks, and mutation/update paths across both rows of the matrix. Any guard that treats the lagging projection as authoritative over the source of truth in either direction is a convergence defect.
-
-## 4. Build the impact map
-
-Trace the feature through all entry points and consumers.
-
-- API, YunAPI, CLI, UI, MCP, SDK, and internal RPC contracts
-- every create, update, pause, resume, fork, pre-create, gateway, console, and billing path that can observe the changed state
-- queue producers and consumers, workers, schedulers, Redis keys, database tables, and external Cube or registry calls
-- every shared coordination primitive (locks, leases, fences, epochs, version/generation keys, CAS targets, singleflight gates) and auxiliary state store (ledgers, pending sets, reservation hashes, outboxes, queues), with its full reader and writer map
-- credential and permission ownership for third-party image preparation or external calls
-- emitted events, metrics, logs, error codes, and request identifiers
-
-For each path, record the old behavior, the current behavior, and the expected terminal behavior, and explicitly separate flag-gated paths from always-on shared paths that execute even when new gray or feature flags are disabled. A change is incomplete when one path still observes the old state model, bypasses the new invariant, or mutates a shared primitive without accounting for concurrent callers.
-
-## 5. Review the business chain
-
-Follow the feature in this order.
-
-1. Business terminal state. Confirm what “ready”, “success”, “deleted”, “failed”, “paused”, or equivalent means to callers and billing.
-2. Durable progress. Check cursors, checkpoints, leases, orders, database rows, migrations, and restart behavior.
-3. Asynchronous external receipt. Check retries, timeouts, cancellation, duplicate delivery, provider errors, and whether success is recorded before the external result is durable.
-4. Reconciliation and reclamation. Check that later scans or read APIs can recover from every partial failure, that the final account, resource, usage, and billing views agree, and that settled auxiliary records (tickets, tombstones, pending rows, staging keys) are actively reclaimed in steady state rather than left to accumulate until a miss or TTL cliff.
-
-Check lifecycle edges, clock and TTL-expiry boundaries after warm operation, stale messages, replays, partial writes, leader changes, liveness under concurrent routine traffic, and old messages read by the new code.
-
-Explicitly check these two cross-layer consistency failure modes:
-
-- **Post-outage stale-cache resurrection**: Proving fail-safe DB fallback *during* a Redis or cache outage is insufficient. For every post-commit cache invalidation (`DEL`, generation rotation, tombstone), trace what happens when the invalidation fails during a brief outage and the cache later recovers before a long TTL (for example 5–30 min) expires. Any security, billing, isolation, or lifecycle gate whose stale entry could fail-open after recovery requires a durable compensation path (outbox, pending flag re-driven by a scanner, or bounded reconciliation) rather than fire-and-forget logging.
-- **Bidirectional authority-vs-projection convergence**: Verify both forward lag (authority restricted, projection still active) and reverse lag (authority resumed, projection still restricted) across cache hits, cache misses, admission/reuse checks, and updates so no path diverges from the authoritative record.
-
-## 6. Run the engineering and contract lanes separately
-
-Engineering lane checks:
-
-- package and layer boundaries
-- names and domain types
-- public error-code hierarchy
-- SQL shape, indexes, query plans, transactions, lock ordering, and connection usage
-- **Multi-branch query snapshot atomicity (`TX-09`)**: Whenever a multi-status or composite read is split into multiple per-status `SELECT`s and K-way merged in memory (cursor pagination, cleanup scanners, TTL expiration scans, reconciliation pages), verify all branches execute inside a single `ReadOnly` consistent-snapshot transaction (or a single `UNION ALL` query) so concurrent state transitions between branch queries cannot drop rows from every branch or prematurely terminate cursor pagination.
-- observability and actionable failure context
-- concurrency safety, liveness (no livelock or starvation), and active resource/state cleanup
-
-Contract lane checks:
-
-- API request and response semantics
-- state-machine and lifecycle invariants
-- resource ownership and tenant isolation
-- metering, usage, order, callback, and reconciliation semantics
-- retry, idempotency, backfill, compensation, rollback, and migration behavior
-- compatibility with existing clients, stored data, and default configuration
-
-Do not turn an explicitly accepted product boundary into a defect. Do record the boundary when it changes what the system guarantees.
-
-## 7. Check compatibility and rollout
-
-Use a matrix that covers at least:
-
-| Dimension | Cases |
-|---|---|
-| Data | no data, new data, existing data, partially migrated data |
-| Process | old process, new process, rolling mixed version |
-| Configuration | default mode, named mode, feature disabled, feature enabled |
-| Backend | single backend, dual backend, provider unavailable |
-| Operation | create, read, update, pause/resume, delete, retry, replay |
-| Time boundary | post-deploy warm cache/lease, first TTL expiry or eviction after sustained traffic, window rollover, threshold crossing |
-
-Check whether old and new processes can share the same database and Redis keys. Check whether a deployment can leave an old writer, an old reader, or an old worker running long enough to violate the terminal-state model.
-
-Check these rollout failure modes explicitly:
-
-- **Always-on shared foundation blast radius**: When a change is behind a gray or feature flag, audit every shared foundation path that still executes with the flag disabled under production defaults. Any always-on path carries full-tenant blast radius regardless of rollout scope.
-- **Default-config producer/cleaner symmetry**: Audit the exact shipped default values of every new or changed flag. Whenever a writer, ledger, fence, or guard is enabled by default, confirm its companion cleanup, handoff, drain, or escape path is also active by default rather than gated behind an opt-in switch.
-- **Delayed-detonation boundaries**: Identify paths kept dormant immediately after deployment by warm keys, caches, leases, or existing rows written by the previous release. Trace what executes on the first cold transition (TTL expiry, cache eviction, failover, window rollover, or cap crossing) after sustained steady-state traffic has accumulated under the new code.
-- **Identity and key normalization against legacy rows**: Whenever a change introduces or tightens canonicalization/normalization for a lookup key, repository name, or unique business identity, grep every SQL query across the codebase (point lookups, uniqueness checks, upserts, bootstrap/backfill, and association repair) and trace pre-existing non-canonical rows stored by prior releases. A single-value `key = canonical` query that misses legacy rows can bypass isolation/lifecycle gates or create duplicate active entities.
-
-## 8. Quantify capacity, state growth, and concurrency liveness
-
-For any database, Redis, cache, queue, ledger, metering, or coordination change, quantify rather than describe. Unless live metrics, `agentruntime-context`, or service configs show a stricter scale, size every hot path against at least these single-region, hot-tenant baseline orders of magnitude (calibrated from 7-day multi-region production traffic and live table sizes; never size from average traffic):
-
-| Dimension | Baseline floor (hot tenant / single region) | Primary review risk |
+| Lens | Reference file | Primary failure modes owned |
 |---|---|---|
-| Live instances (`RUNNING` vs. `PAUSED`) | `~10^5` `RUNNING` (one tenant / region); **`10^6–5×10^6` `PAUSED`** (`10^6+` in one tenant, 30–40× `RUNNING`) | Queries/scans over `PAUSED` or non-deleted instances, pause-release queues, checkpoints, and bucket rebuilds |
-| Core MySQL table scale (single region) | Live `sandbox_instances`: **`1.5×10^7+` rows / `450–600+ GB`**; daily event shards: `~10^7` rows/day (`~6 GB/day`); companion tables (`volumes`, `tokens`, `tools`, `tasks`, `pre_cache_images`, `billing_stat`): **`10^6–5×10^6` rows** (`3–20 GB`) | Full/wide index scans, `COUNT`/`SUM` timeouts (`>5 s`), online DDL locks, and unsharded growth |
-| Read & invoke hot-path QPS | `1.5–2×10^3` ops/s per hot tenant (`3–4×10^3+` region total) | Uncached DB reads, cache/lock contention, and fan-out scans on list/describe/invoke paths |
-| Lifecycle & update write QPS (peak 1m) | `200–320+` ops/s for start/stop/update (`3–5 ms` interval; up to `3.5×10^5`/h single-tenant creates, `4×10^6`/day region); `~170` ops/s for pause incl. auto-pause (`~6 ms` interval); `~70` ops/s for resume (`~14 ms` interval) | Optimistic-fence livelock (`T_invalidate` in single-digit ms) and serial-worker backlog |
-| Unreclaimed TTL accumulation | `10^5–10^6` entries / `1h` window; `10^6–10^7+` entries / `24h` window (`write_rate × TTL`) | Unbounded companion hashes, queues, pending sets, or multi-day watermark maps |
-| Redis cluster RTT & multi-round scan | `1.5–4 ms` per op (P50–P95, `~80 ms` tail); `40–400+` `HSCAN`/`SCAN` rounds (`100 ms–1 s+`) at `10^4–10^5` entries (multi-second at `10^6`) | Synchronous `O(N)` scans exceeding `T_invalidate` or request latency budgets |
-| DB query & async-batch load | Point ops `2–10 ms` (P50–P95); broad `SELECT` P99 `50–300 ms` (multi-second/`>5 s` timeout tail); async flush `350–550+` batches/s | Critical-section / lock-hold / fence-window duration and connection-pool exhaustion |
-| Replicas & concurrency | `6–26` pods per major region (`3–6` smaller regions); `10^2–10^3` concurrent hot-tenant requests | Cross-pod lock contention, miss stampedes, and retry/connection amplification |
+| Fallback & Concurrency | [`lens-fallback-and-concurrency.md`](lens-fallback-and-concurrency.md) | Fence/CAS liveness, exhaustion return contracts, post-outage cache resurrection, flag × health protection symmetry |
+| SQL & Capacity | [`lens-sql-and-capacity.md`](lens-sql-and-capacity.md) | Hot-tenant capacity envelope, runtime + runbook SQL `EXPLAIN` & lock analysis, generated-column predicates, `TX-09` snapshots, steady-state reclamation |
+| Rollout & Compatibility | [`lens-rollout-and-compat.md`](lens-rollout-and-compat.md) | Always-on default-config amplification, producer/cleaner symmetry, legacy key normalization, mixed-version rollout, multi-doc rollout order & anchor cross-checks |
+| State & Contract | [`lens-state-and-contract.md`](lens-state-and-contract.md) | Terminal-state convergence, bidirectional authority-vs-projection lag matrix, business data-flow chain, API/UI/E2E contracts |
 
-### Storage and hot-path capacity
+When fanning out, give each subagent:
+- the merge-base, current HEAD, changed file list, and the shared Terminal-State + Impact Map from Step 3;
+- its assigned lens file path to read and follow strictly;
+- explicit instructions to report only evidence-backed defects (with file, line, call chain, or command output) and never stop after the first finding.
 
-- rows, keys, or collection entries scanned and written per cycle, day, and region
-- read and update QPS, batch size, pagination rounds, lock duration, and retry amplification
-- index predicates and actual query plans
-- account and region skew, shard size, and the largest customer (anchored to the baseline floor above)
-- hot API paths and lock-holding rebuild paths that must avoid routine SQL, full-table scans, or `O(N)` Redis reads (`HSCAN`/`SCAN`/`HGETALL`/`SMEMBERS`)
-- event, stat, usage, order, and billing record volume
+**Non-early-stop rule**: Finding 1–2 P1 defects never justifies skipping remaining lenses, truncating cross-layer call-chain tracing, or replacing `EXPLAIN`/behavioral verification with comment inspection.
 
-### Steady-state accumulation and reclamation
+## 5. Separate engineering and contract lanes
 
-For every new or modified Redis hash, set, sorted set, stream, database table, queue, or in-memory buffer:
+Across all lenses, keep engineering findings distinct from product/domain contract findings:
 
-- Compute steady-state cardinality against the baseline floor as `write_rate × retention_or_TTL_window` (for example, `10^5–10^6` entries over an hourly TTL under `10^2` ops/s creates/updates, or `10^6–10^7+` per day for multi-day watermark maps and logs).
-- Verify an active, bounded steady-state reclamation path (such as handoff or deletion on async commit completion, or bounded background drain) that keeps cardinality proportional to true in-flight work rather than cumulative throughput over the TTL window.
-- Flag deferred synchronous cleanup when a hot request path, cache-miss rebuild, or lease-holding worker must scan or process backlog accumulated since the last expiry or reconciliation.
+- **Engineering lane**: package/layer boundaries, domain types, error-code hierarchy, SQL/indexes/query plans/transactions/locks, observability, concurrency safety/liveness, and active resource cleanup.
+- **Contract lane**: API request/response semantics, state-machine invariants, resource ownership and tenant isolation, metering/usage/order/callback/reconciliation semantics, retry/idempotency/backfill/rollback behavior, and compatibility with existing clients, stored data, and default configuration.
 
-### Concurrency liveness and fencing
+Do not turn an explicitly accepted product boundary into a defect. Record the boundary when it changes what the system guarantees.
 
-Safety fences (epochs, generation counters, version keys, CAS targets, `WATCH`, rebuild locks, singleflight gates) prevent stale writes but can cause deterministic livelock when paired with multi-step work. For every touched fence or optimistic retry loop:
+## 6. Verify behavior with evidence
 
-- **Complete writer inventory**: Audit every writer that creates, rotates, or invalidates the fence across the codebase, including Go callers, Lua scripts, legacy/compatibility paths, routine lifecycle transitions (start, pause, resume, stop, update), error/repair handlers, and background workers.
-- **Conditional invalidation**: Confirm each writer rotates or invalidates the fence only when it actually mutates protected state; flag unconditional writes on no-op paths (missing target key, zero affected entries, or already-settled state).
-- **Scope separation**: Confirm routine high-frequency operations are isolated from slow rebuild, backfill, or repair fences (or preserve forward progress under concurrent writes) rather than sharing an unguarded tenant-wide, pool-wide, or global epoch.
-- **Liveness inequality (`T_work` vs. `T_invalidate`)**: Compute the full guarded critical window `T_work` (scan/pagination RTTs + DB queries + external RPCs + final writes from fence sample to commit) at the baseline hot-tenant scale (`10^4–10^5` entries / `100 ms–1 s+` for multi-round scans or heavy queries), and compare it against the concurrent fence-mutation arrival interval `T_invalidate` (`3–15 ms` under `70–320+` ops/s peak lifecycle/update traffic) across all writers in the inventory. Whenever `T_work` can approach or exceed `T_invalidate`, bounded optimistic retries amplify latency and exhaust into failure rather than converging; flag this as a blocking liveness defect.
-
-If a design adds a table, Redis structure, field, queue, fence, or middleware, explain why existing structures cannot satisfy the invariant and how the new structure remains bounded and maintainable.
-
-## 9. Verify behavior with evidence
-
-Use the smallest check that can falsify the suspected problem.
+Use the smallest check that can falsify each suspected problem. Synthesize subagent findings in the main session and verify contested or high-severity claims directly.
 
 Prefer:
 
-- a focused regression test that compares `develop` and the current branch
-- race tests for shared state and lifecycle paths
-- fault injection for Redis, database, queue, Cube, registry, and billing failures
+- a focused regression test comparing `develop` and the current branch
+- race tests (`-race`) for shared state and lifecycle paths
+- fault injection for Redis, database, queue, Cube, registry, and billing failures—including **exhausted retry/CAS paths** to verify callers do not write poisoned metadata or fail-open
+- real MySQL `EXPLAIN` on **every new/modified runtime SQL and every DDL/backfill/rollback/runbook doc SQL** (syntax/execution pass alone is insufficient)
 - controlled clock tests for TTL, grace periods, windows, and day rollover
 - restart, leader-change, pagination-interruption, duplicate-delivery, and retry tests
-- liveness tests under concurrent cross-path traffic at realistic accumulated cardinality (forcing `10+` scan or pagination batches via `10^3–10^4` entries or a narrowed test batch size, not a handful of entries), driving routine sibling mutations at a hot-tenant arrival interval (`3–15 ms` or per batch boundary) while a rebuild, backfill, or reconciliation executes to prove bounded completion rather than retry exhaustion
+- liveness tests under concurrent cross-path traffic at realistic accumulated cardinality (`10+` scan/pagination batches via `10^3–10^4` entries or a narrowed batch size) driving sibling mutations at hot-tenant intervals (`3–15 ms` or per batch boundary)
 - default-configuration warm-to-cold transition tests (gray and optional cleanup flags left at production defaults), accumulating steady-state entries before forcing TTL expiry or cache eviction
-- three-step post-outage cache recovery tests (warm cache -> commit DB mutation -> inject cache invalidation failure -> recover cache and expire short local TTL -> verify stale long-TTL key does not fail-open or is healed by durable compensation)
-- legacy non-canonical row tests against real MySQL (seed pre-existing non-canonical rows -> exercise canonicalized lookup, gate, upsert, bootstrap, and repair paths -> verify no gate bypass or duplicate active entity)
-- bidirectional async-projection lag tests (authority ahead of projection in both forward and reverse directions -> verify cache-hit, cache-miss, admission, reuse, and update paths agree with authority)
-- concurrent cross-branch state-transition tests for split/K-way-merged queries (transition a row's status between branch queries -> verify shared read-only snapshot prevents row loss and premature cursor termination)
+- three-step post-outage cache recovery tests (warm cache → commit DB mutation → inject cache invalidation failure → recover cache and expire short local TTL → verify stale long-TTL key does not fail-open or is healed by durable compensation)
+- legacy non-canonical row tests against real MySQL (seed pre-existing non-canonical rows → exercise canonicalized lookup, gate, upsert, bootstrap, and repair paths)
+- bidirectional async-projection lag tests (authority ahead of projection in both forward and reverse directions across cache-hit, cache-miss, admission, reuse, and update paths)
+- concurrent cross-branch state-transition tests for split/K-way-merged queries (`TX-09`)
 - E2E runs that prove the intended matrix executed
 
-For each check, record the exact command, result, environment, and skip reason. A green command is insufficient when the relevant matrix was skipped, tests ran only with non-default flags, tiny cardinality, or isolated single-path execution (proving safety without liveness), a negative case asserted only a route 404, or the shared environment changed versions during the run. Clean up temporary resources and report any incomplete cleanup.
+For each check, record the exact command, result, environment, and skip reason. A green command is insufficient when the relevant matrix was skipped, tests ran only with non-default flags, tiny cardinality, or isolated single-path execution, a negative case asserted only a route 404, or the shared environment changed versions during the run. Clean up temporary resources and report any incomplete cleanup.
 
-## 10. Classify and attribute findings
+## 7. Classify and attribute findings
 
 Each finding must state:
 
-- severity P0, P1, or P2
-- the affected path and triggering condition
+- severity `P0`, `P1`, or `P2`
+- attribution (`baseline`, `regression`, `design-convergence`, `incomplete-fix`, or `unverified`)
+- affected path and triggering condition
 - why the behavior violates the terminal-state model or an explicit engineering rule
-- evidence, including the file, line, test, log, query plan, or baseline/current comparison
-- the smallest repair that restores the invariant
-- the verification that should pass after the repair
+- evidence (file, line, call chain, test, log, `EXPLAIN` output, or baseline/current comparison)
+- smallest repair that restores the invariant (checking sibling branches for symmetry)
+- verification that should pass after the repair
 - whether it blocks merge
 
-P0 covers security, catastrophic data or service impact, deterministic livelock or starvation on a critical path, or default-config shared-path outages affecting non-gray tenants. P1 covers correctness, compatibility, lifecycle, data integrity, unbounded steady-state growth, or performance and liveness problems that can materially affect users or operations. P2 covers bounded correctness or maintainability problems that still prevent terminal design convergence when they leave conflicting or incomplete behavior.
+Severity boundaries:
+- **P0**: security, catastrophic data or service impact, deterministic livelock/starvation on a critical path, or default-config shared-path outages affecting non-gray tenants.
+- **P1**: correctness, compatibility, lifecycle, data integrity, cache poisoning / fail-open fallback returns, unbounded steady-state growth, or performance/liveness problems that materially affect users or operations.
+- **P2**: bounded correctness, runbook/doc contradictions, unindexed operational SQL, or maintainability problems that prevent terminal design convergence when they leave conflicting or incomplete behavior.
 
-## 11. Deliver the review
+## 8. Deliver the review
 
-Default output is a draft in the user's language. Use the report template. State the baseline, current HEAD, terminal state, findings, verification, skipped checks, and merge recommendation.
+Default output is a draft in the user's language using [`report-template.md`](report-template.md). State the baseline, current HEAD, terminal state, findings, verification, skipped checks, and merge recommendation.
 
 When the user explicitly requests submission:
 
@@ -217,4 +121,4 @@ When the user explicitly requests submission:
 - publish one overview with severity, merge gate, and verification boundary
 - read the notes back and report their final state
 
-Do not create comments or other external mutations merely because the user said “review”.
+Do not create comments or other external mutations merely because the user said "review".
