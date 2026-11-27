@@ -17,7 +17,7 @@ Describe how the current branch differs from `develop` as a complete implementat
 
 ## Rollout, capacity, and liveness
 
-Summarize always-on shared paths vs. flag-gated paths under default configuration (including producer/cleaner symmetry), delayed-trigger boundaries (such as first TTL expiry or cold rebuild after sustained traffic), steady-state collection growth and reclamation bounds sized against the baseline hot-tenant envelope, and the writer inventory plus explicit `T_work` vs. `T_invalidate` numbers for any touched fence, epoch, or optimistic retry loop. Omit subsections that do not apply and state why.
+Summarize always-on shared paths vs. flag-gated paths under default configuration (including producer/cleaner symmetry), delayed-trigger boundaries (such as first TTL expiry, cold rebuild after sustained traffic, or post-outage cache recovery with failed invalidations), legacy key-normalization compatibility against pre-existing rows, bidirectional authority-vs-projection lag, multi-branch query snapshot atomicity (`TX-09`), steady-state collection growth and reclamation bounds sized against the baseline hot-tenant envelope, and the writer inventory plus explicit `T_work` vs. `T_invalidate` numbers for any touched fence, epoch, or optimistic retry loop. Omit subsections that do not apply and state why.
 
 ## Findings
 

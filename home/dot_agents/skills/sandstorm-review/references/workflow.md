@@ -46,6 +46,13 @@ Include:
 
 Then compare the current branch to `develop` and to this model. Look for duplicate old and new paths, state transitions that can be reached through only one entry point, fields that no longer carry a product meaning, compatibility layers for data that does not exist, migrations that are repeated or out of order, and logic placed in a layer that cannot enforce the required invariant.
 
+When a state combines an authoritative source of truth with an asynchronous materialized projection (for example, a parent repository's `isolated_at` vs. member rows' `status`), build a **bidirectional lag matrix** before reading individual handlers:
+
+- **Forward lag**: authority has transitioned to restricted/terminal while the async projection still shows the prior active state.
+- **Reverse lag**: authority has resumed/cleared while the async projection still shows the prior restricted state.
+
+Check cache-hit reads, cache-miss reads, admission/reuse checks, and mutation/update paths across both rows of the matrix. Any guard that treats the lagging projection as authoritative over the source of truth in either direction is a convergence defect.
+
 ## 4. Build the impact map
 
 Trace the feature through all entry points and consumers.
@@ -70,6 +77,11 @@ Follow the feature in this order.
 
 Check lifecycle edges, clock and TTL-expiry boundaries after warm operation, stale messages, replays, partial writes, leader changes, liveness under concurrent routine traffic, and old messages read by the new code.
 
+Explicitly check these two cross-layer consistency failure modes:
+
+- **Post-outage stale-cache resurrection**: Proving fail-safe DB fallback *during* a Redis or cache outage is insufficient. For every post-commit cache invalidation (`DEL`, generation rotation, tombstone), trace what happens when the invalidation fails during a brief outage and the cache later recovers before a long TTL (for example 5–30 min) expires. Any security, billing, isolation, or lifecycle gate whose stale entry could fail-open after recovery requires a durable compensation path (outbox, pending flag re-driven by a scanner, or bounded reconciliation) rather than fire-and-forget logging.
+- **Bidirectional authority-vs-projection convergence**: Verify both forward lag (authority restricted, projection still active) and reverse lag (authority resumed, projection still restricted) across cache hits, cache misses, admission/reuse checks, and updates so no path diverges from the authoritative record.
+
 ## 6. Run the engineering and contract lanes separately
 
 Engineering lane checks:
@@ -78,6 +90,7 @@ Engineering lane checks:
 - names and domain types
 - public error-code hierarchy
 - SQL shape, indexes, query plans, transactions, lock ordering, and connection usage
+- **Multi-branch query snapshot atomicity (`TX-09`)**: Whenever a multi-status or composite read is split into multiple per-status `SELECT`s and K-way merged in memory (cursor pagination, cleanup scanners, TTL expiration scans, reconciliation pages), verify all branches execute inside a single `ReadOnly` consistent-snapshot transaction (or a single `UNION ALL` query) so concurrent state transitions between branch queries cannot drop rows from every branch or prematurely terminate cursor pagination.
 - observability and actionable failure context
 - concurrency safety, liveness (no livelock or starvation), and active resource/state cleanup
 
@@ -112,6 +125,7 @@ Check these rollout failure modes explicitly:
 - **Always-on shared foundation blast radius**: When a change is behind a gray or feature flag, audit every shared foundation path that still executes with the flag disabled under production defaults. Any always-on path carries full-tenant blast radius regardless of rollout scope.
 - **Default-config producer/cleaner symmetry**: Audit the exact shipped default values of every new or changed flag. Whenever a writer, ledger, fence, or guard is enabled by default, confirm its companion cleanup, handoff, drain, or escape path is also active by default rather than gated behind an opt-in switch.
 - **Delayed-detonation boundaries**: Identify paths kept dormant immediately after deployment by warm keys, caches, leases, or existing rows written by the previous release. Trace what executes on the first cold transition (TTL expiry, cache eviction, failover, window rollover, or cap crossing) after sustained steady-state traffic has accumulated under the new code.
+- **Identity and key normalization against legacy rows**: Whenever a change introduces or tightens canonicalization/normalization for a lookup key, repository name, or unique business identity, grep every SQL query across the codebase (point lookups, uniqueness checks, upserts, bootstrap/backfill, and association repair) and trace pre-existing non-canonical rows stored by prior releases. A single-value `key = canonical` query that misses legacy rows can bypass isolation/lifecycle gates or create duplicate active entities.
 
 ## 8. Quantify capacity, state growth, and concurrency liveness
 
@@ -169,6 +183,10 @@ Prefer:
 - restart, leader-change, pagination-interruption, duplicate-delivery, and retry tests
 - liveness tests under concurrent cross-path traffic at realistic accumulated cardinality (forcing `10+` scan or pagination batches via `10^3–10^4` entries or a narrowed test batch size, not a handful of entries), driving routine sibling mutations at a hot-tenant arrival interval (`3–15 ms` or per batch boundary) while a rebuild, backfill, or reconciliation executes to prove bounded completion rather than retry exhaustion
 - default-configuration warm-to-cold transition tests (gray and optional cleanup flags left at production defaults), accumulating steady-state entries before forcing TTL expiry or cache eviction
+- three-step post-outage cache recovery tests (warm cache -> commit DB mutation -> inject cache invalidation failure -> recover cache and expire short local TTL -> verify stale long-TTL key does not fail-open or is healed by durable compensation)
+- legacy non-canonical row tests against real MySQL (seed pre-existing non-canonical rows -> exercise canonicalized lookup, gate, upsert, bootstrap, and repair paths -> verify no gate bypass or duplicate active entity)
+- bidirectional async-projection lag tests (authority ahead of projection in both forward and reverse directions -> verify cache-hit, cache-miss, admission, reuse, and update paths agree with authority)
+- concurrent cross-branch state-transition tests for split/K-way-merged queries (transition a row's status between branch queries -> verify shared read-only snapshot prevents row loss and premature cursor termination)
 - E2E runs that prove the intended matrix executed
 
 For each check, record the exact command, result, environment, and skip reason. A green command is insufficient when the relevant matrix was skipped, tests ran only with non-default flags, tiny cardinality, or isolated single-path execution (proving safety without liveness), a negative case asserted only a route 404, or the shared environment changed versions during the run. Clean up temporary resources and report any incomplete cleanup.

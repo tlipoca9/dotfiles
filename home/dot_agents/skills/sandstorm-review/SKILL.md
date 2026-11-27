@@ -15,7 +15,7 @@ This skill is for `agentrun/sandstorm` and closely coupled E2E changes. It does 
 - Read repository `AGENTS.md`, `README.md`, relevant `.review/` rules, domain documents, and project review skills before drawing conclusions.
 - Preserve unrelated working-tree changes. Use a detached worktree or temporary checkout for experiments and tests when needed.
 - Treat terminal-state design issues as merge-blocking defects when they leave duplicate paths, conflicting state models, unnecessary compatibility layers, incomplete migrations, or responsibilities split across old and new implementations.
-- Treat default-config regressions on always-on shared paths, unbounded steady-state growth, and concurrency liveness defects (starvation or livelock) as merge-blocking defects even when a new feature or gray flag is disabled by default.
+- Treat default-config regressions on always-on shared paths, unbounded steady-state growth, concurrency liveness defects (starvation or livelock), uncompensated post-commit cache invalidations that can fail-open after dependency recovery, key-normalization blind spots against legacy rows, bidirectional authority-vs-projection drift, and split multi-branch queries missing a shared read-only snapshot (`TX-09`) as merge-blocking defects even when a new feature or gray flag is disabled by default.
 - Separate engineering standards from product and domain contract review. A style concern without a behavior or maintainability impact is not a blocking finding.
 - Use the user's language for the review. Keep code identifiers, API names, and quoted evidence unchanged.
 - Keep external mutations disabled by default. Create Gongfeng comments only after the user explicitly asks to post or submit the review.
