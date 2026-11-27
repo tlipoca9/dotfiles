@@ -40,6 +40,4 @@ Use one entry point for all modes (main repository, E2E when coupled, and design
 
 ## Completion criteria
 
-A review is complete when it includes the baseline and current HEAD, the intended terminal state, an impact map, findings across all applicable lenses with severity and attribution, evidence from meaningful verification (and exact skip reasons for blocked checks), and a merge recommendation.
-
-Use [`references/report-template.md`](references/report-template.md) for the final draft or Gongfeng overview.
+A review is complete when it writes the full draft report to a file outside the target repository using [`references/report-template.md`](references/report-template.md) (including the baseline and current HEAD, intended terminal state, impact map, findings across all applicable lenses with severity and attribution, evidence from meaningful verification with exact skip reasons, and a merge recommendation), and returns a concise summary with the clickable file link in chat instead of pasting the full report inline.

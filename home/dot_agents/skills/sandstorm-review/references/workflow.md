@@ -111,7 +111,18 @@ Severity boundaries:
 
 ## 8. Deliver the review
 
-Default output is a draft in the user's language using [`report-template.md`](report-template.md). State the baseline, current HEAD, terminal state, findings, verification, skipped checks, and merge recommendation.
+Write the complete draft report in the user's language using [`report-template.md`](report-template.md) to a file **outside the target repository** (never commit or leave review reports inside the reviewed git working tree):
+
+1. If the user specified an output path, write there.
+2. Otherwise, if the harness provides a conversation artifact/scratch directory, write to `<artifact-dir>/scratch/sandstorm-review-<branch-or-mr>-<short-head>.md` (or `<artifact-dir>/sandstorm-review-<branch-or-mr>-<short-head>.md` when presenting as a user-facing artifact).
+3. Otherwise (plain CLI environments without an artifact directory), write to `/tmp/sandstorm-review-<repo>-<short-head>.md`.
+
+In the chat response, do **not** paste or re-summarize the full report. Return only:
+
+- the clickable link / absolute path to the written report file
+- the merge recommendation and finding counts (`P0`/`P1`/`P2`)
+- a one-line bullet per blocking finding (severity, title, primary location)
+- any unverified or environment-blocked checks
 
 When the user explicitly requests submission:
 
@@ -119,6 +130,6 @@ When the user explicitly requests submission:
 - deduplicate against existing unresolved comments
 - create only new inline comments with actionable evidence
 - publish one overview with severity, merge gate, and verification boundary
-- read the notes back and report their final state
+- read the notes back and report their final state (while keeping the local report file)
 
 Do not create comments or other external mutations merely because the user said "review".
