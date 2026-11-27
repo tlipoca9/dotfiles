@@ -15,6 +15,7 @@ This skill is for `agentrun/sandstorm` and closely coupled E2E changes. It does 
 - Read repository `AGENTS.md`, `README.md`, relevant `.review/` rules, domain documents, and project review skills before drawing conclusions.
 - Preserve unrelated working-tree changes. Use a detached worktree or temporary checkout for experiments and tests when needed.
 - Treat terminal-state design issues as merge-blocking defects when they leave duplicate paths, conflicting state models, unnecessary compatibility layers, incomplete migrations, or responsibilities split across old and new implementations.
+- Treat default-config regressions on always-on shared paths, unbounded steady-state growth, and concurrency liveness defects (starvation or livelock) as merge-blocking defects even when a new feature or gray flag is disabled by default.
 - Separate engineering standards from product and domain contract review. A style concern without a behavior or maintainability impact is not a blocking finding.
 - Use the user's language for the review. Keep code identifiers, API names, and quoted evidence unchanged.
 - Keep external mutations disabled by default. Create Gongfeng comments only after the user explicitly asks to post or submit the review.
@@ -29,6 +30,6 @@ Use one entry point for all modes.
 
 ## Completion criteria
 
-A review is complete when it includes the baseline and current HEAD, the intended terminal state, an impact map, the business data-flow chain, compatibility and capacity analysis, evidence from meaningful verification, findings with severity and attribution, and a merge recommendation. If the environment prevents a check, state the command and the exact reason it was skipped.
+A review is complete when it includes the baseline and current HEAD, the intended terminal state, an impact map, the business data-flow chain, compatibility and default-config rollout blast radius, capacity and steady-state growth bounds, concurrency liveness analysis, evidence from meaningful verification, findings with severity and attribution, and a merge recommendation. If the environment prevents a check, state the command and the exact reason it was skipped.
 
 Use [`references/report-template.md`](references/report-template.md) for the final draft or Gongfeng overview.
