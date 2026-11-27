@@ -141,6 +141,17 @@ current task. Do not use `git add .` or `git add -A`.
 
 If unrelated or concurrent changes conflict with the task, report the conflict
 instead of discarding or silently resolving those changes.
+
+## Database safety
+
+Treat every shared, staging, pre-prod, and production database—including
+read-only replicas—as live production infrastructure.
+
+Before running any ad-hoc query against a live database or drafting production
+data-fix SQL, read `~/.agents/skills/prod-db-safety/SKILL.md` and follow it.
+Inspect table size and indexes on that exact instance, run `EXPLAIN` (never
+`EXPLAIN ANALYZE`) before querying, and enforce a session execution timeout
+plus read-only transaction mode on every inspection connection.
 {{- if eq .chezmoi.os "darwin" }}
 
 ## Dotfiles
