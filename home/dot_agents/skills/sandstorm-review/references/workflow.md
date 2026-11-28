@@ -22,7 +22,7 @@ Load **only** the files that apply to the changed area—skip unrelated sub-docs
 - `AGENTS.md`, `README.md`, and nested instructions for touched modules.
 - Relevant `.review/` rules/cases (filter by touched domain rather than reading the entire directory).
 - Applicable project skills when present (`.agents/skills/review-ags`, `e2e-review`, `developing-sandhub`—read only the specific references matching touched subsystems).
-- Domain docs, glossary, ADRs, API specs, lifecycle docs, and migration/rollout runbooks for touched subsystems.
+- Domain docs, glossary, ADRs, API specs, lifecycle docs, migration/rollout runbooks, and the feature's `spec.md` (auto-check `.scratch/*/spec.md` or any MR-linked spec) for touched subsystems.
 - `agentruntime-context` when topology, service ownership, environments, or live logs bear on the diff.
 
 When repository review templates (such as `review-ags` standalone `TestXxx_Scenario` prompts or report layouts) conflict with `sandstorm-review`'s subtraction, honest-boundary, or table-driven test-folding rules, follow `sandstorm-review`. When code and domain docs disagree on business semantics, cite the exact contradiction and treat the rule as unresolved until settled.
@@ -31,9 +31,9 @@ When repository review templates (such as `review-ags` standalone `TestXxx_Scena
 
 Before judging individual files—and before fanning out subagents—produce three compact artifacts:
 
-1. **Terminal-state model & Accepted Boundaries**: authoritative sources of truth, legal transitions, durable progress/receipts, reconciliation paths, owning layer per invariant, migration/rollback boundaries, and explicitly documented **Accepted Boundaries** (bounded TTLs or operational preconditions chosen in place of extra runtime state).
+1. **Terminal-state model & Accepted Boundaries**: authoritative sources of truth, legal transitions, durable progress/receipts, reconciliation paths, owning layer per invariant, migration/rollback boundaries, and explicitly documented **Accepted Boundaries** (from `spec.md` or runbooks—bounded TTLs or operational preconditions chosen in place of extra runtime state).
 2. **Impact map**: entry points and consumers (API/YunAPI/CLI/UI/MCP/SDK/RPC, workers, queues, DB tables, shared coordination primitives with full reader/writer maps, external calls, metrics/logs/errors), explicitly separating flag-gated paths from always-on shared paths.
-3. **Trajectory & complexity ledger**: commit-by-commit summary from Step 1, hot prod/test files, and inventory of newly added coordination primitives and heavy test scaffolds.
+3. **Trajectory & complexity ledger**: commit-by-commit summary from Step 1, hot prod/test files, and inventory of newly added coordination primitives and heavy test scaffolds—cross-checked against `spec.md`'s **Primitive Budget** when present (flag unbudgeted state machines, queues, leases, or single-implementation mock interfaces as `design-convergence` bloat).
 
 ## 4. Route review execution
 

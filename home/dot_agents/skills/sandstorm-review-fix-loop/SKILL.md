@@ -19,16 +19,18 @@ Branches entering this loop often already carry multiple commits against `develo
 
 ## Loop workflow
 
-### 1. Snapshot trajectory & decide Pass 0
+### 1. Snapshot trajectory, align `spec.md`, & decide Pass 0
 
-Inspect `merge-base..HEAD` (`git log --reverse --stat <merge-base>..HEAD`) and maintain a **coordinator-owned cross-round ledger** (never reset breaker counts even if git commits are later compressed):
+Inspect `merge-base..HEAD` (`git log --reverse --stat <merge-base>..HEAD`), locate the feature's `spec.md` (auto-check `.scratch/*/spec.md` or any MR-linked spec), and maintain a **coordinator-owned cross-round ledger** (never reset breaker counts even if git commits are later compressed):
 
 - Commit count, prod vs. test net churn, and hot production/test files.
-- Inventory of newly added coordination primitives and heavy test scaffolds.
+- Inventory of newly added coordination primitives and heavy test scaffolds vs. `spec.md`'s **Primitive Budget** and **Accepted Boundaries**.
 
-**Pass 0 (immediate subtraction pass)**: if the branch arrives already carrying bloated hot files, tangled state dimensions, or back-and-forth fix commits, run a **clean-slate subtraction pass first** (after one baseline review) to simplify the core architecture before chasing individual edge bugs.
+**Pass 0 (spec alignment & immediate subtraction pass)**:
+- If `spec.md` already defines `Primitive Budget` and `Accepted Boundaries`, use it as the default primitive budget and boundary authority; run a clean-slate subtraction pass first whenever the branch already exceeds budget or carries tangled churn.
+- **Legacy or spec-less branches**: if no `spec.md` exists—or an older `spec.md` lacks budgets/boundaries or has drifted from the code—present a one-page bloat ledger plus proposed removals and `Accepted Boundaries` for user sign-off before editing code, record the approved truth back into `spec.md` (or the module's runbook), and then run Pass 0 subtraction.
 
-Completion criterion: baseline SHA, HEAD SHA, hot-file sizes, and primitive/test-scaffold counts are recorded.
+Completion criterion: baseline SHA, HEAD SHA, aligned `spec.md`/boundary authority, hot-file sizes, and primitive/test-scaffold counts are recorded.
 
 ### 2. Run a clean-context `sandstorm-review`
 
@@ -43,7 +45,7 @@ Read the full report and inspect the cited code yourself:
 1. **Cluster before triaging**: when `>= 2` findings tangle inside the same module, merge them into one **Clean-Slate Module Redesign** (compare 2 simpler shapes per [`references/subtraction-design.md`](references/subtraction-design.md), preferring deletion of low-value optimizations over defensive layering).
 2. **Assign one disposition** to each cluster or standalone finding:
    - `subtract`: delete a low-value optimization, collapse layers/state machines, or redesign the module to a single owning seam.
-   - `boundary`: record an explicit `Accepted Boundary` in runbook/docs and align overstated comments instead of adding runtime state.
+   - `boundary`: record an explicit `Accepted Boundary` in `spec.md` (when present) and runbook/docs, and align overstated comments instead of adding runtime state.
    - `invariant-fix`: minimal, readable fix in the single owning layer with symmetric sibling coverage.
    - `defer`: non-blocking `P2` left untouched with brief rationale.
 3. **Evaluate the four Circuit Breakers** below. If any trips, jump straight to **Escalation**.
@@ -66,7 +68,7 @@ Completion criterion: fixer returns with passing verification and its 5-line sel
 Before committing, inspect `git diff --stat` and the actual diff of every core file changed:
 
 - **Cold-read & complexity gate**: verify the changed module passes the Cold-Read Test and primitive budget in [`references/subtraction-design.md`](references/subtraction-design.md). Reject unapproved primitives, stealth state machines, or bloated white-box tests (Test Complexity Alarm) and redirect to simplification.
-- **Verification & honesty gate**: confirm checks ran after the final edit, temporary containers/files are gone, and comments/docs state real guarantees honestly.
+- **Verification & honesty gate**: confirm checks ran after the final edit, temporary containers/files are gone, and `spec.md` (when present), runbooks, and comments reflect every approved `subtract` or `boundary` decision honestly so the next clean-context review reads the live truth.
 - **Scoped commit**: stage only task files and create a clean round commit.
 - **Two-stage commit compression against base**:
   - *During regular convergence rounds (`R1 → R2 → R3`)*: keep one commit per fix round so the next clean-context `sandstorm-review` can still observe churn slope and patch-breeding chains directly in `git log`.
