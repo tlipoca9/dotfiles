@@ -2,31 +2,37 @@
 
 ## Scope
 
-- Repository and MR or branch
-- Target branch and merge-base
-- Target commit and current HEAD
-- Change scale and review execution mode (single-pass or multi-lens sharding, plus E2E if applicable)
+- Repository, MR/branch, target branch, merge-base, target tip, and current HEAD
+- Change scale (total / non-test files, prod vs. test net diff) and execution mode (single-pass or 4-lens sharding; coupled E2E if applicable)
 
-## Terminal state
+## Commit trajectory
 
-Describe the intended resource states, authoritative sources of truth, durable progress, external receipts, reconciliation path, and ownership boundaries.
+Summarize `merge-base..HEAD` chronologically (one commit = one iteration round):
+
+- Commit table: short SHA, summary, prod vs. test net diff (`+ins/-del`), and newly added coordination primitives or heavy test scaffolds.
+- Hot-file churn: prod/test files growing across `>= 3` commits, test-to-prod ratio, and any patch-breeding chain.
+
+## Terminal state and accepted boundaries
+
+State authoritative sources of truth, legal transitions, durable progress/receipts, reconciliation path, owning layers, and **explicit Accepted Boundaries** (bounded TTLs or operational preconditions chosen in place of extra runtime state).
 
 ## Design convergence
 
-Describe how the current branch differs from `develop` as a complete implementation. Call out duplicate paths, conflicting state models, residual compatibility layers, redundant migrations, unnecessary fields, responsibilities that have not converged, and avoidable call-chain or test complexity that should be simplified.
+Assess the complete branch against `develop`:
+- Structural convergence (duplicate paths, split responsibilities, legacy/migration hygiene, cold-read legibility).
+- **Subtraction candidates**: optimizations, state machines, abstractions, or test scaffolds that should be deleted, collapsed, or converted into an `Accepted Boundary` rather than patched further.
 
 ## Lens summary
 
-Summarize the verdict for each applicable lens (omit non-applicable lenses and state why):
-
-- **Fallback & Concurrency**: fence writer inventory, `T_work` vs. `T_invalidate`, CAS/retry exhaustion return contracts, post-outage cache recovery, and flag × health protection symmetry.
-- **SQL & Capacity**: runtime + runbook SQL `EXPLAIN` coverage, lock/generated-column risks, `TX-09` snapshot atomicity, and steady-state collection growth/reclamation against the hot-tenant baseline.
-- **Rollout & Compatibility**: default-config always-on blast radius, producer/cleaner symmetry, delayed-detonation boundaries, legacy key normalization, mixed-version safety, and multi-doc rollout/anchor cross-check.
-- **State & Contract**: business chain integrity, bidirectional authority-vs-projection lag matrix, and API/UI/E2E contract alignment.
+Brief verdict per applicable lens (omit non-applicable lenses and note why):
+- **Fallback & Concurrency**
+- **SQL & Capacity**
+- **Rollout & Compatibility**
+- **State & Contract**
 
 ## Findings
 
-For each finding use this shape:
+Repeat per finding:
 
 ### [P0/P1/P2] Short title
 
@@ -34,18 +40,18 @@ For each finding use this shape:
 - Affected path and trigger
 - Evidence
 - Impact
-- Smallest repair
-- Verification
+- Smallest repair (`subtraction` / `boundary-alignment` / `invariant-fix`)
+- Verification (prefer folding into an existing table-driven/contract test or replacing an obsolete test)
 - Merge gate
 
 ## Verification
 
-List commands and results. Distinguish passed, failed, skipped, and environment-blocked checks. Include baseline/current comparisons, real MySQL `EXPLAIN` coverage (runtime + runbook SQL), default-config and concurrent-liveness coverage, and E2E execution coverage.
+List exact commands, environment, and results (passed / failed / skipped / environment-blocked), including real MySQL `EXPLAIN` coverage, default-config/liveness checks, and temporary resource cleanup.
 
 ## Existing comments
 
-State which existing unresolved comments were rechecked and which findings were deduplicated.
+Note rechecked unresolved comments and deduplicated findings (or note if no MR context was supplied).
 
 ## Recommendation
 
-State whether the branch can merge, which findings block it, and what remains unverified.
+State `MERGE_READY` or `CHANGES_REQUESTED`, blocking findings, and unverified boundaries.

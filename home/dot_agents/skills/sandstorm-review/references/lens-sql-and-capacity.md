@@ -28,6 +28,7 @@ Rules for SQL verification:
 - **Syntax/execution pass is insufficient**: Do not stop at proving a backfill or rollback SQL runs without error on toy data. Run real MySQL `EXPLAIN` (matching production MySQL major version, e.g., 8.0) on **every statement in the inventory** and inspect `type`, `key`, `rows`, `Extra`, and lock scope under `REPEATABLE READ`.
 - **MySQL 8 generated-column predicate trap**: MySQL 8 does **not** automatically rewrite a predicate on a base column (e.g., `destroy_at IS NOT NULL`) into a predicate on a virtual/stored generated column index (e.g., `active_slot IS NULL`). Verify that both runtime queries and runbook backfill/rollback queries explicitly match the indexed generated-column predicate (and `FORCE INDEX` if required) so `UPDATE`/`DELETE`/`SELECT ... FOR UPDATE` cannot fall back to `type=ALL` and lock active rows.
 - **Hot-path and lock-holding boundaries**: Flag routine SQL, full/wide index scans, or `O(N)` Redis reads (`HSCAN`/`SCAN`/`HGETALL`/`SMEMBERS`) on hot API paths or lock-holding rebuild paths.
+- **Compact SQL test hygiene**: Prefer shared MySQL schema fixtures and table-driven `EXPLAIN`/lock assertion cases over duplicating schema setup and seed boilerplate per query or fix round.
 
 ## 3. Multi-branch query snapshot atomicity (`TX-09`)
 

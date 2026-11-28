@@ -1,0 +1,99 @@
+---
+name: sandstorm-review-fix-loop
+description: Orchestrate iterative review-and-fix loops on agentrun/sandstorm branches using subtraction-first architecture so reliability emerges naturally from readable, minimal designs. Use for sandstorm review-fix loops, /goal LOOP convergence runs, or multi-round hardening after sandstorm-review findings.
+---
+
+# Sandstorm review-fix loop
+
+Optimize for **real architectural simplicity**, not patch survival. When state space shrinks and a module reads effortlessly, reliability follows naturally.
+
+Branches entering this loop often already carry multiple commits against `develop`. Treat the branch as a clean-slate deliverable: simplify whole modules instead of layering patches, and compress intermediate commit noise against the base so each review round focuses on signal.
+
+## Operating stance
+
+- Read [`references/subtraction-design.md`](references/subtraction-design.md) before designing fixes and [`references/subagent-briefs.md`](references/subagent-briefs.md) before dispatching clean-context subagents.
+- **Coordinate as an architect**: keep the coordinator on a high-reasoning model, cluster related findings into module-level simplifications, and pass only triaged plans to fixers.
+- **Gate exit on `P0`/`P1` and severe bloat only**: fix a `P2` only when it deletes code, simplifies a seam, or closes a concrete operational/SQL risk cheaply; defer marginal `P2` polish.
+- **Respect circuit breakers**: when any breaker trips, stop adding code and present 2–3 concrete options to the user—even inside a `/goal` run.
+- **Keep remote history untouched**: never push unless the user explicitly asks; keep local commit compression safe and reversible (details in Step 5).
+
+## Loop workflow
+
+### 1. Snapshot trajectory & decide Pass 0
+
+Inspect `merge-base..HEAD` (`git log --reverse --stat <merge-base>..HEAD`) and record:
+
+- Commit count, prod vs. test net churn, and hot production/test files.
+- Inventory of newly added coordination primitives and heavy test scaffolds.
+
+**Pass 0 (immediate subtraction pass)**: if the branch arrives already carrying bloated hot files, tangled state dimensions, or back-and-forth fix commits, run a **clean-slate subtraction pass first** (after one baseline review) to simplify the core architecture before chasing individual edge bugs.
+
+Completion criterion: baseline SHA, HEAD SHA, hot-file sizes, and primitive/test-scaffold counts are recorded.
+
+### 2. Run a clean-context `sandstorm-review`
+
+Dispatch a fresh, read-only reviewer using [`references/subagent-briefs.md`](references/subagent-briefs.md). Wait via completion notification (`notifyOnFinish: true` in Paseo).
+
+Completion criterion: a fresh draft report exists outside the repository with `P0`/`P1`/`P2` counts, commit trajectory, and subtraction candidates.
+
+### 3. Cluster, triage, and check circuit breakers
+
+Read the full report and inspect the cited code yourself:
+
+1. **Cluster before triaging**: when `>= 2` findings tangle inside the same module, merge them into one **Clean-Slate Module Redesign** (compare 2 simpler shapes per [`references/subtraction-design.md`](references/subtraction-design.md), preferring deletion of low-value optimizations over defensive layering).
+2. **Assign one disposition** to each cluster or standalone finding:
+   - `subtract`: delete a low-value optimization, collapse layers/state machines, or redesign the module to a single owning seam.
+   - `boundary`: record an explicit `Accepted Boundary` in runbook/docs and align overstated comments instead of adding runtime state.
+   - `invariant-fix`: minimal, readable fix in the single owning layer with symmetric sibling coverage.
+   - `defer`: non-blocking `P2` left untouched with brief rationale.
+3. **Evaluate the four Circuit Breakers** below. If any trips, jump straight to **Escalation**.
+
+Completion criterion: every finding has a disposition (or module redesign cluster) and zero unresolved circuit breakers remain.
+
+### 4. Dispatch a clean-context subtraction fixer
+
+Dispatch a fresh write-enabled fixer using [`references/subagent-briefs.md`](references/subagent-briefs.md) with:
+
+- Only the coordinator's module redesign / approved disposition list.
+- An explicit **primitive budget** (default: `0` new coordination or persistence primitives).
+- Explicit authority to **stop and return trade-off options** if solving an item cleanly requires breaking the primitive budget or colliding with an earlier constraint.
+- Required behavior verification (including real MySQL via local container when SQL/migrations change, `-race`, cold-cache module lint, web checks if touched, temporary resource cleanup) and **no git commit**.
+
+Completion criterion: fixer returns with passing verification and its 5-line self-audit, or stops early with an explicit trade-off escalation.
+
+### 5. Cold-read audit, commit, and compress history
+
+Before committing, inspect `git diff --stat` and the actual diff of every core file changed:
+
+- **Cold-read & complexity gate**: verify the changed module passes the Cold-Read Test and primitive budget in [`references/subtraction-design.md`](references/subtraction-design.md). Reject unapproved primitives, stealth state machines, or bloated white-box tests (Test Complexity Alarm) and redirect to simplification.
+- **Verification & honesty gate**: confirm checks ran after the final edit, temporary containers/files are gone, and comments/docs state real guarantees honestly.
+- **Scoped commit**: stage only task files and create a clean round commit.
+- **Compress commits against base (information-density reduction)**: when a real architectural refactor superseded earlier fix commits, or `merge-base..HEAD` has accumulated noisy back-and-forth commits, compress the branch's local commits against `<merge-base>` into **1–3 clean logical terminal commits** (for example backend / web / docs) so the next clean-context review reads pure signal instead of historical churn. Safety preconditions:
+  1. Confirm `git status --short` is completely clean (zero unrelated or unstaged edits).
+  2. Record the pre-compression `HEAD` SHA in your round log so history remains recoverable via reflog.
+  3. Compress only local commits in `<merge-base>..HEAD` using `git reset --soft <merge-base>` followed by scoped `git add <paths>` + `git commit` (never `git reset --hard`, never `git add .`, never push unless explicitly asked).
+
+Completion criterion: verified round committed (and compressed cleanly against base when churn accumulated).
+
+### 6. Evaluate loop exit
+
+- **Converged**: latest clean-context `sandstorm-review` reports `0 P0`, `0 P1`, and no blocking complexity bloat (remaining `P2` items explicitly deferred). Stop and deliver the convergence summary (include `<!-- GOAL_COMPLETE -->` under `/goal`).
+- **Otherwise**: return to Step 1 (subject to the Round Cap breaker).
+
+## Circuit breakers
+
+Pause the loop and present 2–3 concrete options (recommended subtraction/boundary option first) whenever **any** triggers:
+
+1. **Primitive Escalation**: closing a narrow edge window requires adding a new coordination or persistence primitive outside budget.
+2. **Patch-Breeding / Ratchet**: a new `P1` stemmed from an earlier fix round, or a fix is squeezed between two conflicting historical patch constraints. Prefer reverting/redesigning the earlier source; escalate if an accepted contract changes.
+3. **Hot-File Churn**: the same core production or test file grows monotonically across `>= 3` rounds or keeps accumulating white-box test scaffolding. Run a dedicated Clean-Slate Subtraction Pass or escalate.
+4. **Round Cap**: `3` review-fix rounds finish without reaching `0 P0 / 0 P1` (unless the user set a higher cap).
+
+## Escalation and completion output
+
+Report concisely:
+- **Outcome**: `CONVERGED` or `PAUSED (<breaker>)`.
+- **Architecture & net delta**: commit trajectory (noting any pre-compression SHA if compressed), hot-file line trajectory, and what was **removed/simplified** vs. added.
+- **Decisions**: `subtract` wins, recorded `Accepted Boundaries`, and deferred `P2` items.
+- **Verification boundary**: checks run after the final commit and anything left unverified.
+- **If paused**: 2–3 concrete options with the simplest viable design first.

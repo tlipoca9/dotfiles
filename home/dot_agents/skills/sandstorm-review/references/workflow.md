@@ -1,135 +1,89 @@
 # Sandstorm review workflow
 
-## 1. Establish scope and evidence
+## 1. Establish scope and commit trajectory
 
-Resolve the repository and change under review.
+Resolve the repository and comparison baseline:
 
-- For an MR, identify the source branch, target branch, latest MR commit, target tip, and merge-base. Use the Gongfeng MCP service when available and verify the same commits locally.
-- For a branch, use the requested target. Default to `develop` only when the user has not supplied another target and the repository confirms that branch exists.
-- Record `git status --short --branch`, the merge-base, the target commit, the current HEAD, changed files (total and non-test count), and the existing MR notes.
-- Fetch references before comparing. Do not treat a stale local branch as the current implementation.
-- Read the current branch as a whole. The diff identifies changed behavior, while full-tree searches identify old paths, duplicate models, residual compatibility code, and consumers outside the diff.
+- For an MR, identify source branch, target branch, latest MR commit, target tip, and merge-base via Gongfeng MCP when available, then verify locally.
+- For a branch, default to `develop` only when no target was given and `develop` exists.
+- Fetch references before comparing. Record `git status --short --branch`, merge-base, target tip, HEAD, total vs. non-test changed files, and existing MR notes.
+- Inspect the **commit trajectory** (`git log --reverse --stat <merge-base>..HEAD`), treating **each commit as one iteration round**:
+  - Separate production vs. test net churn (`+ins/-del`) and flag hot production or test files growing monotonically across `>= 3` commits.
+  - Note when new coordination primitives (keys, scripts, locks/leases, queues, flags, tables/columns, background loops) or heavy test scaffolds (custom fakes/hooks, private-state mutators) entered the branch.
+  - Check follow-up commits for **patch-breeding chains** (an earlier fix triggering a later P1 or heavier workaround) and **fix-induced asymmetry** (project every new guard, gate, or SQL predicate onto all sibling paths: other flag states, degraded paths, companion handlers, and runbook SQL).
+- Read the branch as a complete implementation via full-tree searches to catch old paths, duplicate models, residual compatibility layers, and callers outside the diff.
 
-Every finding must be attributed to one of these states:
-
-- Baseline behavior already present in `develop`.
-- A regression introduced by the current branch.
-- A design-convergence defect in the current branch, including an incomplete migration or conflicting implementation that prevents the terminal design.
-- A problem that the author claims to have fixed but that remains after the latest commit (or an incomplete fix that introduces asymmetry across sibling paths).
-- An unverified behavior blocked by credentials, unavailable services, shared-environment changes, or another explicit condition.
-
-**Re-review / Fix-Induced Asymmetry Check**: When reviewing follow-up fix commits, do not inspect only the line cited in the previous finding. Project every new guard, gate, cache protection, or SQL predicate added by the fix onto all sibling branches sharing the same responsibility (other flag states, degraded/fallback paths, companion read/write handlers, and runbook SQL) to confirm the fix did not create architectural asymmetry.
+Attribute every finding to one state: `baseline`, `regression`, `design-convergence` (including incomplete migration, conflicting models, or unjustified complexity inflation), `incomplete-fix` (unfixed or asymmetric/patch-breeding follow-up), or `unverified`.
 
 ## 2. Load repository rules and domain context
 
-Read only the documents relevant to the changed area, plus repository-level rules:
+Read only the rules and domain docs relevant to the change:
 
-- `AGENTS.md`, `README.md`, and any applicable nested instructions.
-- `.review/review-style-guide.md`, critic rules, severity rules, and relevant cases.
-- `.agents/skills/review-ags`, `e2e-review`, `developing-sandhub`, or other project skills when present.
-- Domain documents, glossary, ADRs, API definitions, lifecycle documents, and migration/rollout contracts.
-- `agentruntime-context` for AgentRuntime topology, service ownership, environment, logs, and operational vocabulary.
+- `AGENTS.md`, `README.md`, and nested instructions.
+- `.review/review-style-guide.md`, critic/severity rules, and relevant cases.
+- Project skills when present (`.agents/skills/review-ags`, `e2e-review`, `developing-sandhub`).
+- Domain docs, glossary, ADRs, API specs, lifecycle docs, and migration/rollout runbooks.
+- `agentruntime-context` for AgentRuntime topology, service ownership, environments, and logs.
 
-When code and domain documents disagree, identify the concrete contradiction and treat the domain rule as unresolved until the user or an authoritative document settles it.
+When code and domain docs disagree, cite the exact contradiction and treat the rule as unresolved until settled.
 
-## 3. Build the shared model (Terminal State + Impact Map)
+## 3. Build the shared model
 
-Before judging individual files—and before fanning out subagents on large PRs—build two compact artifacts:
+Before judging individual files—and before fanning out subagents—produce three compact artifacts:
 
-1. **Terminal-state model**: resource states and legal transitions, authoritative source of truth for each state, durable progress and retry checkpoints, external callbacks/receipts/billing records, final reconciliation/read path, layer ownership of each invariant, and migration/rollback boundaries.
-2. **Impact map**: trace every entry point and consumer (API/YunAPI/CLI/UI/MCP/SDK/internal RPC; create/update/pause/resume/fork/pre-create/gateway/console/billing; queues/workers/schedulers/Redis keys/DB tables/external Cube or registry calls; every shared coordination primitive such as locks, leases, fences, epochs, version/generation keys, CAS targets, singleflight gates, and auxiliary state stores with their full reader/writer map; credentials/permissions; metrics/logs/error codes). Explicitly separate **flag-gated paths** from **always-on shared paths**.
+1. **Terminal-state model & Accepted Boundaries**: authoritative sources of truth, legal transitions, durable progress/receipts, reconciliation paths, owning layer per invariant, migration/rollback boundaries, and explicitly documented **Accepted Boundaries** (bounded TTLs or operational preconditions chosen in place of extra runtime state).
+2. **Impact map**: entry points and consumers (API/YunAPI/CLI/UI/MCP/SDK/RPC, workers, queues, DB tables, shared coordination primitives with full reader/writer maps, external calls, metrics/logs/errors), explicitly separating flag-gated paths from always-on shared paths.
+3. **Trajectory & complexity ledger**: commit-by-commit summary from Step 1, hot prod/test files, and inventory of newly added coordination primitives and heavy test scaffolds.
 
-## 4. Route review execution: single-pass vs. multi-lens fan-out
+## 4. Route review execution
 
-Choose the execution strategy from the change scope:
+- **Focused change** (`< 20` non-test files and `< 3` high-risk domains): stay in the main session and apply the relevant lens files.
+- **Large or cross-cutting change** (`>= 20` non-test files or `>= 3` domains): fan out 3–4 clean-context read-only subagents in parallel, one lens each:
 
-- **Focused change** (< 20 non-test files and < 3 high-risk domains): stay in the main session and apply only the relevant lens files below.
-- **Large or cross-cutting change** (≥ 20 non-test files, or spanning ≥ 3 domains among DB/SQL, Redis/concurrency, rollout/hot-paths, and runbooks/UI): fan out **3–4 clean-context, read-only subagents in parallel**, assigning one failure-mode lens per subagent so no single agent's context or attention is diluted by the whole diff.
-
-| Lens | Reference file | Primary failure modes owned |
+| Lens | Reference file | Primary failure modes |
 |---|---|---|
-| Fallback & Concurrency | [`lens-fallback-and-concurrency.md`](lens-fallback-and-concurrency.md) | Fence/CAS liveness, exhaustion return contracts, post-outage cache resurrection, flag × health protection symmetry |
-| SQL & Capacity | [`lens-sql-and-capacity.md`](lens-sql-and-capacity.md) | Hot-tenant capacity envelope, runtime + runbook SQL `EXPLAIN` & lock analysis, generated-column predicates, `TX-09` snapshots, steady-state reclamation |
-| Rollout & Compatibility | [`lens-rollout-and-compat.md`](lens-rollout-and-compat.md) | Always-on default-config amplification, producer/cleaner symmetry, legacy key normalization, mixed-version rollout, multi-doc rollout order & anchor cross-checks |
-| State & Contract | [`lens-state-and-contract.md`](lens-state-and-contract.md) | Terminal-state convergence, call-chain & test complexity simplification, bidirectional authority-vs-projection lag matrix, business data-flow chain, API/UI/E2E contracts |
+| Fallback & Concurrency | [`lens-fallback-and-concurrency.md`](lens-fallback-and-concurrency.md) | Liveness, exhaustion contracts, post-outage recovery, flag × health symmetry, primitive proportionality |
+| SQL & Capacity | [`lens-sql-and-capacity.md`](lens-sql-and-capacity.md) | Hot-tenant scale, runtime + runbook SQL `EXPLAIN`/locks, generated-column traps, `TX-09` snapshots, reclamation |
+| Rollout & Compatibility | [`lens-rollout-and-compat.md`](lens-rollout-and-compat.md) | Default-config blast radius, producer/cleaner symmetry, legacy keys, mixed-version rollout, runbook consistency |
+| State & Contract | [`lens-state-and-contract.md`](lens-state-and-contract.md) | Terminal convergence, cold-read readability, subtraction & test signal-to-noise, bidirectional lag, business/API/UI/E2E contracts |
 
-When fanning out, give each subagent:
-- the merge-base, current HEAD, changed file list, and the shared Terminal-State + Impact Map from Step 3;
-- its assigned lens file path to read and follow strictly;
-- explicit instructions to report only evidence-backed defects (with file, line, call chain, or command output) and never stop after the first finding.
-
-**Non-early-stop rule**: Finding 1–2 P1 defects never justifies skipping remaining lenses, truncating cross-layer call-chain tracing, or replacing `EXPLAIN`/behavioral verification with comment inspection.
+Give each subagent the merge-base, HEAD, changed file list, Step 3 shared model, and its lens file path. Require evidence-backed findings, full lens coverage (no early stop after 1–2 defects), and subtraction/boundary-first repair recommendations.
 
 ## 5. Separate engineering and contract lanes
 
-Across all lenses, keep engineering findings distinct from product/domain contract findings:
+Keep **Engineering lane** findings (seams, types, SQL/locks, concurrency/liveness, cleanup, state-space readability) distinct from **Contract lane** findings (API semantics, state invariants, tenant isolation, billing/metering, compatibility, defaults).
 
-- **Engineering lane**: package/layer boundaries, domain types, error-code hierarchy, SQL/indexes/query plans/transactions/locks, observability, concurrency safety/liveness, and active resource cleanup.
-- **Contract lane**: API request/response semantics, state-machine invariants, resource ownership and tenant isolation, metering/usage/order/callback/reconciliation semantics, retry/idempotency/backfill/rollback behavior, and compatibility with existing clients, stored data, and default configuration.
-
-Do not turn an explicitly accepted product boundary into a defect. Record the boundary when it changes what the system guarantees.
+**Honest boundaries**: honor explicitly accepted product or runbook boundaries instead of reporting them as defects. When a comment or doc over-promises on a best-effort or bounded-TTL mechanism, ask first whether the guarantee is truly required—if the edge window is narrow and operationally bounded, recommend aligning the comment/runbook to an honest `Accepted Boundary` rather than stacking new runtime machinery.
 
 ## 6. Verify behavior with evidence
 
-Use the smallest check that can falsify each suspected problem. Synthesize subagent findings in the main session and verify contested or high-severity claims directly.
+Use the smallest check that falsifies each suspected defect; verify contested or high-severity subagent claims directly in the main session:
 
-Prefer:
+- **Regression & race**: targeted baseline-vs-current tests and `-race` on shared-state/lifecycle paths.
+- **Fault & exhaustion**: inject dependency failures and exhausted retry/CAS paths to prove callers fail safe without poisoning shared stores.
+- **Real MySQL `EXPLAIN` & locks**: run real MySQL (matching production major version) `EXPLAIN` and lock checks on every new/modified runtime SQL and runbook/migration/backfill/rollback SQL—syntax pass alone is insufficient.
+- **Scale, clock & defaults**: test warm-to-cold transitions under shipped default flags, controlled clock/TTL boundaries, realistic pagination cardinality (`10+` batches) under concurrent hot-tenant mutations (`3–15 ms` intervals), and restart/leader-change/duplicate-delivery edges.
+- **Consistency & legacy matrices**: verify long-TTL post-outage recovery, pre-existing non-canonical rows in real MySQL, bidirectional async-projection lag, `TX-09` concurrent cross-branch snapshots, and actual E2E matrix execution when coupled.
 
-- a focused regression test comparing `develop` and the current branch
-- race tests (`-race`) for shared state and lifecycle paths
-- fault injection for Redis, database, queue, Cube, registry, and billing failures—including **exhausted retry/CAS paths** to verify callers do not write poisoned metadata or fail-open
-- real MySQL `EXPLAIN` on **every new/modified runtime SQL and every DDL/backfill/rollback/runbook doc SQL** (syntax/execution pass alone is insufficient)
-- controlled clock tests for TTL, grace periods, windows, and day rollover
-- restart, leader-change, pagination-interruption, duplicate-delivery, and retry tests
-- liveness tests under concurrent cross-path traffic at realistic accumulated cardinality (`10+` scan/pagination batches via `10^3–10^4` entries or a narrowed batch size) driving sibling mutations at hot-tenant intervals (`3–15 ms` or per batch boundary)
-- default-configuration warm-to-cold transition tests (gray and optional cleanup flags left at production defaults), accumulating steady-state entries before forcing TTL expiry or cache eviction
-- three-step post-outage cache recovery tests (warm cache → commit DB mutation → inject cache invalidation failure → recover cache and expire short local TTL → verify stale long-TTL key does not fail-open or is healed by durable compensation)
-- legacy non-canonical row tests against real MySQL (seed pre-existing non-canonical rows → exercise canonicalized lookup, gate, upsert, bootstrap, and repair paths)
-- bidirectional async-projection lag tests (authority ahead of projection in both forward and reverse directions across cache-hit, cache-miss, admission, reuse, and update paths)
-- concurrent cross-branch state-transition tests for split/K-way-merged queries (`TX-09`)
-- E2E runs that prove the intended matrix executed
-
-For each check, record the exact command, result, environment, and skip reason. A green command is insufficient when the relevant matrix was skipped, tests ran only with non-default flags, tiny cardinality, or isolated single-path execution, a negative case asserted only a route 404, or the shared environment changed versions during the run. Clean up temporary resources and report any incomplete cleanup.
+Record exact commands, environments, outcomes, and skip reasons. A green command is insufficient when relevant matrices were skipped, flags were overridden away from defaults, cardinality was trivial, or negative tests asserted only a route 404. Clean up temporary containers/files and report any leftover.
 
 ## 7. Classify and attribute findings
 
-Each finding must state:
-
-- severity `P0`, `P1`, or `P2`
-- attribution (`baseline`, `regression`, `design-convergence`, `incomplete-fix`, or `unverified`)
-- affected path and triggering condition
-- why the behavior violates the terminal-state model or an explicit engineering rule
-- evidence (file, line, call chain, test, log, `EXPLAIN` output, or baseline/current comparison)
-- smallest repair that restores the invariant (checking sibling branches for symmetry)
-- verification that should pass after the repair
-- whether it blocks merge
+Each finding must state: severity (`P0`/`P1`/`P2`), attribution, affected path & trigger, violated invariant or rule, concrete evidence, **smallest repair** labeled `subtraction` / `boundary-alignment` / `invariant-fix` (checking sibling symmetry), **verification** (prefer folding a case into an existing table-driven/contract test or replacing an obsolete test over adding a standalone fixture), and merge gate.
 
 Severity boundaries:
-- **P0**: security, catastrophic data or service impact, deterministic livelock/starvation on a critical path, or default-config shared-path outages affecting non-gray tenants.
-- **P1**: correctness, compatibility, lifecycle, data integrity, cache poisoning / fail-open fallback returns, unbounded steady-state growth, or performance/liveness problems that materially affect users or operations.
-- **P2**: bounded correctness, runbook/doc contradictions, unindexed operational SQL, or maintainability and convergence problems (including avoidable call-chain bloat from stacked patches or brittle, over-complex tests coupled to internal details) that prevent terminal design convergence.
+- **P0 (blocking)**: security, catastrophic data/service impact, deterministic livelock/starvation on a critical path, or default-config shared-path outages affecting non-gray tenants.
+- **P1 (blocking)**: correctness, compatibility, lifecycle, data integrity, cache poisoning / fail-open fallback, unbounded steady-state growth, material performance/liveness defects, or severe complexity bloat where stacked machinery destabilizes a critical module and keeps breeding bugs.
+- **P2 (non-blocking)**: bounded correctness, runbook contradictions, unindexed operational SQL, or convergence/readability/test-bloat defects that do not break production invariants. Keep `P2` non-blocking so downstream fix loops weigh trade-offs instead of stacking patches.
 
 ## 8. Deliver the review
 
-Write the complete draft report in the user's language using [`report-template.md`](report-template.md) to a file **outside the target repository** (never commit or leave review reports inside the reviewed git working tree):
+Write the draft report in the user's language using [`report-template.md`](report-template.md) **outside the target repository**:
 
-1. If the user specified an output path, write there.
-2. Otherwise, if the harness provides a conversation artifact/scratch directory, write to `<artifact-dir>/scratch/sandstorm-review-<branch-or-mr>-<short-head>.md` (or `<artifact-dir>/sandstorm-review-<branch-or-mr>-<short-head>.md` when presenting as a user-facing artifact).
-3. Otherwise (plain CLI environments without an artifact directory), write to `/tmp/sandstorm-review-<repo>-<short-head>.md`.
+1. User-specified path, if given.
+2. Otherwise `<artifact-dir>/scratch/sandstorm-review-<branch-or-mr>-<short-head>.md` (or `<artifact-dir>/...` when user-facing).
+3. Otherwise `/tmp/sandstorm-review-<repo>-<short-head>.md`.
 
-In the chat response, do **not** paste or re-summarize the full report. Return only:
+Return only the clickable report link, recommendation, `P0`/`P1`/`P2` counts, one-line bullets per blocking finding, key subtraction candidates, and unverified checks.
 
-- the clickable link / absolute path to the written report file
-- the merge recommendation and finding counts (`P0`/`P1`/`P2`)
-- a one-line bullet per blocking finding (severity, title, primary location)
-- any unverified or environment-blocked checks
-
-When the user explicitly requests submission:
-
-- fetch the latest MR notes again
-- deduplicate against existing unresolved comments
-- create only new inline comments with actionable evidence
-- publish one overview with severity, merge gate, and verification boundary
-- read the notes back and report their final state (while keeping the local report file)
-
-Do not create comments or other external mutations merely because the user said "review".
+Only when the user explicitly requests submission: re-fetch MR notes, deduplicate unresolved comments, post evidence-backed inline comments plus one overview, and read back their final state.
