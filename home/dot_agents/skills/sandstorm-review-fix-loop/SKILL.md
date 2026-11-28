@@ -42,24 +42,26 @@ Completion criterion: a fresh draft report exists outside the repository with `P
 
 Read the full report and inspect the cited code yourself:
 
-1. **Cluster before triaging**: when `>= 2` findings tangle inside the same module, merge them into one **Clean-Slate Module Redesign** (compare 2 simpler shapes per [`references/subtraction-design.md`](references/subtraction-design.md), preferring deletion of low-value optimizations over defensive layering).
-2. **Assign one disposition** to each cluster or standalone finding:
-   - `subtract`: delete a low-value optimization, collapse layers/state machines, or redesign the module to a single owning seam.
+1. **Lock module contracts & cluster before triaging**: first confirm each affected module's exposed contract (interface, invariants, error semantics). When `>= 2` findings tangle inside the same module, merge them into one **Clean-Slate Module Redesign** (compare 2 simpler shapes per [`references/subtraction-design.md`](references/subtraction-design.md), preferring deletion of low-value optimizations and splitting orthogonal state into self-contained modules).
+2. **Assign one disposition** to each module cluster or standalone finding:
+   - `subtract`: delete a low-value optimization, collapse layers/state machines, or split/redesign into self-contained modules with narrow contracts.
    - `boundary`: record an explicit `Accepted Boundary` in `spec.md` (when present) and runbook/docs, and align overstated comments instead of adding runtime state.
-   - `invariant-fix`: minimal, readable fix in the single owning layer with symmetric sibling coverage.
+   - `invariant-fix`: minimal, readable fix inside the single owning module with symmetric sibling coverage.
    - `defer`: non-blocking `P2` left untouched with brief rationale.
 3. **Evaluate the four Circuit Breakers** below. If any trips, jump straight to **Escalation**.
 
-Completion criterion: every finding has a disposition (or module redesign cluster) and zero unresolved circuit breakers remain.
+Completion criterion: module contracts are settled, every finding has a disposition (or module redesign cluster), and zero unresolved circuit breakers remain.
 
-### 4. Dispatch a clean-context subtraction fixer
+### 4. Dispatch scoped, clean-context subtraction fixers
 
-Dispatch a fresh write-enabled fixer using [`references/subagent-briefs.md`](references/subagent-briefs.md) with:
+Divide and conquer fix execution so every fixer holds its entire target cleanly in working memory—never dump a large cross-domain finding list into one overloaded fixer:
 
-- Only the coordinator's module redesign / approved disposition list.
-- An explicit **primitive budget** (default: `0` new coordination or persistence primitives).
-- Explicit authority to **stop and return trade-off options** if solving an item cleanly requires breaking the primitive budget or colliding with an earlier constraint.
-- Required behavior verification (including real MySQL via local container when SQL/migrations change, `-race`, cold-cache module lint, web checks if touched, temporary resource cleanup) and **no git commit**.
+- Partition approved work by **self-contained module / disjoint file scope** (run disjoint trees such as backend modules and `web/` in parallel; sequence modules that share a changed contract only after locking the contract).
+- Dispatch each fresh write-enabled fixer using [`references/subagent-briefs.md`](references/subagent-briefs.md) with:
+  - Its explicit **module contract & file scope** plus only its approved redesign/disposition items.
+  - An explicit **primitive budget** (default: `0` new coordination or persistence primitives).
+  - Explicit authority to **stop and return trade-off options** if solving an item cleanly requires breaking the primitive budget or colliding with an earlier constraint.
+  - Required behavior verification for its scope (plus integrated verification in the coordinator when multiple fixers ran) and **no git commit**.
 
 Completion criterion: fixer returns with passing verification and its 5-line self-audit, or stops early with an explicit trade-off escalation.
 

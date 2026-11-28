@@ -47,7 +47,7 @@ Before judging individual files—and before fanning out subagents—produce thr
 | Rollout & Compatibility | [`lens-rollout-and-compat.md`](lens-rollout-and-compat.md) | Default-config blast radius, producer/cleaner symmetry, legacy keys, mixed-version rollout, runbook consistency |
 | State & Contract | [`lens-state-and-contract.md`](lens-state-and-contract.md) | Terminal convergence, cold-read readability, subtraction & test signal-to-noise, bidirectional lag, business/API/UI/E2E contracts |
 
-Give each subagent the merge-base, HEAD, changed file list, Step 3 shared model, and its lens file path. Require evidence-backed findings, full lens coverage (no early stop after 1–2 defects), and subtraction/boundary-first repair recommendations.
+Give each subagent the merge-base, HEAD, Step 3 shared model (including module exposed contracts), its scoped file list for that lens/subsystem (so no single context has to absorb unrelated module internals), and its lens file path. Require evidence-backed findings, full lens coverage (no early stop after 1–2 defects), and subtraction/boundary-first repair recommendations.
 
 ## 5. Separate engineering and contract lanes
 

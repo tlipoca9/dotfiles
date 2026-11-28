@@ -21,10 +21,15 @@ Perform a clean-context, read-only review of branch `<branch>` (HEAD `<head_sha>
 
 ## Clean-context Fixer brief
 
-Pass only the coordinator's approved design/disposition plan—never raw untriaged review output.
+Pass only one self-contained module's approved plan—never dump an untriaged cross-domain review report into a single fixer.
 
 ```text
-Implement the coordinator-approved convergence plan for Round <N> on branch `<branch>` (HEAD `<head_sha>`) in `<repo_path>`.
+Implement the coordinator-approved convergence plan for Round <N> (<module_or_domain>) on branch `<branch>` (HEAD `<head_sha>`) in `<repo_path>`.
+
+Module contract & file scope (keep working set minimal):
+- Exposed contract to uphold (interface, invariants, error semantics): <contract summary or interface pointer>
+- Owned files/packages you may edit: <explicit file/package list>
+- Outside this scope: rely on exposed contracts only; do not edit or load unrelated module internals unless verifying a direct caller contract.
 
 Design contract:
 1. Read and strictly follow `~/.agents/skills/sandstorm-review-fix-loop/references/subtraction-design.md`.

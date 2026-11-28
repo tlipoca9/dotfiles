@@ -16,11 +16,12 @@ Before defending an intricate fast path, cache tier, or async buffer, price it h
 - Prefer removing a marginal optimization that causes 60% of the state-machine complexity over building a distributed protocol to keep it safe.
 - Keep optional optimizations cleanly isolated behind a narrow seam so they remain trivial to disable or delete.
 
-## 3. Shrink state space and keep primitives proportional
+## 3. Divide and conquer: contract-first, self-contained modules
 
-Every extra state variable multiplies the interactions both readers and runtime must hold invariant.
+The point of modular decomposition is to **shrink the files and text a reader or model must hold in working memory at once**. Every extra shared state variable multiplies the context required to change one line safely.
 
-- **Single owning seam**: enforce each invariant in one deep module (small interface, clear ownership), not split across adjacent layers.
+- **Agree on exposed contracts first**: define each module's narrow external interface, invariants, and error semantics up front; callers depend only on that contract, never on internal details.
+- **Keep each module self-contained**: each module owns its mutable state, concurrency control, lifecycle, and black-box contract tests exclusively—never sharing internal maps/locks across modules or leaking multi-step wiring onto callers. If a struct bundles orthogonal state spaces, split along clean contract boundaries so editing module A never requires reading module B.
 - **Reuse durable authority**: before introducing a new key family, script, queue, lease, table, or background loop, verify whether existing authoritative DB state, an existing scanner, or a bounded TTL already covers the risk.
 - **Volatile-memory rule**: treat in-process maps as lightweight best-effort accelerators; keep them trivially bounded rather than growing them into quasi-distributed queues.
 - **Narrow edge windows**: for low-probability operational/crash/toggle combinations bounded by short TTL or runbook order, prefer an explicit `Accepted Boundary` over cross-process coordination state.
@@ -29,7 +30,7 @@ Every extra state variable multiplies the interactions both readers and runtime 
 
 A design passes readability only when a colleague arriving cold can verify all three:
 
-1. **Shallow trace (`<= 2` hops)**: starting from the entry point, trace authoritative state, happy path, and failure fallback in at most 2 indirection hops without memorizing hidden cross-file agreements.
+1. **Minimal working set (`<= 2` hops)**: reading or changing a module requires only its exposed contract plus its own files, tracing authoritative state, happy path, and failure fallback in at most 2 indirection hops.
 2. **Bounded state combinations**: no core path juggles `>= 3` interacting flags/modes/versions/fences or relies on `3+` collaborating layers to maintain one invariant.
 3. **Zero dead weight**: no shallow pass-through wrappers, unused parameters, redundant intermediate abstractions, or branches for impossible states.
 
