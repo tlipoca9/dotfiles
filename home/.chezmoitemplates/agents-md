@@ -134,7 +134,10 @@ Never use repository-wide destructive operations such as:
 - `git clean`
 - `git stash`
 
-Do not commit, amend, rebase, or push unless explicitly requested.
+Do not commit, amend, rebase, or push unless explicitly requested (an invoked
+workflow skill that explicitly authorizes local commits or local history
+compression covers those local git actions; pushing still requires an explicit
+request).
 
 When staging is requested, stage only the specific files changed for the
 current task. Do not use `git add .` or `git add -A`.

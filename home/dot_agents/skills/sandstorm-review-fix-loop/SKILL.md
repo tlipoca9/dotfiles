@@ -15,13 +15,13 @@ Branches entering this loop often already carry multiple commits against `develo
 - **Coordinate as an architect**: keep the coordinator on a high-reasoning model, cluster related findings into module-level simplifications, and pass only triaged plans to fixers.
 - **Gate exit on `P0`/`P1` and severe bloat only**: fix a `P2` only when it deletes code, simplifies a seam, or closes a concrete operational/SQL risk cheaply; defer marginal `P2` polish.
 - **Respect circuit breakers**: when any breaker trips, stop adding code and present 2–3 concrete options to the user—even inside a `/goal` run.
-- **Keep remote history untouched**: never push unless the user explicitly asks; keep local commit compression safe and reversible (details in Step 5).
+- **Scoped local git history**: this workflow authorizes scoped local round commits and safe local commit compression against `<merge-base>` (details in Step 5). Remote `git push` still requires an explicit user request.
 
 ## Loop workflow
 
 ### 1. Snapshot trajectory & decide Pass 0
 
-Inspect `merge-base..HEAD` (`git log --reverse --stat <merge-base>..HEAD`) and record:
+Inspect `merge-base..HEAD` (`git log --reverse --stat <merge-base>..HEAD`) and maintain a **coordinator-owned cross-round ledger** (never reset breaker counts even if git commits are later compressed):
 
 - Commit count, prod vs. test net churn, and hot production/test files.
 - Inventory of newly added coordination primitives and heavy test scaffolds.
@@ -68,16 +68,18 @@ Before committing, inspect `git diff --stat` and the actual diff of every core f
 - **Cold-read & complexity gate**: verify the changed module passes the Cold-Read Test and primitive budget in [`references/subtraction-design.md`](references/subtraction-design.md). Reject unapproved primitives, stealth state machines, or bloated white-box tests (Test Complexity Alarm) and redirect to simplification.
 - **Verification & honesty gate**: confirm checks ran after the final edit, temporary containers/files are gone, and comments/docs state real guarantees honestly.
 - **Scoped commit**: stage only task files and create a clean round commit.
-- **Compress commits against base (information-density reduction)**: when a real architectural refactor superseded earlier fix commits, or `merge-base..HEAD` has accumulated noisy back-and-forth commits, compress the branch's local commits against `<merge-base>` into **1–3 clean logical terminal commits** (for example backend / web / docs) so the next clean-context review reads pure signal instead of historical churn. Safety preconditions:
-  1. Confirm `git status --short` is completely clean (zero unrelated or unstaged edits).
-  2. Record the pre-compression `HEAD` SHA in your round log so history remains recoverable via reflog.
-  3. Compress only local commits in `<merge-base>..HEAD` using `git reset --soft <merge-base>` followed by scoped `git add <paths>` + `git commit` (never `git reset --hard`, never `git add .`, never push unless explicitly asked).
+- **Two-stage commit compression against base**:
+  - *During regular convergence rounds (`R1 → R2 → R3`)*: keep one commit per fix round so the next clean-context `sandstorm-review` can still observe churn slope and patch-breeding chains directly in `git log`.
+  - *After Pass 0 / a Clean-Slate Module Redesign, or once the branch converges in Step 6*: compress superseded commits in `<merge-base>..HEAD` into **1–3 clean logical terminal commits** (for example backend / web / docs) to strip historical noise. Safety preconditions:
+    1. Confirm `git status --short` is clean (zero unrelated or unstaged edits).
+    2. Record the pre-compression `HEAD` SHA in your summary so history stays recoverable via reflog.
+    3. Use `git reset --soft <merge-base>` followed by scoped `git add <paths>` + `git commit` (never `git reset --hard`, never `git add .`, never push; pushing a compressed branch already on a remote MR requires `--force-with-lease` and refreshes MR version diffs).
 
-Completion criterion: verified round committed (and compressed cleanly against base when churn accumulated).
+Completion criterion: verified round committed (and compressed against base only at Pass 0 / redesign boundaries or final convergence).
 
 ### 6. Evaluate loop exit
 
-- **Converged**: latest clean-context `sandstorm-review` reports `0 P0`, `0 P1`, and no blocking complexity bloat (remaining `P2` items explicitly deferred). Stop and deliver the convergence summary (include `<!-- GOAL_COMPLETE -->` under `/goal`).
+- **Converged**: latest clean-context `sandstorm-review` reports `0 P0`, `0 P1`, and no blocking complexity bloat (remaining `P2` items explicitly deferred). Optionally run final commit compression per Step 5, then stop and deliver the convergence summary (include `<!-- GOAL_COMPLETE -->` under `/goal`).
 - **Otherwise**: return to Step 1 (subject to the Round Cap breaker).
 
 ## Circuit breakers
@@ -86,8 +88,10 @@ Pause the loop and present 2–3 concrete options (recommended subtraction/bound
 
 1. **Primitive Escalation**: closing a narrow edge window requires adding a new coordination or persistence primitive outside budget.
 2. **Patch-Breeding / Ratchet**: a new `P1` stemmed from an earlier fix round, or a fix is squeezed between two conflicting historical patch constraints. Prefer reverting/redesigning the earlier source; escalate if an accepted contract changes.
-3. **Hot-File Churn**: the same core production or test file grows monotonically across `>= 3` rounds or keeps accumulating white-box test scaffolding. Run a dedicated Clean-Slate Subtraction Pass or escalate.
+3. **Hot-File Churn**: the same core production or test file grows monotonically across `>= 3` rounds (tracked in the coordinator ledger even across compressed history) or keeps accumulating white-box test scaffolding. Run a dedicated Clean-Slate Subtraction Pass or escalate.
 4. **Round Cap**: `3` review-fix rounds finish without reaching `0 P0 / 0 P1` (unless the user set a higher cap).
+
+**Stopping cleanly under `/goal`**: when a breaker trips, call an interactive question tool (such as `ask_question`) to block for the user's choice when available. In unattended `/goal` runs without interactive blocking, write the decision summary and options to an external file outside the repo, report `PAUSED (<breaker>)`, and include `<!-- GOAL_COMPLETE -->` so the `/goal` harness does not force-continue past the breaker.
 
 ## Escalation and completion output
 

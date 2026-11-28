@@ -17,15 +17,15 @@ Attribute every finding to one state: `baseline`, `regression`, `design-converge
 
 ## 2. Load repository rules and domain context
 
-Read only the rules and domain docs relevant to the change:
+Load **only** the files that apply to the changed area—skip unrelated sub-docs (for example, do not read frontend or unrelated API guides on a pure repository/cache change):
 
-- `AGENTS.md`, `README.md`, and nested instructions.
-- `.review/review-style-guide.md`, critic/severity rules, and relevant cases.
-- Project skills when present (`.agents/skills/review-ags`, `e2e-review`, `developing-sandhub`).
-- Domain docs, glossary, ADRs, API specs, lifecycle docs, and migration/rollout runbooks.
-- `agentruntime-context` for AgentRuntime topology, service ownership, environments, and logs.
+- `AGENTS.md`, `README.md`, and nested instructions for touched modules.
+- Relevant `.review/` rules/cases (filter by touched domain rather than reading the entire directory).
+- Applicable project skills when present (`.agents/skills/review-ags`, `e2e-review`, `developing-sandhub`—read only the specific references matching touched subsystems).
+- Domain docs, glossary, ADRs, API specs, lifecycle docs, and migration/rollout runbooks for touched subsystems.
+- `agentruntime-context` when topology, service ownership, environments, or live logs bear on the diff.
 
-When code and domain docs disagree, cite the exact contradiction and treat the rule as unresolved until settled.
+When repository review templates (such as `review-ags` standalone `TestXxx_Scenario` prompts or report layouts) conflict with `sandstorm-review`'s subtraction, honest-boundary, or table-driven test-folding rules, follow `sandstorm-review`. When code and domain docs disagree on business semantics, cite the exact contradiction and treat the rule as unresolved until settled.
 
 ## 3. Build the shared model
 
